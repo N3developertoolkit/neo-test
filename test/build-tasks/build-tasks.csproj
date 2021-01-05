@@ -12,7 +12,7 @@
   <Target Name="GenerateNeoContractInterface" BeforeTargets="PrepareForBuild">
     <NeoContractInterface
       ManifestFile="Apoc.manifest.json"
-      OutputFile="C:\Users\harry\Source\neo\seattle\neo-test\test\build-tasks\obj\Debug\netcoreapp3.1\Apoc.manifest.cs"
+      OutputFile="$(IntermediateOutputPath)\Apoc.manifest.cs"
       RootNamespace="DevHawk.Contracts"/>
   </Target>
 
