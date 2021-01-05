@@ -11,7 +11,7 @@ namespace Neo.BuildTasks
         {
             Log.LogMessage(MessageImportance.High, OutputFile);
             Log.LogMessage(MessageImportance.High, ManifestFile);
-            Log.LogMessage(MessageImportance.High, ContractNamespace);
+            Log.LogMessage(MessageImportance.High, RootNamespace);
 
             if (string.IsNullOrEmpty(ManifestFile))
             {
@@ -20,7 +20,7 @@ namespace Neo.BuildTasks
             else
             {
                 var manifest = NeoManifest.Load(ManifestFile);
-                var source = manifest.GenerateContractInterface(ContractNamespace);
+                var source = manifest.GenerateContractInterface(RootNamespace);
                 if (!string.IsNullOrEmpty(source))
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
@@ -36,7 +36,7 @@ namespace Neo.BuildTasks
         [Required]
         public string ManifestFile { get; set; } = "";
 
-        public string ContractNamespace { get; set; } = "";
+        public string RootNamespace { get; set; } = "";
 
         static void FileOperationWithRetry(Action operation)
         {
