@@ -1,22 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <UsingTask AssemblyFile="C:\Users\harry\Source\neo\seattle\neo-test\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll" TaskName="Neo.BuildTasks.NeoContractInterface"/>
-
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>build_tasks</RootNamespace>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
-    <PackageReference Include="xunit" Version="2.4.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
-    <PackageReference Include="coverlet.collector" Version="1.2.0" />
+    <PackageReference Include="Neo.BuildTasks" Version="0.4.13-preview-gca63f06b12" PrivateAssets="All" />
   </ItemGroup>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="Build">
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="PrepareForBuild">
     <NeoContractInterface
       ManifestFile="Apoc.manifest.json"
       OutputFile="C:\Users\harry\Source\neo\seattle\neo-test\test\build-tasks\obj\Debug\netcoreapp3.1\Apoc.manifest.cs"
