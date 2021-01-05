@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <UsingTask AssemblyFile="C:\Users\harry\Source\neo\seattle\neo-test\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll" TaskName="Neo.BuildTasks.GenerateContractInterface"/>
+  <UsingTask AssemblyFile="C:\Users\harry\Source\neo\seattle\neo-test\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll" TaskName="Neo.BuildTasks.NeoContractInterface"/>
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -16,8 +16,8 @@
     <PackageReference Include="coverlet.collector" Version="1.2.0" />
   </ItemGroup>
 
-  <Target Name="GenerateCOntract" BeforeTargets="Build">
-    <GenerateContractInterface
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="Build">
+    <NeoContractInterface
       ManifestFile="Apoc.manifest.json"
       OutputFile="C:\Users\harry\Source\neo\seattle\neo-test\test\build-tasks\obj\Debug\netcoreapp3.1\Apoc.manifest.cs"
       ContractNamespace="DevHawk.Contracts"/>

@@ -5,7 +5,7 @@ using Microsoft.Build.Utilities;
 
 namespace Neo.BuildTasks
 {
-    public class GenerateContractInterface : Task
+    public class NeoContractInterface : Task
     {
         public override bool Execute()
         {
