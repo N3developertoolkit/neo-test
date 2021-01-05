@@ -9,13 +9,9 @@ namespace Neo.BuildTasks
     {
         public override bool Execute()
         {
-            Log.LogMessage(MessageImportance.High, OutputFile);
-            Log.LogMessage(MessageImportance.High, ManifestFile);
-            Log.LogMessage(MessageImportance.High, RootNamespace);
-
             if (string.IsNullOrEmpty(ManifestFile))
             {
-                Log.LogError("Invalid ManifestFile");
+                Log.LogError("Invalid ManifestFile " + ManifestFile);
             }
             else
             {
