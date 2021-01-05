@@ -25,11 +25,6 @@
     <None Include="../ngdsea.png" Pack="true" Visible="false" PackagePath="" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)'!='Debug'">
-    <SourceRoot Include="$(MSBuildThisFileDirectory)/" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
   <Import Project="../Directory.Build.props" />
 
 </Project>
