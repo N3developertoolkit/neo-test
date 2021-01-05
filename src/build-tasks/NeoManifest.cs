@@ -42,13 +42,6 @@ namespace Neo.BuildTasks
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
-[System.CodeDom.Compiler.GeneratedCode(""Neo.BuildTasks"",""{ThisAssembly.AssemblyFileVersion}"")]
-#endif
-#if NETFRAMEWORK || NETCOREAPP || NETSTANDARD2_0 || NETSTANDARD2_1
-[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-#endif
-
 ");
 
 
@@ -57,6 +50,10 @@ namespace Neo.BuildTasks
                 builder.AppendLine($"namespace {@namespace} {{");
                 builder.IncrementIndent();
             }
+            builder.AppendLines($@"#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+[System.CodeDom.Compiler.GeneratedCode(""Neo.BuildTasks"",""{ThisAssembly.AssemblyFileVersion}"")]
+#endif
+");
             builder.AppendLine($"[NeoTestHarness.Contract(\"{Name}\")]");
             builder.AppendLine($"interface {contractName} {{");
             builder.IncrementIndent();
