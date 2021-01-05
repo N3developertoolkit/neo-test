@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neo.BuildTasks" Version="0.4.13-preview-gca63f06b12" PrivateAssets="All" />
+    <PackageReference Include="Neo.BuildTasks" Version="0.0.0-*" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="GenerateNeoContractInterface" BeforeTargets="PrepareForBuild">
