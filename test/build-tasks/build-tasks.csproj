@@ -20,7 +20,7 @@
     <NeoContractInterface
       ManifestFile="Apoc.manifest.json"
       OutputFile="C:\Users\harry\Source\neo\seattle\neo-test\test\build-tasks\obj\Debug\netcoreapp3.1\Apoc.manifest.cs"
-      ContractNamespace="DevHawk.Contracts"/>
+      RootNamespace="DevHawk.Contracts"/>
   </Target>
 
 </Project>
