@@ -16,7 +16,7 @@
     <NeoContractInterface
       ManifestFile="Apoc.manifest.json"
       OutputFile="$(IntermediateOutputPath)\Apoc.contract-interface.cs"
-      RootNamespace="DevHawk.Contracts"/>
+      RootNamespace="TestContract"/>
 
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)\Apoc.contract-interface.cs" />
