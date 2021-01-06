@@ -11,22 +11,17 @@
     <PackageReference Include="Neo.Test.Harness" Version="0.4.6-preview" />
   </ItemGroup>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ManifestSourceFile>$(IntermediateOutputPath)\Apoc.contract-interface.cs</ManifestSourceFile>
-    </PropertyGroup>
-    
+  <Target Name="TestNeoContractInterface" BeforeTargets="PrepareForBuild">
+
     <NeoContractInterface
       ManifestFile="Apoc.manifest.json"
-      OutputFile="$(ManifestSourceFile)"
+      OutputFile="$(IntermediateOutputPath)\Apoc.contract-interface.cs"
       RootNamespace="DevHawk.Contracts"/>
 
     <ItemGroup>
-      <_CompileWithManifestFile Include="$(ManifestSourceFile);@(Compile)" />
-      <Compile Remove="@(Compile)" />
-      <Compile Include="@(_CompileWithManifestFile)" />
-      <_CompileWithVersionFile Remove="@(_CompileWithManifestFile)" />
+      <Compile Include="$(IntermediateOutputPath)\Apoc.contract-interface.cs" />
     </ItemGroup>
+
   </Target>
 
 </Project>
