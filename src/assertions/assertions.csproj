@@ -12,11 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.10.3" />
-    <!-- <PackageReference Include="Neo" Version="3.0.0-preview5" /> -->
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\official\core\src\neo\neo.csproj" />
+    <PackageReference Include="Neo" Version="3.0.0-preview5" />
   </ItemGroup>
 
 </Project>

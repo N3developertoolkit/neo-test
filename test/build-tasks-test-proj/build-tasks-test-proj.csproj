@@ -15,13 +15,11 @@
   <UsingTask AssemblyFile="..\..\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll   " TaskName="Neo.BuildTasks.NeoContractInterface" />
 
   <Target Name="TestNeoContractInterface" AfterTargets="PrepareForBuild">
-
     <NeoContractInterface ManifestFile="Apoc.manifest.json" OutputFile="$(IntermediateOutputPath)\Apoc.contract-interface.cs" RootNamespace="TestContract" />
 
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)\Apoc.contract-interface.cs" />
     </ItemGroup>
-
   </Target>
 
 </Project>

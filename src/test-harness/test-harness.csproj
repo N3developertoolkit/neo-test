@@ -5,19 +5,13 @@
     <PackageId>Neo.Test.Harness</PackageId>
     <RootNamespace>Neo.Test.Harness</RootNamespace>
   </PropertyGroup>
-  
+
   <ItemGroup Condition="'$(Configuration)'!='Debug'">
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
-  
 
   <ItemGroup>
-    <!-- <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.4-preview" /> -->
-  </ItemGroup>
-  
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\lib-bctk\src\bctklib-3\bctklib-3.csproj" />
+    <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.4-preview" />
   </ItemGroup>
 
 </Project>
