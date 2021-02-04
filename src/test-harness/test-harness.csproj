@@ -12,7 +12,12 @@
   
 
   <ItemGroup>
-    <PackageReference Include="Neo.BlockchainToolkit3" Version="0.4.67-preview" />
+    <!-- <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.4-preview" /> -->
+  </ItemGroup>
+  
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\lib-bctk\src\bctklib-3\bctklib-3.csproj" />
   </ItemGroup>
 
 </Project>
