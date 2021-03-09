@@ -12,7 +12,6 @@
     <Nullable>enable</Nullable>
     <PackageIcon>ngdsea.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <!-- <PackageOutputPath>$(MSBuildThisFileDirectory)..\artifacts\</PackageOutputPath> -->
     <PackageProjectUrl>https://github.com/ngdenterprise/neo-test</PackageProjectUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryType>git</RepositoryType>
