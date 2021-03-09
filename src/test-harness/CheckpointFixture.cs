@@ -38,10 +38,7 @@ namespace NeoTestHarness
             while (Directory.Exists(checkpointTempPath));
 
             var magic = RocksDbStore.RestoreCheckpoint(checkpointPath, checkpointTempPath);
-            InitializeProtocolSettings(magic);
-
             rocksDbStore = RocksDbStore.OpenReadOnly(checkpointTempPath);
-
         }
 
         public void Dispose()
@@ -53,32 +50,6 @@ namespace NeoTestHarness
         public CheckpointStore GetCheckpointStore()
         {
             return new CheckpointStore(rocksDbStore, false);
-        }
-
-        static long initMagic = -1;
-        static void InitializeProtocolSettings(long magic)
-        {
-            if (magic > uint.MaxValue || magic < 0) throw new Exception($"invalid magic value {magic}");
-
-            if (Interlocked.CompareExchange(ref initMagic, magic, -1) == -1)
-            {
-                var settings = new[] { KeyValuePair.Create("ProtocolConfiguration:Magic", $"{(uint)magic}") };
-                var protocolConfig = new ConfigurationBuilder()
-                    .AddInMemoryCollection(settings)
-                    .Build();
-
-                if (!ProtocolSettings.Initialize(protocolConfig))
-                {
-                    throw new Exception($"could not initialize protocol settings {initMagic} / {magic} / {ProtocolSettings.Default.Magic}");
-                }
-            }
-            else
-            {
-                if (magic != initMagic)
-                {
-                    throw new Exception($"ProtocolSettings already initialized with {initMagic} (new magic: {magic})");
-                }
-            }
         }
     }
 }
