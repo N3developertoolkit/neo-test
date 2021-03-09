@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using Microsoft.Extensions.Configuration;
 using Neo;
 using Neo.BlockchainToolkit.Persistence;
 
@@ -10,8 +7,9 @@ namespace NeoTestHarness
 {
     public abstract class CheckpointFixture : IDisposable
     {
-        string checkpointTempPath;
-        RocksDbStore rocksDbStore;
+        readonly string checkpointTempPath;
+        readonly RocksDbStore rocksDbStore;
+        public readonly ProtocolSettings ProtocolSettings;
 
         public CheckpointFixture(string checkpointPath)
         {
@@ -37,7 +35,12 @@ namespace NeoTestHarness
             }
             while (Directory.Exists(checkpointTempPath));
 
-            var magic = RocksDbStore.RestoreCheckpoint(checkpointPath, checkpointTempPath);
+            var metadata = RocksDbStore.RestoreCheckpoint(checkpointPath, checkpointTempPath);
+            this.ProtocolSettings = ProtocolSettings.Default with
+            {
+                Magic = metadata.magic,
+                AddressVersion = metadata.addressVersion,
+            }; 
             rocksDbStore = RocksDbStore.OpenReadOnly(checkpointTempPath);
         }
 
