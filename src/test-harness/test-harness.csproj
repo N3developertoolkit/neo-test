@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.34-preview-g717c4c417b" />
+    <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.35-preview-gbea56fc0dc" />
   </ItemGroup>
 
 </Project>
