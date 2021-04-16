@@ -7,6 +7,6 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.36-preview-g8ff36622d1" />
+    <PackageReference Include="Neo.BlockchainToolkit3" Version="1.0.37-preview-g65636295cb" />
   </ItemGroup>
 </Project>
