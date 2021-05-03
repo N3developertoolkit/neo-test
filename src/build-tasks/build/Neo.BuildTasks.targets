@@ -15,11 +15,11 @@
     <NeoDebugInfoExt>.nefdbgnfo</NeoDebugInfoExt>
     <NccsOutputPath>bin\sc\</NccsOutputPath>
     <TargetNccsOutputPath Condition="'$(NccsOutputPath)' != ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(NccsOutputPath)'))</TargetNccsOutputPath>
-    <TargetNeoContractFileName Condition="'$(TargetContractName)' != ''">$(TargetContractName)$(NeoContractExt)</TargetNeoContractFileName>
+    <TargetNeoContractFileName Condition="'$(TargetNeoContractName)' != ''">$(TargetNeoContractName)$(NeoContractExt)</TargetNeoContractFileName>
     <TargetNeoContractPath Condition="'$(TargetNeoContractFileName)' != ''">$(TargetNccsOutputPath)$(TargetNeoContractFileName)</TargetNeoContractPath>
-    <TargetNeoManifestFileName Condition="'$(TargetContractName)' != ''">$(TargetContractName)$(NeoManifestExt)</TargetNeoManifestFileName>
+    <TargetNeoManifestFileName Condition="'$(TargetNeoContractName)' != ''">$(TargetNeoContractName)$(NeoManifestExt)</TargetNeoManifestFileName>
     <TargetNeoManifestPath Condition="'$(TargetNeoManifestFileName)' != ''">$(TargetNccsOutputPath)$(TargetNeoManifestFileName)</TargetNeoManifestPath>
-    <TargetNeoDebugInfoFileName Condition="'$(TargetContractName)' != ''">$(TargetContractName)$(NeoDebugInfoExt)</TargetNeoDebugInfoFileName>
+    <TargetNeoDebugInfoFileName Condition="'$(TargetNeoContractName)' != ''">$(TargetNeoContractName)$(NeoDebugInfoExt)</TargetNeoDebugInfoFileName>
     <TargetNeoDebugInfoPath Condition="'$(TargetNeoDebugInfoFileName)' != ''">$(TargetNccsOutputPath)$(TargetNeoDebugInfoFileName)</TargetNeoDebugInfoPath>
   </PropertyGroup>
 
@@ -46,7 +46,7 @@
   <Target Name="GetTargetNeoContract" Returns="@(TargetNeoContract)">
     <ItemGroup>
       <TargetNeoContract Include="$(TargetNeoContractPath)">
-        <Name>$(TargetContractName)</Name>
+        <Name>$(TargetNeoContractName)</Name>
         <ManifestPath>$(TargetNeoManifestPath)</ManifestPath>
       </TargetNeoContract>
     </ItemGroup>
