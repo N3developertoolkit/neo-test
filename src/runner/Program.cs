@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.IO.Abstractions;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
@@ -14,6 +16,7 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Newtonsoft.Json;
+using static Neo.BlockchainToolkit.Constants;
 
 namespace Neo.Test.Runner
 {
@@ -35,7 +38,11 @@ namespace Neo.Test.Runner
         }
 
         [Argument(0)]
+        [Required]
         internal string NeoInvokeFile { get; set; } = string.Empty;
+
+        [Argument(1)]
+        internal string Signer { get; set; } = string.Empty;
 
         [Option("-c|--checkpoint")]
         internal string CheckpointFile { get; set; } = string.Empty;
@@ -43,13 +50,13 @@ namespace Neo.Test.Runner
         [Option("-e|--express")]
         internal string NeoExpressFile { get; set; } = string.Empty;
 
-        [Option]
-        internal string Signer { get; set; } = string.Empty;
-
-        [Option("--iterator-count")]
+        [Option("-i|--iterator-count")]
         internal int MaxIteratorCount { get; set; } = 100;
 
-        [Option("--version")]
+        [Option(CommandOptionType.MultipleValue)]
+        public string[] Storages { get; } = Array.Empty<string>();
+
+        [Option("--version", Description = "Show version information.")]
         bool Version { get; }
 
         internal async Task<int> OnExecuteAsync(CommandLineApplication app, IFileSystem fileSystem)
@@ -75,6 +82,11 @@ namespace Neo.Test.Runner
                 store.EnsureLedgerInitialized(checkpoint.Settings);
 
                 var tryGetContract = store.CreateTryGetContract();
+                var storages = Storages
+                    .Select(s => tryGetContract(s, out var hash) ? hash : null)
+                    .Where(h => h != null)
+                    .Cast<UInt160>()
+                    .Distinct();
 
                 var parser = chain != null
                     ? chain.CreateContractParameterParser(tryGetContract, fileSystem)
@@ -93,7 +105,7 @@ namespace Neo.Test.Runner
                 engine.LoadScript(script);
                 var state = engine.Execute();
 
-                await WriteResultsAsync(app.Out, engine, logEvents, notifyEvents);
+                await WriteResultsAsync(app.Out, engine, logEvents, notifyEvents, storages);
 
                 return 0;
             }
@@ -125,7 +137,8 @@ namespace Neo.Test.Runner
         }
 
         private async Task WriteResultsAsync(TextWriter textWriter, TestApplicationEngine engine,
-            IReadOnlyList<LogEventArgs> logEvents, IReadOnlyList<NotifyEventArgs> notifyEvents)
+            IReadOnlyList<LogEventArgs> logEvents, IReadOnlyList<NotifyEventArgs> notifyEvents,
+            IEnumerable<UInt160> storages)
         {
             using var writer = new JsonTextWriter(textWriter)
             {
@@ -145,28 +158,36 @@ namespace Neo.Test.Runner
 
             await writer.WritePropertyNameAsync("logs");
             await writer.WriteStartArrayAsync();
-            foreach (var log in logEvents)
+            for (int i = 0; i < logEvents.Count; i++)
             {
-                await writer.WriteLogAsync(log);
+                await writer.WriteLogAsync(logEvents[i]);
             }
             await writer.WriteEndArrayAsync();
 
             await writer.WritePropertyNameAsync("notifications");
             await writer.WriteStartArrayAsync();
-            foreach (var notification in notifyEvents)
+            for (int i = 0; i < notifyEvents.Count; i++)
             {
-                await writer.WriteNotificationAsync(notification, MaxIteratorCount);
+                await writer.WriteNotificationAsync(notifyEvents[i], MaxIteratorCount);
             }
             await writer.WriteEndArrayAsync();
 
             await writer.WritePropertyNameAsync("stack");
             await writer.WriteStartArrayAsync();
-            foreach (var r in engine.ResultStack)
+            IReadOnlyList<VM.Types.StackItem> list = engine.ResultStack;
+            for (int i = 0; i < list.Count; i++)
             {
-                await writer.WriteStackItemAsync(r, MaxIteratorCount);
+                await writer.WriteStackItemAsync(list[i], MaxIteratorCount);
             }
             await writer.WriteEndArrayAsync();
 
+            await writer.WritePropertyNameAsync("storages");
+            await writer.WriteStartArrayAsync();
+            foreach (var contractHash in storages)
+            {
+                await writer.WriteStorageAsync(engine.Snapshot, contractHash);
+            }
+            await writer.WriteEndArrayAsync();
             await writer.WriteEndObjectAsync();
         }
     }

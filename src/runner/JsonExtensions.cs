@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Iterators;
+using Neo.SmartContract.Native;
 using Neo.VM.Types;
 using Newtonsoft.Json;
 
@@ -29,6 +31,37 @@ namespace Neo.Test.Runner
             await writer.WriteValueAsync(args.EventName);
             await writer.WritePropertyNameAsync("state");
             await writer.WriteStackItemAsync(args.State, maxIteratorCount);
+            await writer.WriteEndObjectAsync();
+        }
+
+        public static async Task WriteStorageAsync(this JsonTextWriter writer, DataCache snapshot, UInt160 contractHash)
+        {
+            var contract = NativeContract.ContractManagement.GetContract(snapshot, contractHash);
+            if (contract == null) return;
+
+            byte[] keyPrefix = StorageKey.CreateSearchPrefix(contract.Id, default(ReadOnlySpan<byte>));
+            await writer.WriteStartObjectAsync();
+
+            await writer.WritePropertyNameAsync("name");
+            await writer.WriteValueAsync(contract.Manifest.Name);
+
+            await writer.WritePropertyNameAsync("hash");
+            await writer.WriteValueAsync($"{contract.Hash}");
+
+            await writer.WritePropertyNameAsync("values");
+
+            await writer.WriteStartArrayAsync();
+            foreach (var kvp in snapshot.Find(keyPrefix))
+            {
+                await writer.WriteStartObjectAsync();
+                await writer.WritePropertyNameAsync("key");
+                await writer.WriteValueAsync(Convert.ToBase64String(kvp.Key.Key));
+                await writer.WritePropertyNameAsync("value");
+                await writer.WriteValueAsync(Convert.ToBase64String(kvp.Value.Value));
+                await writer.WriteEndObjectAsync();
+            }
+            await writer.WriteEndArrayAsync();
+
             await writer.WriteEndObjectAsync();
         }
 

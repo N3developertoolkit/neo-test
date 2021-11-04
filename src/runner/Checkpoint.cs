@@ -60,7 +60,7 @@ namespace Neo.Test.Runner
 
             if (Directory.Exists(checkpointTempPath))
             {
-                Directory.Delete(checkpointTempPath);
+                Directory.Delete(checkpointTempPath, true);
             }
         }
     }
