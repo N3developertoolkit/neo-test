@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>neo-test-runner</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>Neo.Test.Runner</PackageId>
+    <RootNamespace>Neo.Test.Runner</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.1.0" />
+    <PackageReference Include="Neo.BlockchainToolkit.Library" Version="3.0.13" />
+    <PackageReference Include="Nito.Disposables" Version="2.2.1" />
+  </ItemGroup>
+</Project>
