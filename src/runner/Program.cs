@@ -16,7 +16,6 @@ using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Newtonsoft.Json;
-using static Neo.BlockchainToolkit.Constants;
 
 namespace Neo.Test.Runner
 {
@@ -37,23 +36,23 @@ namespace Neo.Test.Runner
             return app.ExecuteAsync(args);
         }
 
-        [Argument(0)]
+        [Argument(0, Description = "Path to neo-invoke JSON file")]
         [Required]
         internal string NeoInvokeFile { get; set; } = string.Empty;
 
-        [Argument(1)]
-        internal string Signer { get; set; } = string.Empty;
+        [Option(Description = "Account that is invoking the contract")]
+        internal string Account { get; set; } = string.Empty;
 
-        [Option("-c|--checkpoint")]
+        [Option("-c|--checkpoint", Description = "Path to checkpoint file")]
         internal string CheckpointFile { get; set; } = string.Empty;
 
-        [Option("-e|--express")]
+        [Option("-e|--express", Description = "Path to neo-express file")]
         internal string NeoExpressFile { get; set; } = string.Empty;
 
         [Option("-i|--iterator-count")]
         internal int MaxIteratorCount { get; set; } = 100;
 
-        [Option(CommandOptionType.MultipleValue)]
+        [Option(Description = "Contracts to include in storage results")]
         public string[] Storages { get; } = Array.Empty<string>();
 
         [Option("--version", Description = "Show version information.")]
@@ -118,22 +117,22 @@ namespace Neo.Test.Runner
 
         UInt160 ParseSigner(ExpressChain? chain)
         {
-            if (string.IsNullOrEmpty(Signer))
+            if (string.IsNullOrEmpty(Account))
             {
                 return UInt160.Zero;
             }
 
-            if (UInt160.TryParse(Signer, out var signer))
+            if (UInt160.TryParse(Account, out var signer))
             {
                 return signer;
             }
 
-            if (chain != null && chain.TryGetDefaultAccount(Signer, out var account))
+            if (chain != null && chain.TryGetDefaultAccount(Account, out var account))
             {
                 return account.ToScriptHash(chain.AddressVersion);
             }
 
-            throw new ArgumentException($"couldn't parse \"{Signer}\" as {nameof(Signer)}", nameof(Signer));
+            throw new ArgumentException($"couldn't parse \"{Account}\" as {nameof(Account)}", nameof(Account));
         }
 
         private async Task WriteResultsAsync(TextWriter textWriter, TestApplicationEngine engine,
