@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions;
-using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,11 +10,9 @@ using Neo.BlockchainToolkit;
 using Neo.BlockchainToolkit.Models;
 using Neo.BlockchainToolkit.Persistence;
 using Neo.BlockchainToolkit.SmartContract;
-using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 using Newtonsoft.Json;
 
 namespace Neo.Test.Runner
@@ -66,33 +65,22 @@ namespace Neo.Test.Runner
                 ExpressChain? chain = string.IsNullOrEmpty(NeoExpressFile)
                     ? null : fileSystem.LoadChain(NeoExpressFile);
 
-                var signer = UInt160.Zero;
-                if (!string.IsNullOrEmpty(Signer))
-                {
-                    if (UInt160.TryParse(Signer, out var _signer))
-                    {
-                        signer = _signer;
-                    }
-
-                    if (chain != null && chain.TryGetDefaultAccount(Signer, out var account))
-                    {
-                        signer = Neo.Wallets.Helper.ToScriptHash(account.ScriptHash, chain.AddressVersion);
-                    }
-
-                    throw new ArgumentException($"couldn't parse \"{Signer}\" as {nameof(Signer)}", nameof(Signer));
-                }
+                var signer = ParseSigner(chain);
 
                 using ICheckpoint checkpoint = string.IsNullOrEmpty(CheckpointFile)
                     ? Checkpoint.NullCheckpoint
                     : new Checkpoint(CheckpointFile, chain);
 
                 using var store = new MemoryTrackingStore(checkpoint.Store);
-                EnsureLedgerInitialized(store, checkpoint.Settings);
-                var parser = chain != null
-                    ? CreateContractParameterParser(chain, store, fileSystem)
-                    : CreateContractParameterParser(checkpoint.Settings, store, fileSystem);
+                store.EnsureLedgerInitialized(checkpoint.Settings);
 
-                var script = await parser.LoadInvocationScriptAsync(NeoInvokeFile); 
+                var tryGetContract = store.CreateTryGetContract();
+
+                var parser = chain != null
+                    ? chain.CreateContractParameterParser(tryGetContract, fileSystem)
+                    : checkpoint.Settings.CreateContractParameterParser(tryGetContract, fileSystem);
+
+                var script = await parser.LoadInvocationScriptAsync(NeoInvokeFile);
 
                 using var snapshot = new SnapshotCache(store);
                 using var engine = new TestApplicationEngine(snapshot, checkpoint.Settings, signer);
@@ -105,47 +93,7 @@ namespace Neo.Test.Runner
                 engine.LoadScript(script);
                 var state = engine.Execute();
 
-                using var writer = new JsonTextWriter(app.Out)
-                {
-                    Formatting = Formatting.Indented
-                };
-
-                await writer.WriteStartObjectAsync();
-
-                await writer.WritePropertyNameAsync("state");
-                await writer.WriteValueAsync(engine.State);;
-                await writer.WritePropertyNameAsync("exception");
-                await ((engine.FaultException == null)
-                    ? writer.WriteNullAsync() 
-                    : writer.WriteValueAsync(engine.FaultException.GetBaseException().Message));
-                await writer.WriteValueAsync($"{engine.GasConsumed}");
-                await writer.WritePropertyNameAsync("gasconsumed");
-
-                await writer.WritePropertyNameAsync("logs");
-                await writer.WriteStartArrayAsync();
-                foreach (var log in logEvents)
-                {
-                    await writer.WriteLogAsync(log);
-                }
-                await writer.WriteEndArrayAsync();
-
-                await writer.WritePropertyNameAsync("notifications");
-                await writer.WriteStartArrayAsync();
-                foreach (var notification in notifyEvents)
-                {
-                    await writer.WriteNotificationAsync(notification, MaxIteratorCount);
-                }
-                await writer.WriteEndArrayAsync();
-
-                await writer.WritePropertyNameAsync("stack");
-                await writer.WriteStartArrayAsync();
-                foreach (var r in engine.ResultStack)
-                {
-                    await writer.WriteStackItemAsync(r, MaxIteratorCount);
-                }
-                await writer.WriteEndArrayAsync();
-
-                await writer.WriteEndObjectAsync();
+                await WriteResultsAsync(app.Out, engine, logEvents, notifyEvents);
 
                 return 0;
             }
@@ -156,110 +104,70 @@ namespace Neo.Test.Runner
             }
         }
 
-        class InitializeAppEngine : ApplicationEngine
+        UInt160 ParseSigner(ExpressChain? chain)
         {
-            public InitializeAppEngine(TriggerType trigger, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas = 2000000000L)
-                : base(trigger, null, snapshot, persistingBlock, settings, gas)
+            if (string.IsNullOrEmpty(Signer))
             {
+                return UInt160.Zero;
             }
 
-            public new void NativeOnPersist() => base.NativeOnPersist();
-            public new void NativePostPersist() => base.NativePostPersist();
-
-            public static bool IsInitialized(DataCache snapshot)
+            if (UInt160.TryParse(Signer, out var signer))
             {
-                const byte Prefix_BlockHash = 9;
-                var key = new KeyBuilder(NativeContract.Ledger.Id, Prefix_BlockHash).ToArray();
-                return snapshot.Find(key).Any();
+                return signer;
             }
+
+            if (chain != null && chain.TryGetDefaultAccount(Signer, out var account))
+            {
+                return account.ToScriptHash(chain.AddressVersion);
+            }
+
+            throw new ArgumentException($"couldn't parse \"{Signer}\" as {nameof(Signer)}", nameof(Signer));
         }
 
-        static void EnsureLedgerInitialized(IStore store, ProtocolSettings settings)
+        private async Task WriteResultsAsync(TextWriter textWriter, TestApplicationEngine engine,
+            IReadOnlyList<LogEventArgs> logEvents, IReadOnlyList<NotifyEventArgs> notifyEvents)
         {
-            using var snapshot = new SnapshotCache(store.GetSnapshot());
-            if (InitializeAppEngine.IsInitialized(snapshot)) return;
-
-            var block = NeoSystem.CreateGenesisBlock(settings);
-            if (block.Transactions.Length != 0) throw new Exception("Unexpected Transactions in genesis block");
-
-            using (var engine = new InitializeAppEngine(TriggerType.OnPersist, snapshot, block, settings))
+            using var writer = new JsonTextWriter(textWriter)
             {
-                engine.NativeOnPersist();
-                if (engine.State != VMState.HALT) throw new InvalidOperationException("NativeOnPersist operation failed", engine.FaultException);
-            }
+                Formatting = Formatting.Indented
+            };
 
-            using (var engine = new InitializeAppEngine(TriggerType.PostPersist, snapshot, block, settings))
+            await writer.WriteStartObjectAsync();
+
+            await writer.WritePropertyNameAsync("state");
+            await writer.WriteValueAsync($"{engine.State}"); ;
+            await writer.WritePropertyNameAsync("exception");
+            await ((engine.FaultException == null)
+                ? writer.WriteNullAsync()
+                : writer.WriteValueAsync(engine.FaultException.GetBaseException().Message));
+            await writer.WritePropertyNameAsync("gasconsumed");
+            await writer.WriteValueAsync($"{new BigDecimal((BigInteger)engine.GasConsumed, NativeContract.GAS.Decimals)}");
+
+            await writer.WritePropertyNameAsync("logs");
+            await writer.WriteStartArrayAsync();
+            foreach (var log in logEvents)
             {
-                engine.NativePostPersist();
-                if (engine.State != VMState.HALT) throw new InvalidOperationException("NativePostPersist operation failed", engine.FaultException);
+                await writer.WriteLogAsync(log);
             }
+            await writer.WriteEndArrayAsync();
 
-            snapshot.Commit();
-        }
-
-        static ContractParameterParser CreateContractParameterParser(ExpressChain chain, IReadOnlyStore store, IFileSystem? fileSystem = null)
-        {
-            var tryGetContract = BuildTryGetContract(store);
-            ContractParameterParser.TryGetUInt160 tryGetAccount = (string name, out UInt160 scriptHash) =>
-                {
-                    if (chain.TryGetDefaultAccount(name, out var account))
-                    {
-                        scriptHash = Neo.Wallets.Helper.ToScriptHash(account.ScriptHash, chain.AddressVersion);
-                        return true;
-                    }
-
-                    scriptHash = null!;
-                    return false;
-                };
-
-            return new ContractParameterParser(chain.AddressVersion,
-                                               tryGetAccount: tryGetAccount,
-                                               tryGetContract: tryGetContract,
-                                               fileSystem: fileSystem);
-        }
-            
-        static ContractParameterParser CreateContractParameterParser(ProtocolSettings settings, IReadOnlyStore store, IFileSystem? fileSystem = null)
-        {
-            var tryGetContract = BuildTryGetContract(store);
-            return new ContractParameterParser(settings.AddressVersion,
-                                               tryGetAccount: null,
-                                               tryGetContract: tryGetContract,
-                                               fileSystem: fileSystem);
-        }
-
-        static ContractParameterParser.TryGetUInt160 BuildTryGetContract(IReadOnlyStore store)
-        {
-            (string name, UInt160 hash)[] contracts;
-            using (var snapshot = new SnapshotCache(store))
+            await writer.WritePropertyNameAsync("notifications");
+            await writer.WriteStartArrayAsync();
+            foreach (var notification in notifyEvents)
             {
-                contracts = NativeContract.ContractManagement.ListContracts(snapshot)
-                    .Select(c => (name: c.Manifest.Name, hash: c.Hash))
-                    .ToArray();
+                await writer.WriteNotificationAsync(notification, MaxIteratorCount);
             }
+            await writer.WriteEndArrayAsync();
 
-            return (string name, out UInt160 scriptHash) =>
-                {
-                    for (int i = 0; i < contracts.Length; i++)
-                    {
-                        if (string.Equals(contracts[i].name, name))
-                        {
-                            scriptHash = contracts[i].hash;
-                            return true;
-                        }
-                    }
+            await writer.WritePropertyNameAsync("stack");
+            await writer.WriteStartArrayAsync();
+            foreach (var r in engine.ResultStack)
+            {
+                await writer.WriteStackItemAsync(r, MaxIteratorCount);
+            }
+            await writer.WriteEndArrayAsync();
 
-                    for (int i = 0; i < contracts.Length; i++)
-                    {
-                        if (string.Equals(contracts[i].name, name, StringComparison.OrdinalIgnoreCase))
-                        {
-                            scriptHash = contracts[i].hash;
-                            return true;
-                        }
-                    }
-
-                    scriptHash = null!;
-                    return false;
-                };
+            await writer.WriteEndObjectAsync();
         }
     }
 }

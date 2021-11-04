@@ -41,67 +41,67 @@ namespace Neo.Test.Runner
             switch (item)
             {
                 case Neo.VM.Types.Array array:
-                {
-                    context ??= new(ReferenceEqualityComparer.Instance);
-                    if (!context.Add(array)) throw new InvalidOperationException();
-                    await writer.WriteStartArrayAsync();
-                    for (int i = 0; i < array.Count; i++)
                     {
-                        await writer.WriteStackItemAsync(array[i], maxIteratorCount, context);
+                        context ??= new(ReferenceEqualityComparer.Instance);
+                        if (!context.Add(array)) throw new InvalidOperationException();
+                        await writer.WriteStartArrayAsync();
+                        for (int i = 0; i < array.Count; i++)
+                        {
+                            await writer.WriteStackItemAsync(array[i], maxIteratorCount, context);
+                        }
+                        await writer.WriteEndArrayAsync();
+                        break;
                     }
-                    await writer.WriteEndArrayAsync();
-                    break;
-                }
                 case Neo.VM.Types.Boolean _:
                     await writer.WriteValueAsync(item.GetBoolean());
                     break;
                 case Neo.VM.Types.Buffer _:
                 case ByteString _:
-                {
-                    var value = Convert.ToBase64String(item.GetSpan());
-                    await writer.WriteValueAsync(value);
-                    break;
-                }
+                    {
+                        var value = Convert.ToBase64String(item.GetSpan());
+                        await writer.WriteValueAsync(value);
+                        break;
+                    }
                 case Neo.VM.Types.Integer _:
                     await writer.WriteValueAsync($"{item.GetInteger()}");
                     break;
                 case Map map:
-                {
-                    context ??= new(ReferenceEqualityComparer.Instance);
-                    if (!context.Add(map)) throw new InvalidOperationException();
-                    await writer.WriteStartArrayAsync();
-                    foreach (var i in map)
                     {
-                        await writer.WriteStartObjectAsync();
-                        await writer.WritePropertyNameAsync("key");
-                        await writer.WriteStackItemAsync(i.Key, maxIteratorCount, context);
-                        await writer.WritePropertyNameAsync("value");
-                        await writer.WriteStackItemAsync(i.Value, maxIteratorCount, context);
-                        await writer.WriteEndObjectAsync();
+                        context ??= new(ReferenceEqualityComparer.Instance);
+                        if (!context.Add(map)) throw new InvalidOperationException();
+                        await writer.WriteStartArrayAsync();
+                        foreach (var i in map)
+                        {
+                            await writer.WriteStartObjectAsync();
+                            await writer.WritePropertyNameAsync("key");
+                            await writer.WriteStackItemAsync(i.Key, maxIteratorCount, context);
+                            await writer.WritePropertyNameAsync("value");
+                            await writer.WriteStackItemAsync(i.Value, maxIteratorCount, context);
+                            await writer.WriteEndObjectAsync();
+                        }
+                        await writer.WriteEndArrayAsync();
+                        break;
                     }
-                    await writer.WriteEndArrayAsync();
-                    break;
-                }
-                case Pointer pointer: 
+                case Pointer pointer:
                     await writer.WriteValueAsync(pointer.Position);
                     break;
-                case InteropInterface interop 
+                case InteropInterface interop
                     when interop.GetInterface<object>() is IIterator iterator:
-                {
-                    context ??= new(ReferenceEqualityComparer.Instance);
-                    await writer.WriteStartObjectAsync();
-                    await writer.WritePropertyNameAsync("iterator");
-                    await writer.WriteStartArrayAsync();
-                    while (maxIteratorCount-- > 0 && iterator.Next())
                     {
-                        await writer.WriteStackItemAsync(iterator.Value(), maxIteratorCount, context);
+                        context ??= new(ReferenceEqualityComparer.Instance);
+                        await writer.WriteStartObjectAsync();
+                        await writer.WritePropertyNameAsync("iterator");
+                        await writer.WriteStartArrayAsync();
+                        while (maxIteratorCount-- > 0 && iterator.Next())
+                        {
+                            await writer.WriteStackItemAsync(iterator.Value(), maxIteratorCount, context);
+                        }
+                        await writer.WriteEndArrayAsync();
+                        await writer.WritePropertyNameAsync("truncated");
+                        await writer.WriteValueAsync(iterator.Next());
+                        await writer.WriteEndArrayAsync();
+                        break;
                     }
-                    await writer.WriteEndArrayAsync();
-                    await writer.WritePropertyNameAsync("truncated");
-                    await writer.WriteValueAsync(iterator.Next());
-                    await writer.WriteEndArrayAsync();
-                    break;
-                }
             }
             await writer.WriteEndObjectAsync();
         }
