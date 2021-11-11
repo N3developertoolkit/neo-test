@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.IO.Abstractions;
@@ -15,6 +16,7 @@ using Neo.BlockchainToolkit.SmartContract;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.VM;
 using Newtonsoft.Json;
 
 namespace Neo.Test.Runner
@@ -46,6 +48,9 @@ namespace Neo.Test.Runner
         [Option("-c|--checkpoint", Description = "Path to checkpoint file")]
         internal string CheckpointFile { get; set; } = string.Empty;
 
+        [Option("-n|--nef-file")]
+        internal string NefFile { get; set; } = string.Empty;
+
         [Option("-e|--express", Description = "Path to neo-express file")]
         internal string NeoExpressFile { get; set; } = string.Empty;
 
@@ -67,6 +72,11 @@ namespace Neo.Test.Runner
                     await app.Out.WriteLineAsync(ThisAssembly.AssemblyInformationalVersion);
                     return 0;
                 }
+
+                DebugInfo? debugInfo = string.IsNullOrEmpty(NefFile)
+                    ? null 
+                    : (await DebugInfo.LoadAsync(NefFile, fileSystem: fileSystem))
+                        .Match<DebugInfo?>(di => di, _ => null);
 
                 ExpressChain? chain = string.IsNullOrEmpty(NeoExpressFile)
                     ? null : fileSystem.LoadChain(NeoExpressFile);
@@ -103,6 +113,40 @@ namespace Neo.Test.Runner
 
                 engine.LoadScript(script);
                 var state = engine.Execute();
+
+                if (debugInfo != null)
+                {
+                    var contract = engine.ExecutedScripts.Values
+                        .Where(s => s.IsT0).Select(s => s.AsT0)
+                        .SingleOrDefault(c => c.Script.ToScriptHash() == debugInfo.ScriptHash);
+
+                    if (contract != null)
+                    {
+                        var instructions = ((Script)contract.Script)
+                            .EnumerateInstructions()
+                            .ToArray();
+                        var hitMap = engine.GetHitMap(contract.Hash);
+
+                        var sequencePoints = debugInfo.Methods
+                            .SelectMany(m => m.SequencePoints)
+                            .Select(sp => sp.Address)
+                            .ToArray();
+                        var hitSequencePoints = hitMap
+                            .Where(kvp => sequencePoints.Contains(kvp.Key))
+                            .ToArray();
+
+                        var branchInstructions = instructions
+                            .Where(t => t.instruction.IsBranchInstruction())
+                            .ToArray();
+                        var branchMap = engine.GetBranchMap(contract.Hash);
+
+                        var instructionCoverage = (decimal)hitMap.Count / (decimal)instructions.Length;
+                        var sequencePointCoverage = (decimal)hitSequencePoints.Length / (decimal)sequencePoints.Length;
+                        var branchCoverage = (decimal)branchMap.Count / (decimal)branchInstructions.Length
+
+                        ;
+                    }
+                }
 
                 await WriteResultsAsync(app.Out, engine, logEvents, notifyEvents, storages);
 
