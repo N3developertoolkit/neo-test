@@ -11,7 +11,7 @@ using Neo.VM;
 
 namespace Neo.Test.Runner
 {
-    static class StoreExtensions
+    static class Extensions
     {
         public static ContractParameterParser CreateContractParameterParser(this IReadOnlyStore store, ExpressChain chain, IFileSystem? fileSystem = null)
         {
@@ -122,7 +122,6 @@ namespace Neo.Test.Runner
 
             public new void NativeOnPersist() => base.NativeOnPersist();
             public new void NativePostPersist() => base.NativePostPersist();
-
         }
     }
 }

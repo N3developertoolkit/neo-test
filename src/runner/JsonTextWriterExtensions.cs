@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace Neo.Test.Runner
 {
-    static class JsonExtensions
+    static class JsonTextWriterExtensions
     {
         public static async Task WriteLogAsync(this JsonTextWriter writer, LogEventArgs args)
         {
