@@ -112,43 +112,9 @@ namespace Neo.Test.Runner
                 engine.Notify += (_, args) => notifyEvents.Add(args);
 
                 engine.LoadScript(script);
-                var state = engine.Execute();
+                engine.Execute();
 
-                if (debugInfo != null)
-                {
-                    var contract = engine.ExecutedScripts.Values
-                        .Where(s => s.IsT0).Select(s => s.AsT0)
-                        .SingleOrDefault(c => c.Script.ToScriptHash() == debugInfo.ScriptHash);
-
-                    if (contract != null)
-                    {
-                        var instructions = ((Script)contract.Script)
-                            .EnumerateInstructions()
-                            .ToArray();
-                        var hitMap = engine.GetHitMap(contract.Hash);
-
-                        var sequencePoints = debugInfo.Methods
-                            .SelectMany(m => m.SequencePoints)
-                            .Select(sp => sp.Address)
-                            .ToArray();
-                        var hitSequencePoints = hitMap
-                            .Where(kvp => sequencePoints.Contains(kvp.Key))
-                            .ToArray();
-
-                        var branchInstructions = instructions
-                            .Where(t => t.instruction.IsBranchInstruction())
-                            .ToArray();
-                        var branchMap = engine.GetBranchMap(contract.Hash);
-
-                        var instructionCoverage = (decimal)hitMap.Count / (decimal)instructions.Length;
-                        var sequencePointCoverage = (decimal)hitSequencePoints.Length / (decimal)sequencePoints.Length;
-                        var branchCoverage = (decimal)branchMap.Count / (decimal)branchInstructions.Length
-
-                        ;
-                    }
-                }
-
-                await WriteResultsAsync(app.Out, engine, logEvents, notifyEvents, storages);
+                await WriteResultsAsync(app.Out, engine, logEvents, notifyEvents, storages, debugInfo);
 
                 return 0;
             }
@@ -181,7 +147,7 @@ namespace Neo.Test.Runner
 
         private async Task WriteResultsAsync(TextWriter textWriter, TestApplicationEngine engine,
             IReadOnlyList<LogEventArgs> logEvents, IReadOnlyList<NotifyEventArgs> notifyEvents,
-            IEnumerable<UInt160> storages)
+            IEnumerable<UInt160> storages, DebugInfo? debugInfo)
         {
             using var writer = new JsonTextWriter(textWriter)
             {
@@ -231,7 +197,82 @@ namespace Neo.Test.Runner
                 await writer.WriteStorageAsync(engine.Snapshot, contractHash);
             }
             await writer.WriteEndArrayAsync();
+
+            if (debugInfo != null)
+            {
+                var contract = engine.ExecutedScripts.Values
+                    .Where(s => s.IsT0).Select(s => s.AsT0)
+                    .SingleOrDefault(c => c.Script.ToScriptHash() == debugInfo.ScriptHash);
+
+                if (contract != null)
+                {
+                    var sequencePoints = debugInfo.Methods.SelectMany(m => m.SequencePoints).ToArray();
+                    var hitMap = engine.GetHitMap(contract.Hash);
+
+
+                    var branchMap = engine.GetBranchMap(contract.Hash);
+
+                    await writer.WritePropertyNameAsync("code-coverage");
+                    await writer.WriteStartObjectAsync();
+
+                    await writer.WritePropertyNameAsync("contract-hash");
+                    await writer.WriteValueAsync($"{contract.Hash}");
+                    await writer.WritePropertyNameAsync("debug-info-hash");
+                    await writer.WriteValueAsync($"{debugInfo.ScriptHash}");
+
+                    await writer.WritePropertyNameAsync("hit-map");
+                    await writer.WriteStartObjectAsync();
+                    foreach (var sp in sequencePoints)
+                    {
+                        await writer.WritePropertyNameAsync($"{sp.Address}");
+                        var hitCount = hitMap.TryGetValue(sp.Address, out var count) ? count : 0;
+                        await writer.WriteValueAsync(hitCount);
+                    }
+                    await writer.WriteEndObjectAsync();
+
+                    await writer.WritePropertyNameAsync("branch-map");
+                    await writer.WriteStartObjectAsync();
+                    foreach (var t in GetBranchingSequencePoints(contract.Script, sequencePoints))
+                    {
+                        await writer.WritePropertyNameAsync($"{t.sequencePoint.Address}");
+                        var (branchCount, continueCount) = branchMap.TryGetValue(t.branchAddress, out var count) ? count : (0,0);
+                        await writer.WriteValueAsync($"{branchCount}-{continueCount}");
+                    }
+                    await writer.WriteEndObjectAsync();
+
+                    await writer.WriteEndObjectAsync();
+                }
+            }
+
             await writer.WriteEndObjectAsync();
+
+            static IEnumerable<(DebugInfo.SequencePoint sequencePoint, int branchAddress)> GetBranchingSequencePoints(Script script, IReadOnlyList<DebugInfo.SequencePoint> sequencePoints)
+            {
+                var branchInstructions = script.EnumerateInstructions()
+                    .Where(t => t.instruction.IsBranchInstruction())
+                    .GroupBy(t => GetSequencePoint(t.address, sequencePoints));
+
+                foreach (var group in branchInstructions)
+                {
+                    yield return (group.Key, group.Max(g => g.address));
+                }
+            }
+
+            static DebugInfo.SequencePoint GetSequencePoint(int instructionPointer, IReadOnlyList<DebugInfo.SequencePoint> sequencePoints)
+            {
+                if (sequencePoints.Count == 0)
+                {
+                    throw new ArgumentException($"{nameof(sequencePoints)} can't be empty", nameof(sequencePoints));
+                }
+
+                for (int i = sequencePoints.Count - 1; i >= 0; i--)
+                {
+                    if (instructionPointer >= sequencePoints[i].Address)
+                        return sequencePoints[i];
+                }
+
+                return sequencePoints[0];
+            }
         }
     }
 }
