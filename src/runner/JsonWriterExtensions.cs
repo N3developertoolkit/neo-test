@@ -10,9 +10,9 @@ using Newtonsoft.Json;
 
 namespace Neo.Test.Runner
 {
-    static class JsonTextWriterExtensions
+    static class JsonWriterExtensions
     {
-        public static async Task WriteLogAsync(this JsonTextWriter writer, LogEventArgs args)
+        public static async Task WriteLogAsync(this JsonWriter writer, LogEventArgs args)
         {
             await writer.WriteStartObjectAsync();
             await writer.WritePropertyNameAsync("contract");
@@ -22,7 +22,7 @@ namespace Neo.Test.Runner
             await writer.WriteEndObjectAsync();
         }
 
-        public static async Task WriteNotificationAsync(this JsonTextWriter writer, NotifyEventArgs args, int maxIteratorCount)
+        public static async Task WriteNotificationAsync(this JsonWriter writer, NotifyEventArgs args, int maxIteratorCount)
         {
             await writer.WriteStartObjectAsync();
             await writer.WritePropertyNameAsync("contract");
@@ -34,7 +34,7 @@ namespace Neo.Test.Runner
             await writer.WriteEndObjectAsync();
         }
 
-        public static async Task WriteStorageAsync(this JsonTextWriter writer, DataCache snapshot, UInt160 contractHash)
+        public static async Task WriteStorageAsync(this JsonWriter writer, DataCache snapshot, UInt160 contractHash)
         {
             var contract = NativeContract.ContractManagement.GetContract(snapshot, contractHash);
             if (contract == null) return;
@@ -65,7 +65,7 @@ namespace Neo.Test.Runner
             await writer.WriteEndObjectAsync();
         }
 
-        public static async Task WriteStackItemAsync(this JsonTextWriter writer, StackItem item, int maxIteratorCount, HashSet<StackItem>? context = null)
+        public static async Task WriteStackItemAsync(this JsonWriter writer, StackItem item, int maxIteratorCount, HashSet<StackItem>? context = null)
         {
             await writer.WriteStartObjectAsync();
             await writer.WritePropertyNameAsync("type");
