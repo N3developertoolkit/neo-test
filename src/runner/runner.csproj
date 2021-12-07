@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <AssemblyName>neo-test-runner</AssemblyName>
+    <Description>neo-test-runner is a utility for executing contract unit tests in an emulated Neo blockchain environment</Description>
     <OutputType>Exe</OutputType>
     <PackageId>Neo.Test.Runner</PackageId>
+    <PackAsTool>true</PackAsTool>
     <RootNamespace>Neo.Test.Runner</RootNamespace>
-    <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
