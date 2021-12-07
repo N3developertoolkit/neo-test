@@ -3,11 +3,9 @@ using System.IO.Abstractions;
 using System.Linq;
 using Neo.BlockchainToolkit;
 using Neo.BlockchainToolkit.Models;
-using Neo.Network.P2P.Payloads;
+using Neo.BlockchainToolkit.SmartContract;
 using Neo.Persistence;
-using Neo.SmartContract;
 using Neo.SmartContract.Native;
-using Neo.VM;
 
 namespace Neo.Test.Runner
 {
@@ -86,42 +84,6 @@ namespace Neo.Test.Runner
                     scriptHash = null!;
                     return false;
                 };
-        }
-        public static void EnsureLedgerInitialized(this IStore store, ProtocolSettings settings)
-        {
-            const byte Prefix_BlockHash = 9;
-            var key = new KeyBuilder(NativeContract.Ledger.Id, Prefix_BlockHash).ToArray();
-
-            using var snapshot = new SnapshotCache(store.GetSnapshot());
-            if (snapshot.Find(key).Any()) return;
-
-            var block = NeoSystem.CreateGenesisBlock(settings);
-            if (block.Transactions.Length != 0) throw new Exception("Unexpected Transactions in genesis block");
-
-            using (var engine = new InitializeAppEngine(TriggerType.OnPersist, snapshot, block, settings))
-            {
-                engine.NativeOnPersist();
-                if (engine.State != VMState.HALT) throw new InvalidOperationException("NativeOnPersist operation failed", engine.FaultException);
-            }
-
-            using (var engine = new InitializeAppEngine(TriggerType.PostPersist, snapshot, block, settings))
-            {
-                engine.NativePostPersist();
-                if (engine.State != VMState.HALT) throw new InvalidOperationException("NativePostPersist operation failed", engine.FaultException);
-            }
-
-            snapshot.Commit();
-        }
-
-        class InitializeAppEngine : ApplicationEngine
-        {
-            public InitializeAppEngine(TriggerType trigger, DataCache snapshot, Block persistingBlock, ProtocolSettings settings, long gas = 2000000000L)
-                : base(trigger, null, snapshot, persistingBlock, settings, gas)
-            {
-            }
-
-            public new void NativeOnPersist() => base.NativeOnPersist();
-            public new void NativePostPersist() => base.NativePostPersist();
         }
     }
 }

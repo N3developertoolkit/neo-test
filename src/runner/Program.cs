@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.IO.Abstractions;
@@ -18,9 +17,12 @@ using Neo.SmartContract;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Newtonsoft.Json;
+using Nito.Disposables;
 
 namespace Neo.Test.Runner
 {
+    [Command("neo-test-runner", Description = "Neo N3 smart contract runner for unit testing", UsePagerForHelpText = false)]
+
     class Program
     {
         static Task<int> Main(string[] args)
@@ -63,7 +65,7 @@ namespace Neo.Test.Runner
         [Option("--version", Description = "Show version information.")]
         bool Version { get; }
 
-        internal async Task<int> OnExecuteAsync(CommandLineApplication app, IFileSystem fileSystem)
+        internal async Task<int> OnExecuteAsync(CommandLineApplication app, IConsole console, IFileSystem fileSystem)
         {
             try
             {
@@ -74,7 +76,7 @@ namespace Neo.Test.Runner
                 }
 
                 DebugInfo? debugInfo = string.IsNullOrEmpty(NefFile)
-                    ? null 
+                    ? null
                     : (await DebugInfo.LoadAsync(NefFile, fileSystem: fileSystem))
                         .Match<DebugInfo?>(di => di, _ => null);
 
@@ -83,11 +85,12 @@ namespace Neo.Test.Runner
 
                 var signer = ParseSigner(chain);
 
-                using ICheckpoint checkpoint = string.IsNullOrEmpty(CheckpointFile)
-                    ? Checkpoint.NullCheckpoint
-                    : new Checkpoint(CheckpointFile, chain);
+                ICheckpointStore checkpoint = string.IsNullOrEmpty(CheckpointFile)
+                    ? new NullCheckpointStore(chain)
+                    : new CheckpointStore(CheckpointFile, chain);
 
-                using var store = new MemoryTrackingStore(checkpoint.Store);
+                using var _ = checkpoint as IDisposable ?? NoopDisposable.Instance;
+                using var store = new MemoryTrackingStore(checkpoint);
                 store.EnsureLedgerInitialized(checkpoint.Settings);
 
                 var tryGetContract = store.CreateTryGetContract();
@@ -149,6 +152,9 @@ namespace Neo.Test.Runner
             IReadOnlyList<LogEventArgs> logEvents, IReadOnlyList<NotifyEventArgs> notifyEvents,
             IEnumerable<UInt160> storages, DebugInfo? debugInfo)
         {
+            // using Newtonsoft.Json instead of System.Json because CommandLineUtils doesn't provide
+            // a mechanism to access stdout Stream, just the stdout TextWriter
+
             using var writer = new JsonTextWriter(textWriter)
             {
                 Formatting = Formatting.Indented
@@ -235,7 +241,7 @@ namespace Neo.Test.Runner
                     foreach (var t in GetBranchingSequencePoints(contract.Script, sequencePoints))
                     {
                         await writer.WritePropertyNameAsync($"{t.sequencePoint.Address}");
-                        var (branchCount, continueCount) = branchMap.TryGetValue(t.branchAddress, out var count) ? count : (0,0);
+                        var (branchCount, continueCount) = branchMap.TryGetValue(t.branchAddress, out var count) ? count : (0, 0);
                         await writer.WriteValueAsync($"{branchCount}-{continueCount}");
                     }
                     await writer.WriteEndObjectAsync();
