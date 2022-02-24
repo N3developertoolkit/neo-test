@@ -364,7 +364,7 @@ namespace SimpleJSON
 
         public static implicit operator JSONNode(string s)
         {
-            return (s is null) ? (JSONNode)JSONNull.CreateOrGet() : new JSONString(s);
+            return (s == null) ? (JSONNode) JSONNull.CreateOrGet() : new JSONString(s);
         }
         public static implicit operator string(JSONNode d)
         {

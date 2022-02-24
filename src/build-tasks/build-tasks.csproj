@@ -22,6 +22,8 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" />
     <PackageReference Update="@(PackageReference)" PrivateAssets="all" />
     <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+    <PackageReference Include="SemanticVersion" Version="2.1.0" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
   
 </Project>

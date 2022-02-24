@@ -26,14 +26,12 @@ namespace Neo.BuildTasks
         public IReadOnlyList<Method> Methods { get; set; } = Array.Empty<Method>();
         public IReadOnlyList<Event> Events { get; set; } = Array.Empty<Event>();
 
-        public static NeoManifest Load(string manifestPath)
+        public static void UpdateExtra(SimpleJSON.JSONNode manifest, SimpleJSON.JSONNode extra, string name)
         {
-            var text = File.ReadAllText(manifestPath) ?? throw new FileNotFoundException("", manifestPath);
-            var json = SimpleJSON.JSON.Parse(text) ?? throw new InvalidOperationException();
-            return NeoManifest.FromManifestJson(json);
+            manifest["extra"][name] = extra;
         }
 
-        public static NeoManifest FromManifestJson(SimpleJSON.JSONNode json)
+        public static NeoManifest FromJson(SimpleJSON.JSONNode json)
         {
             var contractName = json["name"].Value;
             var abi = json["abi"];

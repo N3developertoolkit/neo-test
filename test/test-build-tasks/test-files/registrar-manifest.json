@@ -1,0 +1,119 @@
+{
+    "name": "registrar",
+    "groups": [],
+    "features": {},
+    "supportedstandards": [],
+    "abi": {
+        "methods": [
+            {
+                "name": "query",
+                "offset": 999,
+                "safe": false,
+                "returntype": "Hash160",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "type": "String"
+                    }
+                ]
+            },
+            {
+                "name": "register",
+                "offset": 1013,
+                "safe": false,
+                "returntype": "Boolean",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "type": "String"
+                    },
+                    {
+                        "name": "owner",
+                        "type": "Hash160"
+                    }
+                ]
+            },
+            {
+                "name": "transfer",
+                "offset": 1027,
+                "safe": false,
+                "returntype": "Boolean",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "type": "String"
+                    },
+                    {
+                        "name": "to",
+                        "type": "Hash160"
+                    }
+                ]
+            },
+            {
+                "name": "delete",
+                "offset": 1041,
+                "safe": false,
+                "returntype": "Boolean",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "type": "String"
+                    }
+                ]
+            },
+            {
+                "name": "_deploy",
+                "offset": 1055,
+                "safe": false,
+                "returntype": "Void",
+                "parameters": [
+                    {
+                        "name": "data",
+                        "type": "Any"
+                    },
+                    {
+                        "name": "update",
+                        "type": "Boolean"
+                    }
+                ]
+            },
+            {
+                "name": "update",
+                "offset": 886,
+                "safe": false,
+                "returntype": "Void",
+                "parameters": [
+                    {
+                        "name": "nefFile",
+                        "type": "ByteArray"
+                    },
+                    {
+                        "name": "manifest",
+                        "type": "String"
+                    }
+                ]
+            }
+        ],
+        "events": []
+    },
+    "permissions": [
+        {
+            "contract": "0xda65b600f7124ce6c79950c1772a36403104f2be",
+            "methods": [
+                "getBlock"
+            ]
+        },
+        {
+            "contract": "0xfffdc93764dbaddd97c48f252a53ea4643faa3fd",
+            "methods": [
+                "update"
+            ]
+        }
+    ],
+    "trusts": [],
+    "extra": {
+        "Author": "Harry Pierson",
+        "Email": "harrypierson@hotmail.com",
+        "Description": "This is an example contract"
+    }
+}

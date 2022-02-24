@@ -38,7 +38,7 @@ namespace native_contracts
             var results = (JSONArray)responseJson["result"];
             foreach (var result in results)
             {
-                var manifest = NeoManifest.FromManifestJson((JSONObject)result.Value["manifest"]);
+                var manifest = NeoManifest.FromJson((JSONObject)result.Value["manifest"]);
                 var source = ContractGenerator.GenerateContractInterface(manifest, "Neo.Native");
                 await System.IO.File.WriteAllTextAsync($"./out/{manifest.Name}.cs", source);
             }

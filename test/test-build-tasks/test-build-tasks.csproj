@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+     <EmbeddedResource Include="test-files/*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\build-tasks\build-tasks.csproj" />
   </ItemGroup>
 

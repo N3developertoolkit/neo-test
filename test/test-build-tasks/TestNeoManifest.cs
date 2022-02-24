@@ -1,4 +1,6 @@
 using System;
+using Neo.BuildTasks;
+using SimpleJSON;
 using Xunit;
 
 namespace build_tasks
@@ -8,195 +10,40 @@ namespace build_tasks
         [Fact]
         public void parse_sample_manifest()
         {
-            var json = SimpleJSON.JSON.Parse(MANIFEST) ?? throw new InvalidOperationException();
-            var manifest = Neo.BuildTasks.NeoManifest.FromManifestJson(json);
+            var text = Utility.GetResource("apoc-manifest.json");
+            var json = JSON.Parse(text) ?? throw new InvalidOperationException();
+            var manifest = NeoManifest.FromJson(json);
             Assert.Equal("DevHawk.Contracts.ApocToken", manifest.Name);
             Assert.Equal(13, manifest.Methods.Count);
             Assert.Equal(1, manifest.Events.Count);
         }
 
-        const string MANIFEST = @"{
-    ""groups"": [],
-    ""abi"": {
-        ""methods"": [
-            {
-                ""name"": ""_initialize"",
-                ""offset"": ""0"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""balanceOf"",
-                ""offset"": ""95"",
-                ""safe"": false,
-                ""parameters"": [
-                    {
-                        ""name"": ""account"",
-                        ""type"": ""Hash160""
-                    }
-                ],
-                ""returntype"": ""Integer""
-            },
-            {
-                ""name"": ""decimals"",
-                ""offset"": ""213"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Integer""
-            },
-            {
-                ""name"": ""deploy"",
-                ""offset"": ""236"",
-                ""safe"": false,
-                ""parameters"": [
-                    {
-                        ""name"": ""update"",
-                        ""type"": ""Boolean""
-                    }
-                ],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""destroy"",
-                ""offset"": ""455"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""disablePayment"",
-                ""offset"": ""578"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""enablePayment"",
-                ""offset"": ""667"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""onPayment"",
-                ""offset"": ""1245"",
-                ""safe"": false,
-                ""parameters"": [
-                    {
-                        ""name"": ""from"",
-                        ""type"": ""Hash160""
-                    },
-                    {
-                        ""name"": ""amount"",
-                        ""type"": ""Integer""
-                    },
-                    {
-                        ""name"": ""data"",
-                        ""type"": ""Any""
-                    }
-                ],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""symbol"",
-                ""offset"": ""1705"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""String""
-            },
-            {
-                ""name"": ""totalSupply"",
-                ""offset"": ""1712"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Integer""
-            },
-            {
-                ""name"": ""transfer"",
-                ""offset"": ""1719"",
-                ""safe"": false,
-                ""parameters"": [
-                    {
-                        ""name"": ""from"",
-                        ""type"": ""Hash160""
-                    },
-                    {
-                        ""name"": ""to"",
-                        ""type"": ""Hash160""
-                    },
-                    {
-                        ""name"": ""amount"",
-                        ""type"": ""Integer""
-                    },
-                    {
-                        ""name"": ""data"",
-                        ""type"": ""Any""
-                    }
-                ],
-                ""returntype"": ""Boolean""
-            },
-            {
-                ""name"": ""update"",
-                ""offset"": ""2098"",
-                ""safe"": false,
-                ""parameters"": [
-                    {
-                        ""name"": ""nefFile"",
-                        ""type"": ""ByteArray""
-                    },
-                    {
-                        ""name"": ""manifest"",
-                        ""type"": ""String""
-                    }
-                ],
-                ""returntype"": ""Void""
-            },
-            {
-                ""name"": ""verify"",
-                ""offset"": ""2214"",
-                ""safe"": false,
-                ""parameters"": [],
-                ""returntype"": ""Boolean""
-            }
-        ],
-        ""events"": [
-            {
-                ""name"": ""Transfer"",
-                ""parameters"": [
-                    {
-                        ""name"": ""arg1"",
-                        ""type"": ""Hash160""
-                    },
-                    {
-                        ""name"": ""arg2"",
-                        ""type"": ""Hash160""
-                    },
-                    {
-                        ""name"": ""arg3"",
-                        ""type"": ""Integer""
-                    }
-                ]
-            }
-        ]
-    },
-    ""permissions"": [
+        [Fact]
+        public void test_add_extra()
         {
-            ""contract"": ""*"",
-            ""methods"": ""*""
+            var manifest = JSON.Parse(Utility.GetResource("registrar-manifest.json"));
+            var extra = JSON.Parse(Utility.GetResource("sample-storage-schema.json"));
+            test_manifest_extra(manifest, extra);
         }
-    ],
-    ""trusts"": [],
-    ""name"": ""DevHawk.Contracts.ApocToken"",
-    ""supportedstandards"": [
-        ""NEP17"",
-        ""NEP10""
-    ],
-    ""extra"": {
-        ""Author"": ""Harry Pierson"",
-        ""Email"": ""harrypierson@hotmail.com"",
-        ""Description"": ""This is a NEP17 example""
-    }
-}";
+
+        [Fact]
+        public void test_add_extra_no_extra_in_source_manifest()
+        {
+            var manifest = JSON.Parse(Utility.GetResource("registrar-manifest-no-extra.json"));
+            var extra = JSON.Parse(Utility.GetResource("sample-storage-schema.json"));
+            test_manifest_extra(manifest, extra);
+        }
+
+        static void test_manifest_extra(JSONNode manifest, JSONNode extra)
+        {
+            NeoManifest.UpdateExtra(manifest, extra, nameof(TestNeoManifest));
+
+            Assert.True(manifest["extra"][nameof(TestNeoManifest)].IsObject);
+
+            var manifest2 = JSON.Parse(manifest.ToString());
+            Assert.True(manifest2["extra"][nameof(TestNeoManifest)].IsObject);
+            
+            Assert.Equal(extra.ToString(), manifest2["extra"][nameof(TestNeoManifest)].ToString());
+        }
     }
 }
