@@ -6,7 +6,7 @@ using SimpleJSON;
 namespace Neo.BuildTasks
 {
     // Parse Manifest ABI JSON manually using SimpleJSON to avoid taking dependency on neo.dll or a JSON parsing package
-    class NeoManifest
+    public class NeoManifest
     {
         public class Method
         {

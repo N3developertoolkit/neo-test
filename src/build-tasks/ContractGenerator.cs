@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Neo.BuildTasks
 {
-    static class ContractGenerator
+    public static class ContractGenerator
     {
         // generated from Roslyn C# 4.1 SyntaxFacts.GetKeywordKinds().Select(k => SyntaxFacts.GetText(k)).OrderBy(k => k)
         static readonly ImmutableHashSet<string> CSHARP_KEYWORDS = ImmutableHashSet.Create("__arglist", "__makeref",
