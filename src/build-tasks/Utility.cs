@@ -13,8 +13,7 @@ namespace Neo.BuildTasks
         {
             if (string.IsNullOrEmpty(path)) throw new ArgumentNullException(nameof(path));
             if (!File.Exists(path)) throw new FileNotFoundException("", path);
-            var text = File.ReadAllText(path) ?? throw new FileLoadException("failed to read text", path);
-            return JSON.Parse(text) ?? throw new FileLoadException("failed to parse json", path);
+            return JSON.Parse(File.ReadAllText(path)) ?? throw new FileLoadException("failed to parse json", path);
         }
 
         public static void FileOperationWithRetry(Action operation)

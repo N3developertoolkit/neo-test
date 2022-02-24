@@ -4,12 +4,11 @@ using System.Threading;
 
 namespace Neo.BuildTasks
 {
-    public record struct ProcessRunResults(int ExitCode, IReadOnlyList<string> Output, IReadOnlyList<string> Error);
-
     class ProcessRunner
     {
+        public record struct Results(int ExitCode, IReadOnlyList<string> Output, IReadOnlyList<string> Error);
 
-        public static ProcessRunResults Run(string command, string arguments, string workingDirectory = "")
+        public static Results Run(string command, string arguments, string workingDirectory = "")
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo(command, arguments)
             {
@@ -41,7 +40,7 @@ namespace Neo.BuildTasks
 
             completeEvent.WaitOne();
 
-            return new ProcessRunResults(process.ExitCode, output, error);
+            return new Results(process.ExitCode, output, error);
         }
     }
 }

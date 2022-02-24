@@ -7,14 +7,9 @@ namespace Neo.BuildTasks
 {
     public class NeoContractManifestExtra : Task
     {
-        [Required]
-        public ITaskItem ManifestFile { get; set; } = default!;
-
-        [Required]
-        public ITaskItem ExtraJsonFile { get; set; } = default!;
-
-        [Required]
-        public string ExtraPropertyName { get; set; } = string.Empty;
+        [Required] public ITaskItem ManifestFile { get; set; } = default!;
+        [Required] public ITaskItem ExtraJsonFile { get; set; } = default!;
+        [Required] public string ExtraPropertyName { get; set; } = string.Empty;
 
         public override bool Execute()
         {

@@ -2,18 +2,13 @@
 using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using SimpleJSON;
 
 namespace Neo.BuildTasks
 {
     public class NeoContractInterface : Task
     {
-        [Required]
-        public ITaskItem OutputFile { get; set; } = default!;
-
-        [Required]
-        public ITaskItem ManifestFile { get; set; } = default!;
-
+        [Required] public ITaskItem ManifestFile { get; set; } = default!;
+        [Required] public ITaskItem OutputFile { get; set; } = default!;
         public string RootNamespace { get; set; } = "";
 
         public override bool Execute()
