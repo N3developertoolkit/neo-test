@@ -6,7 +6,7 @@ using Microsoft.Build.Framework;
 
 namespace Neo.BuildTasks
 {
-    public class NeoExpress : DotNetToolTask
+    public class NeoExpressBatch : DotNetToolTask
     {
         const string PackageName = "neo.express";
         const string Command = "neoxp";
