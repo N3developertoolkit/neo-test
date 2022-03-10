@@ -16,9 +16,11 @@ namespace build_tasks
 
         public static string GetResource(string name)
         {
-            using var resource = GetResourceStream(name);
-            using var streamReader = new System.IO.StreamReader(resource);
-            return streamReader.ReadToEnd();
+            using (var resource = GetResourceStream(name))
+            using (var streamReader = new System.IO.StreamReader(resource))
+            {
+                return streamReader.ReadToEnd();
+            }
         }
     }
 }

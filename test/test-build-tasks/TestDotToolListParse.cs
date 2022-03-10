@@ -9,8 +9,8 @@ namespace build_tasks
 {
     public class TestDotToolListParse
     {
-        static IReadOnlyList<string> GlobalOutput => GLOBAL_OUTPUT.Split("\r\n");
-        static IReadOnlyList<string> LocalOutput => LOCAL_OUTPUT.Split("\r\n");
+        static IReadOnlyList<string> GlobalOutput => GLOBAL_OUTPUT.Split('\n').Select(s => s.Trim()).ToArray();
+        static IReadOnlyList<string> LocalOutput => LOCAL_OUTPUT.Split('\n').Select(s => s.Trim()).ToArray();
 
         [Fact]
         public void test_RunTool_local_success()
@@ -75,14 +75,14 @@ namespace build_tasks
         [Fact]
         public void test_TryGetTool_success()
         {
-            var dnt = new DotNetToolRunner((_, _, _) => new ProcessRunner.Results(0, GlobalOutput, Array.Empty<string>()));
+            var dnt = new DotNetToolRunner((c, a, d) => new ProcessRunner.Results(0, GlobalOutput, Array.Empty<string>()));
             Assert.True(dnt.TryGetTool("cmd", "args", "workingDir", "dotnet-outdated-tool", out _));
         }
 
         [Fact]
         public void test_TryGetTool_fail()
         {
-            var dnt = new DotNetToolRunner((_, _, _) => new ProcessRunner.Results(1, GlobalOutput, Array.Empty<string>()));
+            var dnt = new DotNetToolRunner((c, a, d) => new ProcessRunner.Results(1, GlobalOutput, Array.Empty<string>()));
             Assert.Throws<Exception>(() => dnt.TryGetTool("cmd", "args", "workingDir", "dotnet-outdated-tool", out _));
         }
 
@@ -177,7 +177,7 @@ neo.test.runner          3.1.10       neo-test-runner      C:\Users\harry\Source
 
     class MockProcessRunner
     {
-        Queue<(string cmd, string args, string workDir, ProcessRunner.Results results)> calls = new();
+        Queue<(string cmd, string args, string workDir, ProcessRunner.Results results)> calls = new Queue<(string cmd, string args, string workDir, ProcessRunner.Results results)>();
 
         public void Add(string cmd, string args, string workDir, IReadOnlyList<string> output)
         {

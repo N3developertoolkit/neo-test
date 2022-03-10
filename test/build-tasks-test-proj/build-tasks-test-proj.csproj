@@ -12,7 +12,10 @@
     <ProjectReference Include="..\..\src\test-harness\test-harness.csproj" />
   </ItemGroup>
 
-  <UsingTask AssemblyFile="..\..\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll   " TaskName="Neo.BuildTasks.NeoContractInterface" />
+  <UsingTask TaskName="Neo.BuildTasks.NeoCompilerCSharp" AssemblyFile="..\..\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll"/>
+  <UsingTask TaskName="Neo.BuildTasks.NeoContractInterface" AssemblyFile="..\..\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll"/>
+  <UsingTask TaskName="Neo.BuildTasks.NeoContractManifestExtra" AssemblyFile="..\..\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll"/>
+  <UsingTask TaskName="Neo.BuildTasks.NeoExpressBatch" AssemblyFile="..\..\src\build-tasks\bin\Debug\netstandard2.0\neo-build-tasks.dll"/>
 
   <Target Name="TestNeoContractInterface" AfterTargets="PrepareForBuild">
     <NeoContractInterface ManifestFile="Apoc.manifest.json" OutputFile="$(IntermediateOutputPath)\Apoc.contract-interface.cs" RootNamespace="TestContract" />
