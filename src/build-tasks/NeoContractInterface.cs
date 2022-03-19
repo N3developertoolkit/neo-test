@@ -9,40 +9,28 @@ namespace Neo.BuildTasks
     {
         public override bool Execute()
         {
-            if (ManifestFiles.Length != OutputFiles.Length)
+            if (string.IsNullOrEmpty(ManifestFile))
             {
-                Log.LogError("Mismatched Manifest and Output file arrays");
-                return false;
+                Log.LogError("Invalid ManifestFile " + ManifestFile);
             }
-
-            for (int i = 0; i < ManifestFiles.Length; i++)
+            else
             {
-                var manifestFile = ManifestFiles[i];
-                var outputFile = OutputFiles[i];
-
-                if (string.IsNullOrEmpty(manifestFile.ItemSpec))
+                var manifest = NeoManifest.Load(ManifestFile);
+                var source = ContractGenerator.GenerateContractInterface(manifest, RootNamespace);
+                if (!string.IsNullOrEmpty(source))
                 {
-                    Log.LogError("Invalid ManifestFile {0}", manifestFile);
-                    continue;
-                }
-
-                var manifest = NeoManifest.Load(manifestFile.ItemSpec);
-                var generatedSource = ContractGenerator.GenerateContractInterface(manifest, RootNamespace);
-                if (!string.IsNullOrEmpty(generatedSource))
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(outputFile.ItemSpec));
-                    FileOperationWithRetry(() => File.WriteAllText(outputFile.ItemSpec, generatedSource));
+                    Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
+                    FileOperationWithRetry(() => File.WriteAllText(this.OutputFile, source));
                 }
             }
-
             return !Log.HasLoggedErrors;
         }
 
         [Required]
-        public ITaskItem[] OutputFiles { get; set; } = Array.Empty<ITaskItem>();
+        public string OutputFile { get; set; } = "";
 
         [Required]
-        public ITaskItem[] ManifestFiles { get; set; } = Array.Empty<ITaskItem>();
+        public string ManifestFile { get; set; } = "";
 
         public string RootNamespace { get; set; } = "";
 
