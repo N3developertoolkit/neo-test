@@ -41,11 +41,12 @@ namespace Neo.BuildTasks
         {
             var packageId = PackageId;
             var directory = WorkingDirectory;
-            Log.LogWarning($"{packageId} {directory}");
+            Log.LogMessage(MessageImportance.Low, $"Searching for {packageId} in '{directory?.ItemSpec}'");
+
             if (FindTool(packageId, directory, out var toolType, out var version))
             {
                 this.toolType = toolType;
-                Log.LogWarning($"{packageId} {toolType} tool ({version})");
+                Log.LogMessage(MessageImportance.High, $"Using {packageId} {toolType} tool ({version})");
 
                 var command = toolType == Neo.BuildTasks.ToolType.Global ? Command : "dotnet";
                 var arguments = toolType == Neo.BuildTasks.ToolType.Global
