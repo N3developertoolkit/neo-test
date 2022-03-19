@@ -90,10 +90,10 @@
 
   <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Inputs="@(NeoContractReference)" Outputs="%(Identity).Dummy">
 
-    <!-- <ItemGroup>
+    <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
- -->
+ 
     <MSBuild Projects="@(NeoContractReference)" Targets="GetNeoContractInfo">
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
@@ -108,14 +108,14 @@
 
     <Message Importance="High" Text="NeoContractManifest %(OutputFile) @(NeoContractManifest)" />
  -->
-    <!-- <NeoContractInterface
-      ManifestFile="@(NeoContractManifest->Metadata('ManifestFile'))"
+    <NeoContractInterface
+      ManifestFile="%(ManifestPath)"
       OutputFile="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
       RootNamespace="$(RootNamespace)"/>
 
     <ItemGroup>
-      <Compile Include="@(NeoContractManifest->Metadata('OutputFile'))" />
-    </ItemGroup> -->
+      <Compile Include="%(ManifestPath)" />
+    </ItemGroup>
 
 
   </Target>
