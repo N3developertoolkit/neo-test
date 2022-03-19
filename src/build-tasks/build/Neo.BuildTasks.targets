@@ -90,6 +90,7 @@
 
   <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
 
+    <Message Importance="High" Text="NeoContractReference @(NeoContractReference)" />
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -99,7 +100,7 @@
     <MSBuild Projects="@(NeoContractReference)" Targets="GetNeoContractInfo">
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
-
+    <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo)" />
     <ItemGroup>
       <NeoContractManifest Include="@(NeoContractInfo)" >
         <ManifestFile>@(NeoContractInfo->Metadata('ManifestPath'))</ManifestFile>
