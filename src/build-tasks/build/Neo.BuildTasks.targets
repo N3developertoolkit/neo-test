@@ -68,9 +68,6 @@
       Reset="true" 
       WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
-  </Target>
-
-  <Target Name="AfterExecuteNeoExpressBatch" AfterTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
