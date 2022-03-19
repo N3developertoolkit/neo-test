@@ -101,8 +101,8 @@
     <Message Importance="High" Text="NeoContractInfo %(ManifestPath) @(NeoContractInfo)" />
 
     <ItemGroup>
-      <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))" >
-        <OutputFile>$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs</OutputFile>
+      <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))"  >
+        <OutputFile>$(IntermediateOutputPath)$(NeoContractInfo).contract-interface.cs</OutputFile>
       </NeoContractManifest>
     </ItemGroup>
 
