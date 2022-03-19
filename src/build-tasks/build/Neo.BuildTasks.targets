@@ -98,7 +98,7 @@
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
 
-    <Message Importance="High" Text="NeoContractInfo %(ManifestPath) @(NeoContractInfo)" />
+    <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo) -> %(ManifestPath)" />
 
     <ItemGroup>
       <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))"  >
