@@ -4,6 +4,7 @@
     <AssemblyName>neo-build-tasks</AssemblyName>
     <!-- Change the default location where NuGet will put the build output -->
     <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+    <DevelopmentDependency>true</DevelopmentDependency>
     <!-- Suppresses the warnings about the package not having assemblies in lib/*/.dll.-->
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <PackageId>Neo.BuildTasks</PackageId>
