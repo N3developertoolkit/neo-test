@@ -74,7 +74,7 @@
   </Target>
 
   <Target Name="AfterExecuteNeoExpressBatch" AfterTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
-    <Message Importance="High" Text="Run $(NeoExpressNormalizedBatchFile)" />
+    <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
 </Project>
