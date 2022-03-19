@@ -2,23 +2,30 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace Neo.BuildTasks
 {
-    // https://ithrowexceptions.com/2020/08/04/implementing-and-debugging-custom-msbuild-tasks.html
-    // https://maheep.wordpress.com/2017/05/22/msbuild-writing-a-custom-task/
-    // https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/
-    // https://natemcmaster.com/blog/tags/#msbuild
+    internal enum ToolType { Local, Global }
 
     public abstract class DotNetToolTask : Task
     {
-        internal enum ToolType { Local, Global }
 
         protected abstract string Command { get; }
         protected abstract string PackageId { get; }
         protected virtual string WorkingDirectory
             => Path.GetDirectoryName(BuildEngine.ProjectFileOfTaskNode);
+
+        
+        ToolType toolType;
+
+        [Output]
+        public string ToolType => $"{toolType}";
+
+        [Output]
+        public string CommandLine { get; set; } = string.Empty;
+
 
         protected abstract string GetArguments();
         protected virtual void ExecutionSuccess(IReadOnlyCollection<string> output)
@@ -35,13 +42,15 @@ namespace Neo.BuildTasks
             var directory = WorkingDirectory;
             if (FindTool(packageId, directory, out var toolType, out var version))
             {
+                this.toolType = toolType;
                 Log.LogWarning($"{packageId} {toolType} tool ({version})");
 
-                var command = toolType == ToolType.Global ? Command : "dotnet";
-                var arguments = toolType == ToolType.Global
+                var command = toolType == Neo.BuildTasks.ToolType.Global ? Command : "dotnet";
+                var arguments = toolType == Neo.BuildTasks.ToolType.Global
                     ? GetArguments()
                     : $"{Command} {GetArguments()}";
 
+                CommandLine = $"{command} {arguments}";
                 Log.LogWarning($"Running '{command}' '{arguments}' in {directory}");
 
                 if (TryExecute(command, arguments, directory, out var output))
@@ -62,18 +71,18 @@ namespace Neo.BuildTasks
             if (TryExecute("dotnet", "tool list --local", directory, out var output)
                 && ContainsPackage(output, package, out version))
             {
-                toolType = ToolType.Local;
+                toolType = Neo.BuildTasks.ToolType.Local;
                 return true;
             }
 
             if (TryExecute("dotnet", "tool list --global", directory, out output)
                 && ContainsPackage(output, package, out version))
             {
-                toolType = ToolType.Global;
+                toolType = Neo.BuildTasks.ToolType.Global;
                 return true;
             }
 
-            toolType = ToolType.Local;
+            toolType = Neo.BuildTasks.ToolType.Local;
             version = string.Empty;
             return false;
         }
@@ -83,20 +92,13 @@ namespace Neo.BuildTasks
         {
             var results = ProcessRunner.Run(command, arguments, directory);
 
-            var success = true;
-            if (results.ExitCode != 0)
+            if (results.ExitCode != 0 || results.Error.Any())
             {
-                Log.LogError($"{command} {arguments} returned {results.ExitCode}");
-                success = false;
-            }
+                if (results.ExitCode != 0)
+                    Log.LogError($"{command} {arguments} returned {results.ExitCode}");
+                else
+                    Log.LogWarning($"{command} {arguments} returned {results.ExitCode}");
 
-            if (results.Error.Any())
-            {
-                success = false;
-            }
-
-            if (!success)
-            {
                 foreach (var error in results.Error)
                 {
                     Log.LogError(error);
@@ -105,6 +107,14 @@ namespace Neo.BuildTasks
                 {
                     Log.LogWarning(o);
                 }
+
+                output = Array.Empty<string>();
+                return false;
+            }
+
+            foreach (var o in results.Output)
+            {
+                Log.LogWarning(o);
             }
 
             output = results.Output;
