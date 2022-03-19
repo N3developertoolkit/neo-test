@@ -43,7 +43,7 @@ namespace Neo.BuildTasks
                 builder.Append(" --reset");
                 if (Checkpoint is not null)
                 {
-                    // builder.AppendFormat(":\"{0}\"", Path.Combine(WorkingDirectory, Checkpoint.ItemSpec));
+                    builder.AppendFormat(":\"{0}\"", Checkpoint.ItemSpec);
                 }
             }
 
