@@ -87,9 +87,9 @@
       </NeoContractInfo>
     </ItemGroup>
   </Target>
-  
+
   <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractInterface)'!=''">
-    <Message Importance="High" Text="@(NeoContractInterface)" />
+
     <ItemGroup>
       <ProjectReference Include="@(NeoContractInterface)">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
