@@ -1,7 +1,9 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 
 namespace Neo.BuildTasks
 {
@@ -11,11 +13,11 @@ namespace Neo.BuildTasks
         const string COMMAND = "nccs";
         const byte DEFAULT_ADDRESS_VERSION = 53;
 
+        ITaskItem[] outputFiles = Array.Empty<ITaskItem>();
+
         protected override string Command => COMMAND;
+        protected override string PackageId => PACKAGE_ID;
 
-        protected override string PackageId => throw new System.NotImplementedException();
-
-        [Required]
         public ITaskItem[] Files { get; set; } = Array.Empty<ITaskItem>();
         public ITaskItem? Output { get; set; }
         public string ContractName { get; set; } = "";
@@ -25,10 +27,11 @@ namespace Neo.BuildTasks
         public bool Inline { get; set; }
         public byte AddressVersion { get; set; } = DEFAULT_ADDRESS_VERSION;
 
-
+        [Output]
+        public ITaskItem[] OutputFiles => outputFiles;
 
         protected override string GetArguments()
-        {
+        { 
             var builder = new StringBuilder();
             foreach (var file in Files)
             {
@@ -55,6 +58,18 @@ namespace Neo.BuildTasks
             }
 
             return builder.ToString();
+        }
+
+        protected override void ExecutionSuccess(IReadOnlyCollection<string> output)
+        {
+            const string CREATED = "Created ";
+
+            outputFiles = output
+                .Where(o => o.StartsWith(CREATED))
+                .Select(o => new TaskItem(o.Substring(CREATED.Length)))
+                .ToArray();
+
+            base.ExecutionSuccess(output);
         }
     }
 }

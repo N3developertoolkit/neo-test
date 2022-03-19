@@ -21,6 +21,13 @@ namespace Neo.BuildTasks
             => Path.GetDirectoryName(BuildEngine.ProjectFileOfTaskNode);
 
         protected abstract string GetArguments();
+        protected virtual void ExecutionSuccess(IReadOnlyCollection<string> output)
+        {
+            foreach (var o in output)
+            {
+                Log.LogWarning($"{Command}: {o}");
+            }
+        }
 
         public override bool Execute()
         {
@@ -31,21 +38,19 @@ namespace Neo.BuildTasks
                 Log.LogWarning($"{packageId} {toolType} tool ({version})");
 
                 var command = toolType == ToolType.Global ? Command : "dotnet";
-                var arguments = toolType == ToolType.Global 
-                    ? GetArguments() 
+                var arguments = toolType == ToolType.Global
+                    ? GetArguments()
                     : $"{Command} {GetArguments()}";
 
                 Log.LogWarning($"Running '{command}' '{arguments}' in {directory}");
 
                 if (TryExecute(command, arguments, directory, out var output))
                 {
-                    foreach (var o in output)
-                    {
-                        Log.LogWarning($"{Command}: {o}");
-                    }
+                    ExecutionSuccess(output);
+                    return true;
                 }
 
-                return true;
+                return false;
             }
 
             Log.LogError($"Could not locate {packageId} tool package");
