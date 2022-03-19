@@ -9,28 +9,40 @@ namespace Neo.BuildTasks
     {
         public override bool Execute()
         {
-            if (string.IsNullOrEmpty(ManifestFile))
+            if (ManifestFiles.Length != OutputFiles.Length)
             {
-                Log.LogError("Invalid ManifestFile " + ManifestFile);
+                Log.LogError("Mismatched Manifest and Output file arrays");
+                return false;
             }
-            else
+
+            for (int i = 0; i < ManifestFiles.Length; i++)
             {
-                var manifest = NeoManifest.Load(ManifestFile);
-                var source = ContractGenerator.GenerateContractInterface(manifest, RootNamespace);
-                if (!string.IsNullOrEmpty(source))
+                var manifestFile = ManifestFiles[i];
+                var outputFile = OutputFiles[i];
+
+                if (string.IsNullOrEmpty(manifestFile.ItemSpec))
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
-                    FileOperationWithRetry(() => File.WriteAllText(this.OutputFile, source));
+                    Log.LogError("Invalid ManifestFile {0}", manifestFile);
+                    continue;
+                }
+
+                var manifest = NeoManifest.Load(manifestFile.ItemSpec);
+                var generatedSource = ContractGenerator.GenerateContractInterface(manifest, RootNamespace);
+                if (!string.IsNullOrEmpty(generatedSource))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputFile.ItemSpec));
+                    FileOperationWithRetry(() => File.WriteAllText(outputFile.ItemSpec, generatedSource));
                 }
             }
+
             return !Log.HasLoggedErrors;
         }
 
         [Required]
-        public string OutputFile { get; set; } = "";
+        public ITaskItem[] OutputFiles { get; set; } = Array.Empty<ITaskItem>();
 
         [Required]
-        public string ManifestFile { get; set; } = "";
+        public ITaskItem[] ManifestFiles { get; set; } = Array.Empty<ITaskItem>();
 
         public string RootNamespace { get; set; } = "";
 
