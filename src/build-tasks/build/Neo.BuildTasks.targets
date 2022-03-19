@@ -61,9 +61,18 @@
   <Target Name="ExecuteNeoExpressBatch" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoExpressBatchFile)'!=''"
     Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
 
+    <PropertyGroup>
+      <NeoExpressNormalizedBatchFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(NeoExpressBatchFile)))</NeoExpressNormalizedBatchFile>
+      <NeoExpressBatchReset>true</NeoExpressBatchReset>
+      <NeoExpressBatchReset Condition="'(NeoExpressBatchNoReset)'=='true'">false</NeoExpressBatchReset>
+    </PropertyGroup>
+
     <NeoExpressBatch 
       BatchFile="$(NeoExpressNormalizedBatchFile)" 
-      Reset="true" 
+      InputFile="$(NeoExpressBatchInputFile)"
+      Reset="$(NeoExpressBatchReset)"
+      Checkpoint="$(NeoExpressBatchCheckpoint)"
+      Trace="$(NeoExpressBatchTrace)"
       StackTrace="$(NeoExpressBatchStackTrace)"
       WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
