@@ -24,6 +24,8 @@ namespace Neo.BuildTasks
 
         public bool Trace { get; set; }
 
+        public bool StackTrace { get; set; }
+
         protected override string GetArguments()
         {
             if (BatchFile is null) throw new Exception("Missing BatchFile Property");
@@ -46,6 +48,7 @@ namespace Neo.BuildTasks
             }
 
             if (Trace) { builder.Append(" --trace"); }
+            if (StackTrace) { builder.Append(" --stack-trace"); }
 
             return builder.ToString();
         }

@@ -66,6 +66,7 @@
     <NeoExpressBatch 
       BatchFile="$(NeoExpressNormalizedBatchFile)" 
       Reset="true" 
+      StackTrace="$(NeoExpressBatchStackTrace)"
       WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
