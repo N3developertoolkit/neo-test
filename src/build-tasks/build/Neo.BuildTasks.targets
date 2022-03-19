@@ -58,9 +58,6 @@
       <NeoExpressTouchFile>$([MSBuild]::NormalizePath($(IntermediateOutputPath), '$(NeoExpressBatchFile).neoxp.touch'))</NeoExpressTouchFile>
       <NeoExpressNormalizedBatchFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(NeoExpressBatchFile)))</NeoExpressNormalizedBatchFile>
     </PropertyGroup>
-    <Message Importance="High" Text="$(NeoExpressBatchFile)"/>
-    <Message Importance="High" Text="$([MSBuild]::NormalizePath($(NeoExpressBatchFile)))"/>
-    <Message Importance="High" Text="$([MSBuild]::NormalizePath($(NeoExpressNormalizedBatchFile)))"/>
   </Target>
 
   <Target Name="ExecuteNeoExpressBatch" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoExpressBatchFile)'!=''"
