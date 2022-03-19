@@ -53,4 +53,5 @@
     <Message Importance="High" Text="$(NeoContractName) -&gt; $(NeoCscContractPath)" />
   </Target>
 
+
 </Project>
