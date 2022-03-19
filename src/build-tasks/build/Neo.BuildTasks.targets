@@ -91,33 +91,32 @@
   <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
 
     <Message Importance="High" Text="NeoContractReference @(NeoContractReference)" />
+    
     <ItemGroup>
-      <ProjectReference Include="@(NeoContractReference)">
-        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      </ProjectReference>
+      <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <MSBuild Projects="@(NeoContractReference)" Targets="GetNeoContractInfo">
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
+
     <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo)" />
     <ItemGroup>
-      <NeoContractManifest Include="@(NeoContractInfo)" >
-        <ManifestFile>@(NeoContractInfo->Metadata('ManifestPath'))</ManifestFile>
+      <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))" >
         <OutputFile>$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs</OutputFile>
       </NeoContractManifest>
     </ItemGroup>
 
-    <NeoContractInterface
+    <!-- <NeoContractInterface
       ManifestFile="@(NeoContractManifest->Metadata('ManifestFile'))"
       OutputFile="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
       RootNamespace="$(RootNamespace)"/>
 
     <ItemGroup>
       <Compile Include="@(NeoContractManifest->Metadata('OutputFile'))" />
-    </ItemGroup>
+    </ItemGroup> -->
 
-    <Message Importance="High" Text="NeoContractInterface @(NeoContractManifest) -> @(NeoContractManifest->Metadata('OutputFile'))" />
+    <Message Importance="High" Text="NeoContractInterface @(NeoContractManifest) -> %(OutputFile)" />
 
   </Target>
 
