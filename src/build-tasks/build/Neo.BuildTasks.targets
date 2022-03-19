@@ -11,4 +11,42 @@
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoCsc"/>
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoExpressBatch"/>
 
+  <Target Name="BeforeExecuteNeoCsc" BeforeTargets="ExecuteNeoCsc" Condition="'$(NeoContract)'=='true'">
+    <PropertyGroup>
+      <NeoContractName Condition="'$(NeoContractName)' == ''">$(TargetName)</NeoContractName>
+
+      <NeoCscOutputFolder Condition="'$(NeoContractOutput)' == ''">$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), 'bin\sc'))</NeoCscOutputFolder>
+      <NeoCscOutputFolder Condition="'$(NeoContractOutput)' != ''">$(NeoContractOutput)</NeoCscOutputFolder>
+
+      <NeoCscContractPath>$([MSBuild]::NormalizePath($(NeoCscOutputFolder), '$(NeoContractName).nef'))</NeoCscContractPath>
+      <NeoCscManifestPath>$([MSBuild]::NormalizePath($(NeoCscOutputFolder), '$(NeoContractName).manifest.json'))</NeoCscManifestPath>
+      <NeoCscDebugInfoPath>$([MSBuild]::NormalizePath($(NeoCscOutputFolder), '$(NeoContractName).nefdbgnfo'))</NeoCscDebugInfoPath>
+      <NeoCscAssemblyPath>$([MSBuild]::NormalizePath($(NeoCscOutputFolder), '$(NeoContractName).asm'))</NeoCscAssemblyPath>
+
+      <NeoCscOptimize>true</NeoCscOptimize>
+      <NeoCscOptimize Condition="'$(Configuration)'=='Debug'">false</NeoCscOptimize>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <NeoCscOutput Include="$(NeoCscContractPath)" />
+      <NeoCscOutput Include="$(NeoCscManifestPath)" />
+      <NeoCscOutput Include="$(NeoCscDebugInfoPath)" Condition="'$(DebugSymbols)'=='true'" />
+      <NeoCscOutput Include="$(NeoCscAssemblyPath)" Condition="'$(NeoContractAssembly)'=='true'"/>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ExecuteNeoCsc" AfterTargets="Compile" Condition="'$(NeoContract)'=='true'"
+    Inputs="$(MSBuildProjectFullPath);@(Compile);" Outputs="@(NeoCscOutput)">
+
+    <NeoCsc 
+      Files="$(MSBuildProjectFullPath)"
+      Output="$(NeoContractOutput)"
+      ContractName="$(NeoContractName)"
+      Assembly="$(NeoContractAssembly)"
+      Debug="$(DebugSymbols)"
+      Inline="$(Optimize)"
+      Optimize="$(Optimize)"
+    />
+  </Target>
+  
 </Project>
