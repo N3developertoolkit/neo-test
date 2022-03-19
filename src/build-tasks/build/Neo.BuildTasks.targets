@@ -106,6 +106,8 @@
       </NeoContractManifest>
     </ItemGroup>
 
+    <Message Importance="High" Text="NeoContractManifest %(OutputFile) @(NeoContractManifest)" />
+
     <!-- <NeoContractInterface
       ManifestFile="@(NeoContractManifest->Metadata('ManifestFile'))"
       OutputFile="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
@@ -115,8 +117,6 @@
       <Compile Include="@(NeoContractManifest->Metadata('OutputFile'))" />
     </ItemGroup> -->
 
-    <Message Importance="High" Text="FOO @(NeoContractManifest)" />
-    <Message Importance="High" Text="BAR @(NeoContractManifest->Metadata('OutputFile'))" />
 
   </Target>
 
