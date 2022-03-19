@@ -48,5 +48,10 @@
       Optimize="$(Optimize)"
     />
   </Target>
-  
+
+  <Target Name="AfterExecuteNeoCsc" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoContract)'=='true'">
+    <Message Importance="High" Text="$(NeoContractOutput) -&gt; $(NeoCscContractPath)" />
+  </Target>
+
+
 </Project>
