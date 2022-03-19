@@ -110,7 +110,7 @@
 
     <NeoContractInterface
       ManifestFiles="@(NeoContractManifest->Metadata('ManifestFile'))"
-      OutputFiles="@(NeoContractManifest->Metadata('OutputFile'))"
+      OutputFiles="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
       RootNamespace="$(RootNamespace)"/>
 
     <ItemGroup>
