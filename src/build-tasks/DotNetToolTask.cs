@@ -118,11 +118,6 @@ namespace Neo.BuildTasks
                 return false;
             }
 
-            foreach (var o in results.Output)
-            {
-                Log.LogWarning(o);
-            }
-
             output = results.Output;
             return true;
         }
