@@ -53,5 +53,21 @@
     <Message Importance="High" Text="$(NeoContractName) -&gt; $(NeoCscContractPath)" />
   </Target>
 
+  <Target Name="BeforeExecuteNeoExpressBatch" BeforeTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
+    <PropertyGroup>
+      <NeoExpressTouchFile>$([MSBuild]::NormalizePath($(IntermediateOutputPath), '$(NeoExpressBatchFile).touch'))</NeoExpressTouchFile>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="ExecuteNeoExpressBatch" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoExpressBatchFile)'!=''"
+    Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
+
+    <NeoExpressBatch BatchFile="$(NeoExpressBatchFile)" Reset="true" />
+    <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="AfterExecuteNeoExpressBatch" AfterTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
+    <Message Importance="High" Text="Run $(NeoExpressBatchFile)" />
+  </Target>
 
 </Project>
