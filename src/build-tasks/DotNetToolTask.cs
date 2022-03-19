@@ -14,9 +14,6 @@ namespace Neo.BuildTasks
 
         protected abstract string Command { get; }
         protected abstract string PackageId { get; }
-        // protected virtual string WorkingDirectory
-        //     => Path.GetDirectoryName(BuildEngine);
-
 
         ToolType toolType;
 
@@ -33,7 +30,7 @@ namespace Neo.BuildTasks
         {
             foreach (var o in output)
             {
-                Log.LogWarning($"{Command}: {o}");
+                Log.LogMessage(MessageImportance.High, $"{Command}: {o}");
             }
         }
 
@@ -54,7 +51,7 @@ namespace Neo.BuildTasks
                     : $"{Command} {GetArguments()}";
 
                 CommandLine = $"{command} {arguments}";
-                Log.LogWarning($"Running '{command}' '{arguments}' in {directory}");
+                Log.LogMessage(MessageImportance.High, $"Running '{command}' '{arguments}' in {directory}");
 
                 if (TryExecute(command, arguments, directory, out var output))
                 {
