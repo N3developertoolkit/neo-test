@@ -28,37 +28,15 @@ namespace Neo.BuildTasks
                 EnableRaisingEvents = true,
             };
 
-            Queue<string> output = new();
-            process.OutputDataReceived += (sender, args) => 
-            { 
-                if (args.Data != null) 
-                { 
-                    lock (output) { output.Enqueue(args.Data); }
-                }
-            };
+            ConcurrentQueue<string> output = new();
+            process.OutputDataReceived += (sender, args) => { if (args.Data != null) { output.Enqueue(args.Data); } };
 
-            Queue<string> error = new();
-            process.ErrorDataReceived += (sender, args) =>
-            { 
-                if (args.Data != null) 
-                { 
-                    lock (error) { error.Enqueue(args.Data); }
-                }
-            };
-
+            ConcurrentQueue<string> error = new();
+            process.ErrorDataReceived += (sender, args) => { if (args.Data != null) { error.Enqueue(args.Data); } };
 
             ManualResetEvent completeEvent = new(false);
 
-            process.Exited += (_, _) => 
-            { 
-                process.WaitForExit();
-                while (!process.HasExited)
-                {
-                    Thread.Sleep(50);
-                }
-                
-                completeEvent.Set(); 
-            };
+            process.Exited += (_, _) => completeEvent.Set(); 
 
             if (!process.Start()) throw new Exception("Process failed to start");
             process.BeginOutputReadLine();
@@ -66,10 +44,10 @@ namespace Neo.BuildTasks
 
             completeEvent.WaitOne();
 
-            while (!process.HasExited)
-            {
-                Thread.Sleep(50);
-            }
+            // while (!process.HasExited)
+            // {
+            //     Thread.Sleep(50);
+            // }
 
             return new Results(process.ExitCode, output, error);
         }
