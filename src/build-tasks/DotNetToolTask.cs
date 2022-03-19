@@ -8,28 +8,43 @@ using Microsoft.Build.Utilities;
 
 namespace Neo.BuildTasks
 {
-    // https://ithrowexceptions.com/2020/08/04/implementing-and-debugging-custom-msbuild-tasks.html
-    // https://maheep.wordpress.com/2017/05/22/msbuild-writing-a-custom-task/
-    // https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/
-    // https://natemcmaster.com/blog/tags/#msbuild
-
-
-    public class DotNetCliTask : Task
+    public abstract class DotNetToolTask : Task
     {
         internal enum ToolType { Local, Global }
 
+        protected abstract string Command { get; }
+        protected abstract string PackageId { get; }
+        protected abstract string WorkingDirectory { get; }
+
+        protected abstract string GetArguments();
+
         public override bool Execute()
         {
-            var directory = System.IO.Path.GetDirectoryName(BuildEngine.ProjectFileOfTaskNode);
-            var package = "neo.express";
-
-            if (FindTool(package, directory, out var toolType, out var version))
+            var packageId = PackageId;
+            var directory = WorkingDirectory;
+            if (FindTool(packageId, directory, out var toolType, out var version))
             {
-                Log.LogWarning($"{package} {toolType} tool ({version})");
+                Log.LogWarning($"{packageId} {toolType} tool ({version})");
+
+                var command = toolType == ToolType.Global ? Command : "dotnet";
+                var arguments = toolType == ToolType.Global 
+                    ? GetArguments() 
+                    : $"{Command} {GetArguments()}";
+
+                Log.LogWarning($"Running '{command}' '{arguments}' in {directory}");
+
+                if (TryExecute(command, arguments, directory, out var output))
+                {
+                    foreach (var o in output)
+                    {
+                        Log.LogWarning($"{Command}: {o}");
+                    }
+                }
+
                 return true;
             }
 
-            Log.LogError($"Could not locate {package} tool package");
+            Log.LogError($"Could not locate {packageId} tool package");
             return false;
         }
 
@@ -55,24 +70,31 @@ namespace Neo.BuildTasks
         }
 
 
-        internal bool TryExecute(string command, string arguments, string workingDirectory, out IReadOnlyCollection<string> output)
+        internal bool TryExecute(string command, string arguments, string directory, out IReadOnlyCollection<string> output)
         {
-            var results = ProcessRunner.Run(command, arguments, workingDirectory);
+            var results = ProcessRunner.Run(command, arguments, directory);
 
+            var success = true;
             if (results.ExitCode != 0)
             {
                 Log.LogError($"{command} {arguments} returned {results.ExitCode}");
-                output = Array.Empty<string>();
-                return false;
+                success = false;
             }
 
             if (results.Error.Any())
             {
+                success = false;
+            }
+
+            if (!success)
+            {
                 foreach (var error in results.Error)
                 {
                     Log.LogError(error);
-                    output = Array.Empty<string>();
-                    return false;
+                }
+                foreach (var o in results.Output)
+                {
+                    Log.LogWarning(o);
                 }
             }
 
@@ -120,6 +142,5 @@ namespace Neo.BuildTasks
             }
             return columns;
         }
-
     }
 }
