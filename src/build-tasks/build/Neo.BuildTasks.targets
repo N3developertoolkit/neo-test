@@ -11,12 +11,10 @@
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoCsc"/>
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoExpressBatch"/>
 
-  <Target Name="BeforeExecuteNeoCsc" BeforeTargets="ExecuteNeoCsc" Condition="'$(NeoContract)'=='true'">
+  <Target Name="BeforeExecuteNeoCsc" BeforeTargets="ExecuteNeoCsc" Condition="'$(NeoContractName)'!=''">
     <PropertyGroup>
-      <NeoContractName Condition="'$(NeoContractName)' == ''">$(TargetName)</NeoContractName>
-
-      <NeoCscOutputFolder Condition="'$(NeoContractOutput)' == ''">$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), 'bin\sc'))</NeoCscOutputFolder>
-      <NeoCscOutputFolder Condition="'$(NeoContractOutput)' != ''">$(NeoContractOutput)</NeoCscOutputFolder>
+      <NeoCscOutputFolder Condition="'$(NeoContractOutput)'==''">$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), 'bin\sc'))</NeoCscOutputFolder>
+      <NeoCscOutputFolder Condition="'$(NeoContractOutput)'!=''">$(NeoContractOutput)</NeoCscOutputFolder>
 
       <NeoCscContractPath>$([MSBuild]::NormalizePath($(NeoCscOutputFolder), '$(NeoContractName).nef'))</NeoCscContractPath>
       <NeoCscManifestPath>$([MSBuild]::NormalizePath($(NeoCscOutputFolder), '$(NeoContractName).manifest.json'))</NeoCscManifestPath>
@@ -35,7 +33,7 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="ExecuteNeoCsc" AfterTargets="Compile" Condition="'$(NeoContract)'=='true'"
+  <Target Name="ExecuteNeoCsc" AfterTargets="Compile" Condition="'$(NeoContractName)'!=''"
     Inputs="$(MSBuildProjectFullPath);@(Compile);" Outputs="@(NeoCscOutput)">
 
     <NeoCsc 
@@ -49,7 +47,7 @@
       WorkingDirectory="$(MSBuildProjectDirectory)"/>
   </Target>
 
-  <Target Name="AfterExecuteNeoCsc" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoContract)'=='true'">
+  <Target Name="AfterExecuteNeoCsc" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoContractName)'!=''">
     <Message Importance="High" Text="$(NeoContractName) -&gt; $(NeoCscContractPath)" />
   </Target>
 
