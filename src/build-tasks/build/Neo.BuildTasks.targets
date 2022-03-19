@@ -88,15 +88,15 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractInterface)'!=''">
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
 
     <ItemGroup>
-      <ProjectReference Include="@(NeoContractInterface)">
+      <ProjectReference Include="@(NeoContractReference)">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       </ProjectReference>
     </ItemGroup>
 
-    <MSBuild Projects="@(NeoContractInterface)" Targets="GetNeoContractInfo">
+    <MSBuild Projects="@(NeoContractReference)" Targets="GetNeoContractInfo">
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
 
