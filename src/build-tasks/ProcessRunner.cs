@@ -28,11 +28,24 @@ namespace Neo.BuildTasks
                 EnableRaisingEvents = true,
             };
 
-            ConcurrentQueue<string> output = new();
-            process.OutputDataReceived += (sender, args) => { if (args.Data != null) { output.Enqueue(args.Data); } };
+            Queue<string> output = new();
+            process.OutputDataReceived += (sender, args) => 
+            { 
+                if (args.Data != null) 
+                { 
+                    lock (output) { output.Enqueue(args.Data); }
+                }
+            };
 
-            ConcurrentQueue<string> error = new();
-            process.ErrorDataReceived += (sender, args) => { if (args.Data != null) { error.Enqueue(args.Data); } };
+            Queue<string> error = new();
+            process.ErrorDataReceived += (sender, args) =>
+            { 
+                if (args.Data != null) 
+                { 
+                    lock (error) { error.Enqueue(args.Data); }
+                }
+            };
+
 
             ManualResetEvent completeEvent = new(false);
 
