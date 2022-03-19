@@ -7,15 +7,15 @@ using Microsoft.Build.Utilities;
 
 namespace Neo.BuildTasks
 {
-    internal enum ToolType { Local, Global }
+    internal enum DotNetToolType { Local, Global }
 
     public abstract class DotNetToolTask : Task
     {
-
         protected abstract string Command { get; }
         protected abstract string PackageId { get; }
+        protected abstract string GetArguments();
 
-        ToolType toolType;
+        DotNetToolType toolType;
 
         [Output]
         public string ToolType => $"{toolType}";
@@ -23,14 +23,17 @@ namespace Neo.BuildTasks
         [Output]
         public string CommandLine { get; set; } = string.Empty;
 
+        [Output]
+        public string ToolVersion { get; set; } = string.Empty;
+
         public ITaskItem? WorkingDirectory { get; set; }
 
-        protected abstract string GetArguments();
         protected virtual void ExecutionSuccess(IReadOnlyCollection<string> output)
         {
-            foreach (var o in output)
+            foreach (var @out in output)
             {
-                Log.LogMessage(MessageImportance.High, $"{Command}: {o}");
+                Log.LogMessage(MessageImportance.High, "{0}: {1}",
+                    Command, @out);
             }
         }
 
@@ -38,20 +41,25 @@ namespace Neo.BuildTasks
         {
             var packageId = PackageId;
             var directory = WorkingDirectory;
-            Log.LogMessage(MessageImportance.Low, $"Searching for {packageId} in '{directory?.ItemSpec}'");
+
+            Log.LogMessage(MessageImportance.High, "Searching for tool package {0} in {1}",
+                packageId, directory?.ItemSpec ?? "<no working directory>");
 
             if (FindTool(packageId, directory, out var toolType, out var version))
             {
                 this.toolType = toolType;
-                Log.LogMessage(MessageImportance.High, $"Using {packageId} {toolType} tool ({version})");
+                this.ToolVersion = version;
+                Log.LogMessage(MessageImportance.High, "Found {0} tool package {1} version {2}",
+                    toolType, packageId, version);
 
-                var command = toolType == Neo.BuildTasks.ToolType.Global ? Command : "dotnet";
-                var arguments = toolType == Neo.BuildTasks.ToolType.Global
-                    ? GetArguments()
-                    : $"{Command} {GetArguments()}";
+                var command = toolType == Neo.BuildTasks.DotNetToolType.Global ? Command : "dotnet";
+                var arguments = toolType == Neo.BuildTasks.DotNetToolType.Global
+                        ? GetArguments()
+                        : Command + " " + GetArguments();
 
                 CommandLine = $"{command} {arguments}";
-                Log.LogMessage(MessageImportance.High, $"Running '{command}' '{arguments}' in {directory}");
+                Log.LogMessage(MessageImportance.High, "Running {0} {1}",
+                    command, arguments);
 
                 if (TryExecute(command, arguments, directory, out var output))
                 {
@@ -62,18 +70,18 @@ namespace Neo.BuildTasks
                 return false;
             }
 
-            Log.LogError($"Could not locate {packageId} tool package");
+            Log.LogError("tool package {0} not found", packageId);
             return false;
         }
 
-        internal bool FindTool(string package, ITaskItem? directory, out ToolType toolType, out string version)
+        internal bool FindTool(string package, ITaskItem? directory, out DotNetToolType toolType, out string version)
         {
             if (directory is not null)
             {
                 if (TryExecute("dotnet", "tool list --local", directory, out var output)
                     && ContainsPackage(output, package, out version))
                 {
-                    toolType = Neo.BuildTasks.ToolType.Local;
+                    toolType = DotNetToolType.Local;
                     return true;
                 }
             }
@@ -82,15 +90,15 @@ namespace Neo.BuildTasks
                 if (TryExecute("dotnet", "tool list --global", directory, out var output)
                     && ContainsPackage(output, package, out version))
                 {
-                    toolType = Neo.BuildTasks.ToolType.Global;
+                    toolType = DotNetToolType.Global;
                     return true;
                 }
             }
-            toolType = Neo.BuildTasks.ToolType.Local;
+
+            toolType = DotNetToolType.Local;
             version = string.Empty;
             return false;
         }
-
 
         internal bool TryExecute(string command, string arguments, ITaskItem? directory, out IReadOnlyCollection<string> output)
         {
@@ -99,17 +107,17 @@ namespace Neo.BuildTasks
             if (results.ExitCode != 0 || results.Error.Any())
             {
                 if (results.ExitCode != 0)
-                    Log.LogError($"{command} {arguments} returned {results.ExitCode}");
+                    Log.LogError("{0} returned {1}", Command, results.ExitCode);
                 else
-                    Log.LogWarning($"{command} {arguments} returned {results.ExitCode}");
+                    Log.LogWarning("{0} returned {1}", Command, results.ExitCode);
 
-                foreach (var error in results.Error)
+                foreach (var err in results.Error)
                 {
-                    Log.LogError(error);
+                    Log.LogError(err);
                 }
-                foreach (var o in results.Output)
+                foreach (var @out in results.Output)
                 {
-                    Log.LogWarning(o);
+                    Log.LogWarning(@out);
                 }
 
                 output = Array.Empty<string>();
