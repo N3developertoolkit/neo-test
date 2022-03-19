@@ -38,6 +38,7 @@ namespace Neo.BuildTasks
 
             process.Exited += (_, _) => 
             { 
+                process.WaitForExit();
                 while (!process.HasExited)
                 {
                     Thread.Sleep(50);
