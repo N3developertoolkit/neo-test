@@ -79,23 +79,45 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="BeforeNeoContractInterface" BeforeTargets="ExecuteNeoContractInterface" Condition="'$(NeoContractManifest)'!=''">
-    <PropertyGroup>
-      <NeoContractInterfaceBaseName>$([System.IO.Path]::GetFileName('$(NeoContractManifest)'))</NeoContractInterfaceBaseName>
-      <!-- <NeoContractManifestPath>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(NeoContractManifest)'))</NeoContractManifestPath> -->
-      <NeoContractInterfacePath>$([MSBuild]::NormalizePath('$(IntermediateOutputPath)', '$(NeoContractInterfaceBaseName).cs'))</NeoContractInterfacePath>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <Compile Include="$(NeoContractInterfacePath)" />
+  <Target Name="GetNeoContractInfo" Returns="@(NeoContractInfo)" >
+    <ItemGroup Condition="'$(NeoContractName)'!=''" >
+      <NeoContractInfo Include="$(NeoContractName)">
+        <NefPath>$(NeoCscContractPath)</NefPath>
+        <ManifestPath>$(NeoCscManifestPath)</ManifestPath>
+      </NeoContractInfo>
     </ItemGroup>
   </Target>
+  
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractInterface)'!=''">
+    <Message Importance="High" Text="@(NeoContractInterface)" />
+    <ItemGroup>
+      <ProjectReference Include="@(NeoContractInterface)">
+        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      </ProjectReference>
+    </ItemGroup>
 
-  <Target Name="ExecuteNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'$(NeoContractManifest)'!=''"
-          Inputs="$(NeoContractManifest);$(MSBuildProjectFullPath)"
-          Outputs="$(NeoContractInterfacePath)">
-    <NeoContractInterface ManifestFile="$(NeoContractManifest)" OutputFile="$(NeoContractInterfacePath)" RootNamespace="$(RootNamespace)"/>
+    <MSBuild Projects="@(NeoContractInterface)" Targets="GetNeoContractInfo">
+      <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
+    </MSBuild>
+
+    <ItemGroup>
+      <NeoContractManifest Include="@(NeoContractInfo)" >
+        <ManifestFile>@(NeoContractInfo->Metadata('ManifestPath'))</ManifestFile>
+        <OutputFile>$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs</OutputFile>
+      </NeoContractManifest>
+    </ItemGroup>
+
+    <NeoContractInterface
+      ManifestFile="@(NeoContractManifest->Metadata('ManifestFile'))"
+      OutputFile="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
+      RootNamespace="$(RootNamespace)"/>
+
+    <ItemGroup>
+      <Compile Include="@(NeoContractManifest->Metadata('OutputFile'))" />
+    </ItemGroup>
+
+    <Message Importance="High" Text="NeoContractInterface @(NeoContractManifest) -> @(NeoContractManifest->Metadata('OutputFile'))" />
+
   </Target>
-
 
 </Project>
