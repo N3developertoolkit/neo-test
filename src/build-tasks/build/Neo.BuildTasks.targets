@@ -90,8 +90,6 @@
 
   <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
 
-    <Message Importance="High" Text="NeoContractReference @(NeoContractReference)" />
-    
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
@@ -101,6 +99,7 @@
     </MSBuild>
 
     <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo)" />
+
     <ItemGroup>
       <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))" >
         <OutputFile>$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs</OutputFile>
@@ -116,8 +115,8 @@
       <Compile Include="@(NeoContractManifest->Metadata('OutputFile'))" />
     </ItemGroup> -->
 
-    <Message Importance="High" Text="NeoContractInterface @(NeoContractManifest)" />
-    <Message Importance="High" Text="NeoContractInterface @(NeoContractManifest->Metadata('OutputFile'))" />
+    <Message Importance="High" Text="FOO @(NeoContractManifest)" />
+    <Message Importance="High" Text="BAR @(NeoContractManifest->Metadata('OutputFile'))" />
 
   </Target>
 
