@@ -8,76 +8,7 @@
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoContractInterface"/>
-
-  <PropertyGroup>
-    <NeoContractExt>.nef</NeoContractExt>
-    <NeoManifestExt>.manifest.json</NeoManifestExt>
-    <NeoDebugInfoExt>.nefdbgnfo</NeoDebugInfoExt>
-    <NccsOutputPath>bin\sc\</NccsOutputPath>
-    <TargetNccsOutputPath Condition="'$(NccsOutputPath)' != ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(NccsOutputPath)'))</TargetNccsOutputPath>
-    <TargetNeoContractFileName Condition="'$(TargetNeoContractName)' != ''">$(TargetNeoContractName)$(NeoContractExt)</TargetNeoContractFileName>
-    <TargetNeoContractPath Condition="'$(TargetNeoContractFileName)' != ''">$(TargetNccsOutputPath)$(TargetNeoContractFileName)</TargetNeoContractPath>
-    <TargetNeoManifestFileName Condition="'$(TargetNeoContractName)' != ''">$(TargetNeoContractName)$(NeoManifestExt)</TargetNeoManifestFileName>
-    <TargetNeoManifestPath Condition="'$(TargetNeoManifestFileName)' != ''">$(TargetNccsOutputPath)$(TargetNeoManifestFileName)</TargetNeoManifestPath>
-    <TargetNeoDebugInfoFileName Condition="'$(TargetNeoContractName)' != ''">$(TargetNeoContractName)$(NeoDebugInfoExt)</TargetNeoDebugInfoFileName>
-    <TargetNeoDebugInfoPath Condition="'$(TargetNeoDebugInfoFileName)' != ''">$(TargetNccsOutputPath)$(TargetNeoDebugInfoFileName)</TargetNeoDebugInfoPath>
-  </PropertyGroup>
-
-  <Target Name="NccsBuild" AfterTargets="Build" Inputs="$(MSBuildProjectFullPath);@(Compile);" Outputs="$(TargetNeoContractPath);$(TargetNeoManifestPath);">
-    <PropertyGroup>
-      <_NccsDebugArguments Condition="'$(Configuration)'=='Debug'">--debug --no-optimize</_NccsDebugArguments>
-      <_NccsDebugArguments Condition="'$(Configuration)'!='Debug'"></_NccsDebugArguments>
-    </PropertyGroup>
-    <Exec WorkingDirectory="$(ProjectDir)" Command="dotnet nccs $(_NccsDebugArguments) $(MSBuildProjectFullPath)" />
-  </Target>
-
-  <Target Name="RunNeoExpressBatch" AfterTargets="Build" Inputs="$(TargetNeoContractPath);$(NeoExpressBatch)" Outputs="$(IntermediateOutputPath)neoxp">
-    <PropertyGroup>
-      <_NeoExpressFilePath Condition="'$(NeoExpressFile)' != ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(NeoExpressFile)'))</_NeoExpressFilePath>
-      <_NeoExpressParameter Condition="'$(_NeoExpressFilePath)' != ''">--input $(_NeoExpressFilePath)</_NeoExpressParameter>
-      <_NeoExpressBatchFilePath Condition="'$(NeoExpressBatch)' != ''">$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(NeoExpressBatch)'))</_NeoExpressBatchFilePath>
-      <_NeoExpressBatchFileDirectory Condition="'$(_NeoExpressBatchFilePath)' != ''">$([System.IO.Path]::GetDirectoryName('$(_NeoExpressBatchFilePath)'))</_NeoExpressBatchFileDirectory>
-    </PropertyGroup>
-
-    <Exec Command="dotnet neoxp batch $(_NeoExpressBatchFilePath) --reset $(_NeoExpressParameter)" WorkingDirectory="$(_NeoExpressBatchFileDirectory)" />
-    <Touch Files="$(IntermediateOutputPath)neoxp" AlwaysCreate="true" />
-  </Target>
-
-  <Target Name="GetTargetNeoContract" Returns="@(TargetNeoContract)">
-    <ItemGroup>
-      <TargetNeoContract Include="$(TargetNeoContractPath)">
-        <Name>$(TargetNeoContractName)</Name>
-        <ManifestPath>$(TargetNeoManifestPath)</ManifestPath>
-      </TargetNeoContract>
-    </ItemGroup>
-  </Target>
-
-  <Target Name="GenerateContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference->Count())' &gt; 0">
-    <ItemGroup>
-      <ProjectReference Include="@(NeoContractReference)">
-        <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      </ProjectReference>
-    </ItemGroup>
-
-    <MSBuild Projects="@(NeoContractReference)" Targets="GetTargetNeoContract">
-      <Output TaskParameter="TargetOutputs" ItemName="TargetNeoContract" />
-    </MSBuild>
-
-    <ItemGroup>
-      <NeoContractManifest Include="@(TargetNeoContract->Metadata('ManifestPath'))" >
-        <OutputFile>$(IntermediateOutputPath)@(TargetNeoContract->Metadata('Name')).contract-interface.cs</OutputFile>
-      </NeoContractManifest>
-    </ItemGroup>
-
-    <NeoContractInterface
-      ManifestFile="@(NeoContractManifest)"
-      OutputFile="@(NeoContractManifest->Metadata('OutputFile'))"
-      RootNamespace="$(RootNamespace)"/>
-
-    <ItemGroup>
-      <Compile Include="@(NeoContractManifest->Metadata('OutputFile'))" />
-    </ItemGroup>
-
-  </Target>
+  <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoCsc"/>
+  <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoExpressBatch"/>
 
 </Project>
