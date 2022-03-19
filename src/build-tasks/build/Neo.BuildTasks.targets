@@ -58,16 +58,18 @@
       <NeoExpressTouchFile>$([MSBuild]::NormalizePath($(IntermediateOutputPath), '$(NeoExpressBatchFile).neoxp.touch'))</NeoExpressTouchFile>
       <NeoExpressNormalizedBatchFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(NeoExpressBatchFile)))</NeoExpressNormalizedBatchFile>
     </PropertyGroup>
+    <Message Importance="High" Text="$([MSBuild]::NormalizePath($(NeoExpressBatchFile)"/>
+    <Message Importance="High" Text="$([MSBuild]::NormalizePath($(NeoExpressNormalizedBatchFile)"/>
   </Target>
 
-  <Target Name="ExecuteNeoExpressBatch" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoExpressNormalizedBatchFile)'!=''"
-    Inputs="@(NeoCscOutput);$(NeoExpressNormalizedBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
+  <Target Name="ExecuteNeoExpressBatch" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoExpressBatchFile)'!=''"
+    Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
 
     <NeoExpressBatch BatchFile="$(NeoExpressNormalizedBatchFile)" Reset="true" />
     <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="AfterExecuteNeoExpressBatch" AfterTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressNormalizedBatchFile)'!=''">
+  <Target Name="AfterExecuteNeoExpressBatch" AfterTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
     <Message Importance="High" Text="Run $(NeoExpressBatchFile)" />
   </Target>
 
