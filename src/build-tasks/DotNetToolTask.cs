@@ -1,20 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text;
-using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace Neo.BuildTasks
 {
+    // https://ithrowexceptions.com/2020/08/04/implementing-and-debugging-custom-msbuild-tasks.html
+    // https://maheep.wordpress.com/2017/05/22/msbuild-writing-a-custom-task/
+    // https://natemcmaster.com/blog/2017/07/05/msbuild-task-in-nuget/
+    // https://natemcmaster.com/blog/tags/#msbuild
+
     public abstract class DotNetToolTask : Task
     {
         internal enum ToolType { Local, Global }
 
         protected abstract string Command { get; }
         protected abstract string PackageId { get; }
-        protected abstract string WorkingDirectory { get; }
+        protected virtual string WorkingDirectory
+            => Path.GetDirectoryName(BuildEngine.ProjectFileOfTaskNode);
 
         protected abstract string GetArguments();
 
