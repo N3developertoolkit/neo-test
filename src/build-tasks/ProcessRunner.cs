@@ -11,7 +11,7 @@ namespace Neo.BuildTasks
     {
         public record struct Results(int ExitCode, IReadOnlyCollection<string> Output, IReadOnlyCollection<string> Error);
 
-        public static Results Run(string command, string arguments, string workingDirectory = "")
+        public static Results Run(string command, string arguments, string? workingDirectory = null)
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo(command, arguments)
             {

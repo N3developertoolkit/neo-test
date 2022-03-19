@@ -14,10 +14,10 @@ namespace Neo.BuildTasks
 
         protected abstract string Command { get; }
         protected abstract string PackageId { get; }
-        protected virtual string WorkingDirectory
-            => Path.GetDirectoryName(BuildEngine.ProjectFileOfTaskNode);
+        // protected virtual string WorkingDirectory
+        //     => Path.GetDirectoryName(BuildEngine);
 
-        
+
         ToolType toolType;
 
         [Output]
@@ -26,6 +26,7 @@ namespace Neo.BuildTasks
         [Output]
         public string CommandLine { get; set; } = string.Empty;
 
+        public ITaskItem? WorkingDirectory { get; set; }
 
         protected abstract string GetArguments();
         protected virtual void ExecutionSuccess(IReadOnlyCollection<string> output)
@@ -67,31 +68,35 @@ namespace Neo.BuildTasks
             return false;
         }
 
-        internal bool FindTool(string package, string directory, out ToolType toolType, out string version)
+        internal bool FindTool(string package, ITaskItem? directory, out ToolType toolType, out string version)
         {
-            if (TryExecute("dotnet", "tool list --local", directory, out var output)
-                && ContainsPackage(output, package, out version))
+            if (directory is not null)
             {
-                toolType = Neo.BuildTasks.ToolType.Local;
-                return true;
+                if (TryExecute("dotnet", "tool list --local", directory, out var output)
+                    && ContainsPackage(output, package, out version))
+                {
+                    toolType = Neo.BuildTasks.ToolType.Local;
+                    return true;
+                }
             }
 
-            if (TryExecute("dotnet", "tool list --global", directory, out output)
-                && ContainsPackage(output, package, out version))
             {
-                toolType = Neo.BuildTasks.ToolType.Global;
-                return true;
+                if (TryExecute("dotnet", "tool list --global", directory, out var output)
+                    && ContainsPackage(output, package, out version))
+                {
+                    toolType = Neo.BuildTasks.ToolType.Global;
+                    return true;
+                }
             }
-
             toolType = Neo.BuildTasks.ToolType.Local;
             version = string.Empty;
             return false;
         }
 
 
-        internal bool TryExecute(string command, string arguments, string directory, out IReadOnlyCollection<string> output)
+        internal bool TryExecute(string command, string arguments, ITaskItem? directory, out IReadOnlyCollection<string> output)
         {
-            var results = ProcessRunner.Run(command, arguments, directory);
+            var results = ProcessRunner.Run(command, arguments, directory?.ItemSpec);
 
             if (results.ExitCode != 0 || results.Error.Any())
             {
