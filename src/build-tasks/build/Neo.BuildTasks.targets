@@ -79,4 +79,23 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
+  <Target Name="BeforeNeoContractInterface" BeforeTargets="ExecuteNeoContractInterface" Condition="'$(NeoContractManifest)'!=''">
+    <PropertyGroup>
+      <NeoContractInterfaceBaseName>$([System.IO.Path]::GetFileNameWithoutExtension('$(NeoContractManifest)'))</NeoContractInterfaceBaseName>
+      <!-- <NeoContractManifestPath>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(NeoContractManifest)'))</NeoContractManifestPath> -->
+      <NeoContractInterfacePath>$([MSBuild]::NormalizePath('$(IntermediateOutputPath)', '$(NeoContractInterfaceBaseName).cs'))</NeoContractInterfacePath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Include="$(NeoContractInterfacePath)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="ExecuteNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'$(NeoContractManifest)'!=''"
+          Inputs="$(NeoContractManifest);$(MSBuildProjectFullPath)"
+          Outputs="$(NeoContractInterfacePath)">
+    <NeoContractInterface ManifestFile="$(NeoContractManifest)" OutputFile="$(NeoContractInterfacePath)" RootNamespace="$(RootNamespace)"/>
+  </Target>
+
+
 </Project>
