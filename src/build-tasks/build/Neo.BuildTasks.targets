@@ -88,26 +88,26 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Inputs="@(NeoContractReference)" Outputs="%(Identity).Dummy">
 
-    <ItemGroup>
+    <!-- <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
-
+ -->
     <MSBuild Projects="@(NeoContractReference)" Targets="GetNeoContractInfo">
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
 
     <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo) -> %(ManifestPath)" />
 
-    <ItemGroup>
+    <!-- <ItemGroup>
       <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))"  >
         <OutputFile>$(IntermediateOutputPath)$(NeoContractInfo).contract-interface.cs</OutputFile>
       </NeoContractManifest>
     </ItemGroup>
 
     <Message Importance="High" Text="NeoContractManifest %(OutputFile) @(NeoContractManifest)" />
-
+ -->
     <!-- <NeoContractInterface
       ManifestFile="@(NeoContractManifest->Metadata('ManifestFile'))"
       OutputFile="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
