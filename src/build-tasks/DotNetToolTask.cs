@@ -40,6 +40,7 @@ namespace Neo.BuildTasks
         {
             var packageId = PackageId;
             var directory = WorkingDirectory;
+            Log.LogWarning($"{packageId} {directory}");
             if (FindTool(packageId, directory, out var toolType, out var version))
             {
                 this.toolType = toolType;
