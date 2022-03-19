@@ -50,8 +50,7 @@
   </Target>
 
   <Target Name="AfterExecuteNeoCsc" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoContract)'=='true'">
-    <Message Importance="High" Text="$(NeoContractOutput) -&gt; $(NeoCscContractPath)" />
+    <Message Importance="High" Text="$(NeoContractName) -&gt; $(NeoCscContractPath)" />
   </Target>
-
 
 </Project>
