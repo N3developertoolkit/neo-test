@@ -81,7 +81,7 @@
 
   <Target Name="BeforeNeoContractInterface" BeforeTargets="ExecuteNeoContractInterface" Condition="'$(NeoContractManifest)'!=''">
     <PropertyGroup>
-      <NeoContractInterfaceBaseName>$([System.IO.Path]::GetFileNameWithoutExtension('$(NeoContractManifest)'))</NeoContractInterfaceBaseName>
+      <NeoContractInterfaceBaseName>$([System.IO.Path]::GetFileName('$(NeoContractManifest)'))</NeoContractInterfaceBaseName>
       <!-- <NeoContractManifestPath>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(NeoContractManifest)'))</NeoContractManifestPath> -->
       <NeoContractInterfacePath>$([MSBuild]::NormalizePath('$(IntermediateOutputPath)', '$(NeoContractInterfaceBaseName).cs'))</NeoContractInterfacePath>
     </PropertyGroup>
