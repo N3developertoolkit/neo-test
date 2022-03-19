@@ -40,7 +40,7 @@ namespace Neo.BuildTasks
 
             if (Output is not null)
             {
-                builder.AppendFormat(" --Output {0}", Output.ItemSpec);
+                builder.AppendFormat(" --output {0}", Output.ItemSpec);
             }
 
             if (!string.IsNullOrEmpty(ContractName))
