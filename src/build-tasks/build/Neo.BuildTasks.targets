@@ -51,6 +51,15 @@
     <Message Importance="High" Text="$(NeoContractName) -&gt; $(NeoCscContractPath)" />
   </Target>
 
+  <Target Name="GetNeoContractInfo" Returns="@(NeoContractInfo)" DependsOnTargets="BeforeExecuteNeoCsc">
+    <ItemGroup Condition="'$(NeoContractName)'!=''" >
+      <NeoContractInfo Include="$(NeoContractName)">
+        <NefPath>$(NeoCscContractPath)</NefPath>
+        <ManifestPath>$(NeoCscManifestPath)</ManifestPath>
+      </NeoContractInfo>
+    </ItemGroup>
+  </Target>
+
   <Target Name="BeforeExecuteNeoExpressBatch" BeforeTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
     <PropertyGroup>
       <NeoExpressTouchFile>$([MSBuild]::NormalizePath($(IntermediateOutputPath), '$(NeoExpressBatchFile).neoxp.touch'))</NeoExpressTouchFile>
@@ -77,15 +86,6 @@
       WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
-  </Target>
-
-  <Target Name="GetNeoContractInfo" Returns="@(NeoContractInfo)" >
-    <ItemGroup Condition="'$(NeoContractName)'!=''" >
-      <NeoContractInfo Include="$(NeoContractName)">
-        <NefPath>$(NeoCscContractPath)</NefPath>
-        <ManifestPath>$(NeoCscManifestPath)</ManifestPath>
-      </NeoContractInfo>
-    </ItemGroup>
   </Target>
 
   <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
