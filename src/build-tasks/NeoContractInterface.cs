@@ -11,7 +11,7 @@ namespace Neo.BuildTasks
         {
             if (ManifestFiles.Length != OutputFiles.Length)
             {
-                Log.LogError("Mismatched Manifest and Output file arrays");
+                Log.LogError("Mismatched Manifest ({0}) and Output ({1}) file arrays", ManifestFiles.Length, OutputFiles.Length);
                 return false;
             }
 
