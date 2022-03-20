@@ -88,7 +88,7 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Inputs="@(NeoContractReference)" Outputs="%(Identity).Dummy">
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences">
 
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
@@ -98,25 +98,25 @@
       <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
     </MSBuild>
 
-    <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo) -> %(ManifestPath)" />
+    <Message Importance="High" Text="GetNeoContractInfo @(NeoContractInfo) %(ManifestPath)" />
 
-    <!-- <ItemGroup>
-      <NeoContractManifest Include="@(NeoContractInfo->Metadata('ManifestPath'))"  >
-        <OutputFile>$(IntermediateOutputPath)$(NeoContractInfo).contract-interface.cs</OutputFile>
-      </NeoContractManifest>
+    <ItemGroup>
+      <NeoContractGeneration Include="%(NeoContractInfo.Identity)">
+        <ManifestPath>%(NeoContractInfo.ManifestPath)</ManifestPath>
+        <OutputPath>$(IntermediateOutputPath)%(Identity).contract-interface.cs</OutputPath>
+      </NeoContractGeneration>
     </ItemGroup>
 
-    <Message Importance="High" Text="NeoContractManifest %(OutputFile) @(NeoContractManifest)" />
- -->
     <NeoContractInterface
-      ManifestFile="%(ManifestPath)"
-      OutputFile="$(IntermediateOutputPath)@(NeoContractInfo).contract-interface.cs"
+      ManifestFile="%(NeoContractGeneration.ManifestPath)"
+      OutputFile="%(NeoContractGeneration.OutputPath)"
       RootNamespace="$(RootNamespace)"/>
 
     <ItemGroup>
-      <Compile Include="%(ManifestPath)" />
+      <Compile Include="%(NeoContractGeneration.OutputPath)" />
     </ItemGroup>
 
+    <Message Importance="High" Text="Generated @(NeoContractGeneration) contract interface" />
 
   </Target>
 
