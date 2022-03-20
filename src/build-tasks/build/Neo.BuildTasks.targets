@@ -11,7 +11,7 @@
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoCsc"/>
   <UsingTask AssemblyFile="$(NeoBuildTasksAssembly)" TaskName="Neo.BuildTasks.NeoExpressBatch"/>
 
-  <Target Name="BeforeExecuteNeoCsc" BeforeTargets="ExecuteNeoCsc" Condition="'$(NeoContractName)'!=''">
+  <Target Name="ConfigureNeoCsc">
     <PropertyGroup>
       <NeoCscOutputFolder Condition="'$(NeoContractOutput)'==''">$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), 'bin\sc'))</NeoCscOutputFolder>
       <NeoCscOutputFolder Condition="'$(NeoContractOutput)'!=''">$(NeoContractOutput)</NeoCscOutputFolder>
@@ -33,7 +33,9 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="ExecuteNeoCsc" AfterTargets="Compile" Condition="'$(NeoContractName)'!=''"
+  <Target Name="ExecuteNeoCsc" AfterTargets="Compile" 
+    DependsOnTargets="ConfigureNeoCsc"
+    Condition="'$(NeoContractName)'!=''"
     Inputs="$(MSBuildProjectFullPath);@(Compile);" Outputs="@(NeoCscOutput)">
 
     <NeoCsc 
@@ -47,11 +49,11 @@
       WorkingDirectory="$(MSBuildProjectDirectory)"/>
   </Target>
 
-  <Target Name="AfterExecuteNeoCsc" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoContractName)'!=''">
+  <Target Name="NeoCscMessage" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoContractName)'!=''">
     <Message Importance="High" Text="$(NeoContractName) -&gt; $(NeoCscContractPath)" />
   </Target>
 
-  <Target Name="GetNeoContractInfo" Returns="@(NeoContractInfo)" DependsOnTargets="BeforeExecuteNeoCsc">
+  <Target Name="GetNeoContractInfo" Returns="@(NeoContractInfo)" DependsOnTargets="ConfigureNeoCsc">
     <ItemGroup Condition="'$(NeoContractName)'!=''" >
       <NeoContractInfo Include="$(NeoContractName)">
         <NefPath>$(NeoCscContractPath)</NefPath>
@@ -60,14 +62,16 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="BeforeExecuteNeoExpressBatch" BeforeTargets="ExecuteNeoExpressBatch" Condition="'$(NeoExpressBatchFile)'!=''">
+  <Target Name="ConfigureNeoExpressBatch">
     <PropertyGroup>
       <NeoExpressTouchFile>$([MSBuild]::NormalizePath($(IntermediateOutputPath), '$(NeoExpressBatchFile).neoxp.touch'))</NeoExpressTouchFile>
       <NeoExpressNormalizedBatchFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(NeoExpressBatchFile)))</NeoExpressNormalizedBatchFile>
     </PropertyGroup>
   </Target>
 
-  <Target Name="ExecuteNeoExpressBatch" AfterTargets="ExecuteNeoCsc" Condition="'$(NeoExpressBatchFile)'!=''"
+  <Target Name="ExecuteNeoExpressBatch" 
+    DependsOnTargets="ConfigureNeoExpressBatch;ExecuteNeoCsc"
+    Condition="'$(NeoExpressBatchFile)'!=''"
     Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
 
     <PropertyGroup>
@@ -85,10 +89,11 @@
       StackTrace="$(NeoExpressBatchStackTrace)"
       WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Touch Files="$(NeoExpressTouchFile)" AlwaysCreate="true" />
+
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="BeforeGenerateNeoContractInterface" BeforeTargets="GenerateNeoContractInterface" Condition="'@(NeoContractReference)'!=''">
+  <Target Name="ConfigureNeoContractInterface">
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
@@ -110,7 +115,9 @@
 
   </Target>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractGeneration)'!=''"
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" 
+    DependsOnTargets="ConfigureNeoContractInterface"
+    Condition="'@(NeoContractReference)'!=''"
     Inputs="%(NeoContractGeneration.ManifestPath)" Outputs="%(NeoContractGeneration.OutputPath)">
 
     <NeoContractInterface
