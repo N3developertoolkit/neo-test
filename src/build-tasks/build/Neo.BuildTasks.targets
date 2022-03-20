@@ -69,7 +69,8 @@
     </PropertyGroup>
   </Target>
 
-  <Target Name="ExecuteNeoExpressBatch" 
+  <Target Name="ExecuteNeoExpressBatch"
+    AfterTargets="ExecuteNeoCsc" 
     DependsOnTargets="ConfigureNeoExpressBatch;ExecuteNeoCsc"
     Condition="'$(NeoExpressBatchFile)'!=''"
     Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
