@@ -88,8 +88,7 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''">
-
+  <Target Name="BeforeGenerateNeoContractInterface" BeforeTargets="GenerateNeoContractInterface" Condition="'@(NeoContractReference)'!=''">
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
@@ -107,6 +106,13 @@
       </NeoContractGeneration>
     </ItemGroup>
 
+    <Message Importance="High" Text="Generating %(NeoContractGeneration.Identity) contract interface" />
+
+  </Target>
+
+  <Target Name="GenerateNeoContractInterface" BeforeTargets="ResolveProjectReferences" Condition="'@(NeoContractReference)'!=''"
+    Inputs="%(NeoContractGeneration.ManifestPath)" Outputs="%(NeoContractGeneration.OutputPath)">
+
     <NeoContractInterface
       ManifestFile="%(NeoContractGeneration.ManifestPath)"
       OutputFile="%(NeoContractGeneration.OutputPath)"
@@ -115,8 +121,6 @@
     <ItemGroup>
       <Compile Include="%(NeoContractGeneration.OutputPath)" />
     </ItemGroup>
-
-    <Message Importance="High" Text="Generated @(NeoContractGeneration) contract interface" />
 
   </Target>
 
