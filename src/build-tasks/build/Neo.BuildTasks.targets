@@ -70,7 +70,7 @@
   </Target>
 
   <Target Name="ExecuteNeoExpressBatch"
-    AfterTargets="ExecuteNeoCsc" 
+    AfterTargets="Build" 
     DependsOnTargets="ConfigureNeoExpressBatch;ExecuteNeoCsc"
     Condition="'$(NeoExpressBatchFile)'!=''"
     Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
