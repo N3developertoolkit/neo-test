@@ -46,23 +46,35 @@ namespace NeoTestHarness
             using var builder = new ScriptBuilder();
             for (int i = 0; i < expressions.Length; i++)
             {
-                var methodCall = (MethodCallExpression)expressions[i].Body;
-                var operation = methodCall.Method.Name;
-
-                for (var x = methodCall.Arguments.Count - 1; x >= 0; x--)
-                {
-                    var obj = Expression.Lambda(methodCall.Arguments[x]).Compile().DynamicInvoke();
-                    var param = ContractParameterParser.ConvertObject(obj);
-                    builder.EmitPush(param);
-                }
-                builder.EmitPush(methodCall.Arguments.Count);
-                builder.Emit(OpCode.PACK);
-                builder.EmitPush(CallFlags.All);
-                builder.EmitPush(operation);
-                builder.EmitPush(scriptHash);
-                builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
+                builder.EmitContractCall(scriptHash, expressions[i]);
             }
             return builder.ToArray();
+        }
+
+        public static void EmitContractCall<T>(this ScriptBuilder builder, DataCache snapshot, Expression<Action<T>> expression)
+            where T : class
+        {
+            var scriptHash = snapshot.GetContractScriptHash<T>();
+            EmitContractCall<T>(builder, scriptHash, expression);
+        }
+
+        public static void EmitContractCall<T>(this ScriptBuilder builder, UInt160 scriptHash, Expression<Action<T>> expression)
+        {
+            var methodCall = (MethodCallExpression)expression.Body;
+            var operation = methodCall.Method.Name;
+
+            for (var x = methodCall.Arguments.Count - 1; x >= 0; x--)
+            {
+                var obj = Expression.Lambda(methodCall.Arguments[x]).Compile().DynamicInvoke();
+                var param = ContractParameterParser.ConvertObject(obj);
+                builder.EmitPush(param);
+            }
+            builder.EmitPush(methodCall.Arguments.Count);
+            builder.Emit(OpCode.PACK);
+            builder.EmitPush(CallFlags.All);
+            builder.EmitPush(operation);
+            builder.EmitPush(scriptHash);
+            builder.EmitSysCall(ApplicationEngine.System_Contract_Call);
         }
 
         public static NeoStorage GetContractStorages<T>(this DataCache snapshot)
