@@ -76,10 +76,13 @@
     Inputs="@(NeoCscOutput);$(NeoExpressBatchFile);$(NeoExpressTouchFile)" Outputs="$(NeoExpressTouchFile)">
 
     <PropertyGroup>
-      <NeoExpressNormalizedBatchFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(NeoExpressBatchFile)))</NeoExpressNormalizedBatchFile>
       <NeoExpressBatchReset>true</NeoExpressBatchReset>
-      <NeoExpressBatchReset Condition="'(NeoExpressBatchNoReset)'=='true'">false</NeoExpressBatchReset>
+      <NeoExpressBatchReset Condition="'$(NeoExpressBatchNoReset)'=='true'">false</NeoExpressBatchReset>
     </PropertyGroup>
+    
+    <Message Importance="High" Text="NeoExpressBatchFile -> $(NeoExpressBatchFile)" />
+    <Message Importance="High" Text="MSBuildProjectDirectory -> $(MSBuildProjectDirectory)" />
+    <Message Importance="High" Text="NeoExpressNormalizedBatchFile -> $(NeoExpressNormalizedBatchFile)" />
 
     <NeoExpressBatch 
       BatchFile="$(NeoExpressNormalizedBatchFile)" 
