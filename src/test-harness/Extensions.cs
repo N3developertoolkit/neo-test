@@ -98,14 +98,14 @@ namespace NeoTestHarness
         }
 
         public static NeoStorage StorageMap(this NeoStorage storages, string prefix)
-            => storages.StorageMap(Utility.StrictUTF8.GetBytes(prefix));
+            => storages.StorageMap(Neo.Utility.StrictUTF8.GetBytes(prefix));
 
         public static NeoStorage StorageMap(this NeoStorage storages, ReadOnlyMemory<byte> prefix)
             => storages.Where(kvp => kvp.Key.Span.StartsWith(prefix.Span))
                 .ToImmutableDictionary(kvp => kvp.Key.Slice(prefix.Length), kvp => kvp.Value, MemoryEqualityComparer.Instance);
 
         public static bool TryGetValue(this NeoStorage storage, string key, [NotNullWhen(true)] out StorageItem item)
-            => storage.TryGetValue(Utility.StrictUTF8.GetBytes(key), out item!);
+            => storage.TryGetValue(Neo.Utility.StrictUTF8.GetBytes(key), out item!);
 
         public static bool TryGetValue(this NeoStorage storage, UInt160 key, [NotNullWhen(true)] out StorageItem item)
             => storage.TryGetValue(Neo.IO.Helper.ToArray(key), out item!);
