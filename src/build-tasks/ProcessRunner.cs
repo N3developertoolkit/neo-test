@@ -44,11 +44,6 @@ namespace Neo.BuildTasks
 
             completeEvent.WaitOne();
 
-            // while (!process.HasExited)
-            // {
-            //     Thread.Sleep(50);
-            // }
-
             return new Results(process.ExitCode, output, error);
         }
     }
