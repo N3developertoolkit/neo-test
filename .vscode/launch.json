@@ -9,7 +9,18 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/src/runner/bin/Debug/net5.0/neo-test-runner.dll",
+            "program": "${workspaceFolder}/src/runner/bin/Debug/net6.0/neo-test-runner.dll",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": "neo-proxygen",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/proxy-gen/bin/Debug/net6.0/neo-proxygen.dll",
+            "args": "C:/Users/harry/Source/neo/seattle/seraph-id/Issuer/bin/sc/Issuer.manifest.json",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "stopAtEntry": false
@@ -21,3 +32,4 @@
         }
     ]
 }
+
