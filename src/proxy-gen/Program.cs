@@ -1,89 +1,18 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.IO.Abstractions;
-using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TextTemplating;
-using Neo.BlockchainToolkit;
+using Mono.TextTemplating;
 using Neo.BlockchainToolkit.Models;
-using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
-using OneOf;
-using None = OneOf.Types.None;
 
 namespace Neo.ProxyGen;
-
-public record ContractParameter(string Name, ContractType Type);
-public record ContractEvent(string Name, IReadOnlyList<ContractParameter> Parameters);
-public record ContractMethod(string Name, IReadOnlyList<ContractParameter> Parameters, OneOf<ContractType, None> ReturnType);
-
-public record Contract
-{
-    public string Name { get; init; } = string.Empty;
-    public IReadOnlyList<ContractMethod> Methods { get; init; } = Array.Empty<ContractMethod>();
-    public IReadOnlyList<ContractEvent> Events { get; init; } = Array.Empty<ContractEvent>();
-
-    public static Contract FromManifest(ContractManifest manifest, DebugInfo? debugInfo)
-    {
-        var debugMethods = debugInfo?.Methods ?? Array.Empty<DebugInfo.Method>();
-        var debugEvents = debugInfo?.Events ?? Array.Empty<DebugInfo.Event>();
-
-        var methods = new List<ContractMethod>();
-        foreach (var method in manifest.Abi.Methods)
-        {
-            var @params = debugMethods.TryFind(m => m.Name.Equals(method.Name), out var debugMethod)
-                ? debugMethod.Parameters.Select(p => new ContractParameter(p.Name, p.Type))
-                : method.Parameters.Select(p => new ContractParameter(p.Name, ConvertContractParameterType(p.Type)));
-            OneOf<ContractType, None> @return = method.ReturnType == ContractParameterType.Void
-                ? default(None)
-                : ConvertContractParameterType(method.ReturnType);
-            methods.Add(new ContractMethod(method.Name, @params.ToArray(), @return));
-        }
-
-        var events = new List<ContractEvent>();
-        foreach (var @event in manifest.Abi.Events)
-        {
-            var @params = debugEvents.TryFind(e => e.Name.Equals(@event.Name), out var debugEvent)
-                ? debugEvent.Parameters.Select(p => new ContractParameter(p.Name, p.Type))
-                : @event.Parameters.Select(p => new ContractParameter(p.Name, ConvertContractParameterType(p.Type)));
-            events.Add(new ContractEvent(@event.Name, @params.ToArray()));
-        }
-
-        return new Contract
-        {
-            Name = manifest.Name,
-            Methods = methods,
-            Events = events,
-        };
-    }
-
-    // TODO: use version of ConvertContractParameterType from lib-bctk
-    static ContractType ConvertContractParameterType(ContractParameterType type)
-        => type switch
-        {
-            ContractParameterType.Any => ContractType.Unspecified,
-            ContractParameterType.Array => new ArrayContractType(ContractType.Unspecified),
-            ContractParameterType.Boolean => PrimitiveContractType.Boolean,
-            ContractParameterType.ByteArray => PrimitiveContractType.ByteArray,
-            ContractParameterType.Hash160 => PrimitiveContractType.Hash160,
-            ContractParameterType.Hash256 => PrimitiveContractType.Hash256,
-            ContractParameterType.Integer => PrimitiveContractType.Integer,
-            ContractParameterType.InteropInterface => InteropContractType.Unknown,
-            ContractParameterType.Map => new MapContractType(PrimitiveType.ByteArray, ContractType.Unspecified),
-            ContractParameterType.PublicKey => PrimitiveContractType.PublicKey,
-            ContractParameterType.Signature => PrimitiveContractType.Signature,
-            ContractParameterType.String => PrimitiveContractType.String,
-            ContractParameterType.Void => throw new NotSupportedException("Void not supported ContractType"),
-            _ => ContractType.Unspecified
-        };
-}
 
 [Command("neo-proxygen", Description = "Neo N3 smart contract runner for unit testing", UsePagerForHelpText = false)]
 [VersionOptionFromMember("--version", MemberName = nameof(GetVersion))]
@@ -114,40 +43,51 @@ class Program
     [Required]
     internal string Template { get; set; } = string.Empty;
 
-    [Option]
-    internal string DebugInfo { get; set; } = string.Empty;
-
-    public int OnExecute(CommandLineApplication app, IConsole console)
+    internal async Task<int> OnExecuteAsync(CommandLineApplication app, IConsole console, IFileSystem fileSystem)
     {
-        return 0;
-    }
-    internal async Task<int> OnExecuteAsync(CommandLineApplication app, IConsole console)
-    {
-        var fileSystem = new FileSystem();
         try
         {
-            var mainfestText = await fileSystem.File.ReadAllTextAsync(DebugInfo).ConfigureAwait(false);
-            var manifest = ContractManifest.Parse(mainfestText);
-            DebugInfo? debugInfo = null;
+            var filename = fileSystem.Path.GetFileName(Manifest);
+            var index = filename.IndexOf('.');
+            filename = index < 0 ? filename : filename.Substring(0, index);
+            var nefPath = fileSystem.Path.Combine(
+                fileSystem.Path.GetDirectoryName(Manifest), $"{filename}.nef");
 
-            if (!string.IsNullOrEmpty(DebugInfo))
-            {
-                debugInfo = (await Neo.BlockchainToolkit.Models.DebugInfo.LoadAsync(DebugInfo))
-                    .Match<DebugInfo?>(di => di, _ => null);
-            }
+            var mainfestText = await fileSystem.File.ReadAllTextAsync(Manifest).ConfigureAwait(false);
+            var manifest = ContractManifest.Parse(mainfestText);
+            var _debugInfo = await Neo.BlockchainToolkit.Models.DebugInfo.LoadAsync(nefPath);
+            DebugInfo? debugInfo = _debugInfo.Match<DebugInfo?>(di => di, _ => null);
 
             var contract = Contract.FromManifest(manifest, debugInfo);
             var template = await fileSystem.File.ReadAllTextAsync(Template);
 
-            var host = new CustomHost(fileSystem);
-            var engine = new Mono.TextTemplating.TemplatingEngine();
-            var result = engine.ProcessTemplate(template, host);
+            var generator = new TemplateGenerator();
+            generator.Refs.Add(typeof (Contract).Assembly.Location);
+            generator.Refs.Add(typeof (ContractType).Assembly.Location);
+            generator.Refs.Add(typeof(OneOf.IOneOf).Assembly.Location);
+            generator.GetOrCreateSession().Add("Contract", contract);
+            string outname = string.Empty;
+            var foo = generator.ProcessTemplate(Template, template, ref outname, out var content);
+            // var host = new CustomHost(fileSystem);
+            // var engine = new Mono.TextTemplating.TemplatingEngine();
+            // var result = engine.ProcessTemplate(template, host);
 
-            foreach (CompilerError error in host.Errors)
+            // foreach (CompilerError error in host.Errors)
+            // {
+            //     Console.WriteLine(error.ToString());
+            // }
+
+            if (foo)
             {
-                Console.WriteLine(error.ToString());
+                Console.WriteLine(content);
             }
-
+            else
+            {
+                foreach (var error in generator.Errors)
+                {
+                    Console.WriteLine(error);
+                }
+            }
             return 0;
         }
         catch (Exception ex)

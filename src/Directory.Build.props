@@ -27,7 +27,7 @@
     <NeoVersion>3.2.1</NeoVersion>
     <BlockchainToolkitLibraryVersion>3.2.49-preview</BlockchainToolkitLibraryVersion>
     <BlockchainToolkitLibraryLocalPath>..\..\..\lib-bctk</BlockchainToolkitLibraryLocalPath>
-    <!-- <BlockchainToolkitLibraryVersion>local</BlockchainToolkitLibraryVersion> -->
+    <BlockchainToolkitLibraryVersion>local</BlockchainToolkitLibraryVersion>
   </PropertyGroup>
 
   <ItemGroup>

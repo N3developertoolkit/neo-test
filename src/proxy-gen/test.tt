@@ -1,6 +1,5 @@
-Text Template Host Test
-
 <#@ template debug="true" #>
+<#@ parameter type="Neo.ProxyGen.Contract" name="Contract" #>
 
 <# //Uncomment this line to test that the host allows the engine to set the extension. #>
 <# //@ output extension=".htm" #>
@@ -8,8 +7,20 @@ Text Template Host Test
 <# //Uncomment this line if you want to debug the generated transformation class. #>
 <# //System.Diagnostics.Debugger.Break(); #>
 
-<# for (int i=0; i<3; i++)
-   {
-       WriteLine("This is a test");
-   }
-#>
+public class <#= Contract.Name #>Proxy {
+
+
+<# foreach (var m in Contract.Methods) {
+    if (m.Safe) { #>
+    public <#=m.ReturnType#> <#=m.Name#>() {
+    }
+    
+<#  } else { #>
+    public async Task<Neo.UInt256> <#=m.Name#>Async() {
+    }
+    
+    public <#=m.ReturnType#> <#=m.Name#>() {
+    }
+
+<# } } #>
+}
