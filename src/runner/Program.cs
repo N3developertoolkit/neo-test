@@ -22,7 +22,7 @@ using Nito.Disposables;
 namespace Neo.Test.Runner
 {
     [Command("neo-test-runner", Description = "Neo N3 smart contract runner for unit testing", UsePagerForHelpText = false)]
-
+    [VersionOptionFromMember("--version", MemberName = nameof(GetVersion))]
     class Program
     {
         static Task<int> Main(string[] args)
@@ -39,6 +39,8 @@ namespace Neo.Test.Runner
 
             return app.ExecuteAsync(args);
         }
+
+        internal static string GetVersion() => ThisAssembly.AssemblyInformationalVersion;
 
         [Argument(0, Description = "Path to neo-invoke JSON file")]
         [Required]
