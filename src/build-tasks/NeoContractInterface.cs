@@ -15,12 +15,17 @@ namespace Neo.BuildTasks
             }
             else
             {
-                var manifest = NeoManifest.Load(ManifestFile);
-                var source = ContractGenerator.GenerateContractInterface(manifest, RootNamespace);
-                if (!string.IsNullOrEmpty(source))
+                try
                 {
+                    var manifest = NeoManifest.Load(ManifestFile);
+                    var source = ContractGenerator.GenerateContractInterface(manifest, RootNamespace, InterfaceName);
+                    if (string.IsNullOrEmpty(source)) throw new InvalidOperationException("Contract interface generation failed");
                     Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
                     FileOperationWithRetry(() => File.WriteAllText(this.OutputFile, source));
+                }
+                catch (Exception ex)
+                {
+                    Log.LogError(ex.Message);
                 }
             }
             return !Log.HasLoggedErrors;
@@ -33,6 +38,8 @@ namespace Neo.BuildTasks
         public string ManifestFile { get; set; } = "";
 
         public string RootNamespace { get; set; } = "";
+
+        public string InterfaceName { get; set; } = "";
 
         static void FileOperationWithRetry(Action operation)
         {

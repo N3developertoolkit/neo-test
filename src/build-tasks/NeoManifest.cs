@@ -28,8 +28,8 @@ namespace Neo.BuildTasks
 
         public static NeoManifest Load(string manifestPath)
         {
-            var text = File.ReadAllText(manifestPath) ?? throw new FileNotFoundException("", manifestPath);
-            var json = SimpleJSON.JSON.Parse(text) ?? throw new InvalidOperationException();
+            if (!File.Exists(manifestPath)) throw new FileNotFoundException("Manifest not found", manifestPath);
+            var json = SimpleJSON.JSON.Parse(File.ReadAllText(manifestPath)) ?? throw new InvalidOperationException("Manifest JSON parsing failed");
             return NeoManifest.FromManifestJson(json);
         }
 

@@ -15,6 +15,18 @@ may not exactly match a publicly released version.
 
 ## [Unreleased]
 
+### Added 
+
+* `InterfaceName` property for `NeoContractInterface` Task
+* `ContractNameOverride` MSBuild item property to enable specifying name of generated contract interface
+
+### Changed
+
+* Modified Neo.BuildTasks.targets to enable specifying path to .manifest.json file via `<NeoContractInfo>` MSBuild items.
+* `NeoContractInterface` fails if generated contract interface name isn't a valid C# type name
+
+## [3.3] - 2022-06-28
+
 ### Added
 
 * NeoCsc and NeoExpressBatch MSBuild tasks (plus .targets file)
@@ -24,7 +36,6 @@ may not exactly match a publicly released version.
 * `NativeContracts` static class 
   * `NeoToken` and `GasToken` contract hashes
 * `Nep17Token` and `NeoToken` contract interfaces for use with `NeoTestHarness`
-
 
 ### Changed
 

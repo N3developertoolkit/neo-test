@@ -95,7 +95,8 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="ConfigureNeoContractInterface" BeforeTargets="$(BuildDependsOn);Build" Condition="'@(NeoContractReference)'!=''">
+  <Target Name="ProcessNeoContractReferences" BeforeTargets="$(BuildDependsOn);Build" Condition="'@(NeoContractReference)'!=''">
+
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
@@ -106,10 +107,16 @@
 
     <Message Importance="High" Text="NeoContractInfo @(NeoContractInfo) -> %(ManifestPath)" />
 
+  </Target>
+
+  <Target Name="ConfigureNeoContractInterface" Condition="'@(NeoContractInfo)'!=''"
+          DependsOnTargets="ProcessNeoContractReferences" BeforeTargets="$(BuildDependsOn);Build" >
+
     <ItemGroup>
       <NeoContractGeneration Include="%(NeoContractInfo.Identity)">
         <ManifestPath>%(NeoContractInfo.ManifestPath)</ManifestPath>
         <OutputPath>$(IntermediateOutputPath)%(Identity).contract-interface.cs</OutputPath>
+        <ContractNameOverride>%(NeoContractInfo.ContractNameOverride)</ContractNameOverride>
       </NeoContractGeneration>
     </ItemGroup>
 
@@ -117,15 +124,15 @@
 
   </Target>
 
-  <Target Name="GenerateNeoContractInterface" AfterTargets="ResolveProjectReferences" 
-    DependsOnTargets="ConfigureNeoContractInterface"
-    Condition="'@(NeoContractReference)'!=''"
-    Inputs="%(NeoContractGeneration.ManifestPath)" Outputs="%(NeoContractGeneration.OutputPath)">
+  <Target Name="GenerateNeoContractInterface" 
+          DependsOnTargets="ConfigureNeoContractInterface" AfterTargets="ResolveProjectReferences" 
+          Inputs="%(NeoContractGeneration.ManifestPath)" Outputs="%(NeoContractGeneration.OutputPath)">
 
     <NeoContractInterface
       ManifestFile="%(NeoContractGeneration.ManifestPath)"
       OutputFile="%(NeoContractGeneration.OutputPath)"
-      RootNamespace="$(RootNamespace)"/>
+      RootNamespace="$(RootNamespace)"
+      InterfaceName="%(NeoContractGeneration.ContractNameOverride)"/>
 
     <ItemGroup>
       <Compile Include="%(NeoContractGeneration.OutputPath)" />
