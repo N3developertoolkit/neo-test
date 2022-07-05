@@ -47,7 +47,7 @@
       Inline="$(NeoCscOptimize)"
       Optimize="$(NeoCscOptimize)"
       Output="$(NeoContractOutput)"
-      Sources="@(Compile)"
+      Sources="$(MSBuildProjectFullPath)"
       WorkingDirectory="$(MSBuildProjectDirectory)"/>
   </Target>
 
