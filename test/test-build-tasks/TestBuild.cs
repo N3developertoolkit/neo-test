@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using Microsoft.Build.Utilities.ProjectCreation;
 using Neo.BuildTasks;
@@ -6,53 +5,8 @@ using Xunit;
 
 namespace build_tasks
 {
-    public class TestBuild : MSBuildTestBase
+    public partial class TestBuild : MSBuildTestBase
     {
-        static void InstallNccs(string path, string version = "3.3.0")
-        {
-            var runner = new ProcessRunner();
-            runner.RunThrow("dotnet", "new tool-manifest", path);
-            runner.RunThrow("dotnet", $"tool install neo.compiler.csharp --version {version}", path);
-        }
-
-        static void WriteSource(string path, string source, string filename = "contract.cs")
-        {
-            var fullPath = Path.Combine(path, filename);
-            File.WriteAllText(fullPath, source);
-        }
-
-        static ProjectCreator CreateContractProject(string rootPath, string source)
-        {
-            WriteSource(rootPath, source);
-            return ProjectCreator.Templates.SdkCsproj(
-                path: Path.Combine(rootPath, "test.csproj"),
-                targetFramework: "net6.0")
-                .Property("NeoContractName", "$(AssemblyName)")
-                .ImportNeoBuildTools()
-                .ItemPackageReference("Neo.SmartContract.Framework", version: "3.3.0");
-        }
-
-        static void TestBuildContract(string source)
-        {
-            var testRootPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            try
-            {
-                Directory.CreateDirectory(testRootPath);
-                InstallNccs(testRootPath);
-
-                WriteSource(testRootPath, source);
-
-                var creator = CreateContractProject(testRootPath, source);
-                creator.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
-
-                Assert.True(result, string.Join('\n', buildOutput.Errors));
-            }
-            finally
-            {
-                if (Directory.Exists(testRootPath)) Directory.Delete(testRootPath, true);
-            }
-        }
-
         [Fact]
         public void can_build_contract_that_calls_assert_with_message()
         {
@@ -84,5 +38,35 @@ using Neo.SmartContract.Framework;
             TestBuildContract(source);
         }
 
+        static void TestBuildContract(string source, string sourceName = "contract.cs")
+        {
+            using var testRootPath = new TestRootPath();
+            InstallNccs(testRootPath);
+
+            var sourcePath = Path.Combine(testRootPath, sourceName);
+            File.WriteAllText(sourcePath, source);
+
+            var creator = CreateContractProject(testRootPath);
+            creator.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
+
+            Assert.True(result, string.Join('\n', buildOutput.Errors));
+        }
+
+        static ProjectCreator CreateContractProject(string rootPath, string projectName = "test.csproj")
+        {
+            return ProjectCreator.Templates.SdkCsproj(
+                path: Path.Combine(rootPath, projectName),
+                targetFramework: "net6.0")
+                .Property("NeoContractName", "$(AssemblyName)")
+                .ImportNeoBuildTools()
+                .ItemPackageReference("Neo.SmartContract.Framework", version: "3.3.0");
+        }
+
+        static void InstallNccs(string path, string version = "3.3.0")
+        {
+            var runner = new ProcessRunner();
+            runner.RunThrow("dotnet", "new tool-manifest", path);
+            runner.RunThrow("dotnet", $"tool install neo.compiler.csharp --version {version}", path);
+        }
     }
 }
