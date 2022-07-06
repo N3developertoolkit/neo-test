@@ -9,7 +9,6 @@ env:
 
 jobs:
   build:
-    if: startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -36,6 +35,7 @@ jobs:
         name: packages
         path: ./out
     - name: Create Release
+      if: startsWith(github.ref, 'refs/heads/release/')
       uses: marvinpinto/action-automatic-releases@v1.1.1
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -45,10 +45,14 @@ jobs:
         files: |
           ./out/*
     - name: Push to Nuget.org
+      if: startsWith(github.ref, 'refs/heads/release/')
       run: dotnet nuget push ${{ format('./out/Neo.Assertions.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
     - name: Push to Nuget.org
+      if: startsWith(github.ref, 'refs/heads/release/')
       run: dotnet nuget push ${{ format('./out/Neo.BuildTasks.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
     - name: Push to Nuget.org
+      if: startsWith(github.ref, 'refs/heads/release/')
       run: dotnet nuget push ${{ format('./out/Neo.Test.Harness.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
     - name: Push to Nuget.org
+      if: startsWith(github.ref, 'refs/heads/release/')
       run: dotnet nuget push ${{ format('./out/Neo.Test.Runner.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace build_tasks
 {
-    public partial class TestBuild
+    public partial class TestMSBuild
     {
         internal class TestRootPath : IDisposable
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Utilities.ProjectCreation;
@@ -53,7 +54,8 @@ namespace build_tasks
 
         public static ProjectCreator AssertBuild(this ProjectCreator @this, ITestOutputHelper? output = null)
         {
-            @this.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
+            var globalProperties = new Dictionary<string, string>() { ["Configuration"] = "Debug" };
+            @this.TryBuild(restore: true, globalProperties, out bool result, out BuildOutput buildOutput);
             if (!result)
             {
                 if (output != null)
@@ -77,7 +79,7 @@ namespace build_tasks
         public static ProjectCreator ImportNeoBuildTools(this ProjectCreator @this)
         {
             var buildTasksPath = typeof(NeoCsc).Assembly.Location;
-            var testBuildAssmblyDirectory = Path.GetDirectoryName(typeof(TestBuild).Assembly.Location)
+            var testBuildAssmblyDirectory = Path.GetDirectoryName(typeof(TestMSBuild).Assembly.Location)
                 ?? throw new Exception("Couldn't get directory name of TestBuild assembly");
             var targetsPath = Path.Combine(testBuildAssmblyDirectory, "build", "Neo.BuildTasks.targets");
 
