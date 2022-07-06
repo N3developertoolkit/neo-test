@@ -7,11 +7,11 @@ using Xunit.Abstractions;
 
 namespace build_tasks
 {
-    public partial class TestBuild : MSBuildTestBase
+    public partial class TestMSBuild : MSBuildTestBase
     {
         readonly ITestOutputHelper output;
 
-        public TestBuild(ITestOutputHelper output)
+        public TestMSBuild(ITestOutputHelper output)
         {
             this.output = output;
         }
@@ -94,13 +94,7 @@ using Neo.SmartContract.Framework;
                 .ItemInclude("NeoContractGeneration", "registrar", metadata: metadata)
                 .AssertBuild(output);
 
-            var generatedCodePath = Path.Combine(testRootPath, "obj/Debug/net6.0/registrar.contract-interface.cs");
-            output.WriteLine($"generatedCodePath: {generatedCodePath}");
-            foreach (var file in Directory.EnumerateFiles(testRootPath, "", SearchOption.AllDirectories))
-            {
-                output.WriteLine(file);
-            }
-            Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
+            CheckGeneratedPath(testRootPath, "obj/Debug/net6.0/registrar.contract-interface.cs");
         }
 
         [Fact]
@@ -145,13 +139,20 @@ using Neo.SmartContract.Framework;
                 .ItemInclude("NeoContractReference", srcCreator.FullPath, metadata: metadata)
                 .AssertBuild(output);
 
-            var generatedCodePath = Path.Combine(testRootPath, "test/obj/Debug/net6.0/registrar.contract-interface.cs");
-            output.WriteLine($"generatedCodePath: {generatedCodePath}");
-            foreach (var file in Directory.EnumerateFiles(testRootPath, "", SearchOption.AllDirectories))
+            CheckGeneratedPath(testRootPath, "test/obj/Debug/net6.0/registrar.contract-interface.cs");
+        }
+
+        void CheckGeneratedPath(string testRootPath, string relativeGeneratedPath)
+        {
+            var generatedCodePath = Path.Combine(testRootPath, relativeGeneratedPath);
+            if (!File.Exists(generatedCodePath))
             {
-                output.WriteLine(file);
+                foreach (var file in Directory.EnumerateFiles(testRootPath, "", SearchOption.AllDirectories))
+                {
+                    output.WriteLine(file);
+                }
+                throw new FileNotFoundException("contract interface not generated", generatedCodePath);
             }
-            Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
         }
 
         public static ProjectCreator CreateDotNetSixProject(string directory, string projectName = "project.csproj")
