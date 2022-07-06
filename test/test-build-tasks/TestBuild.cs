@@ -95,6 +95,7 @@ using Neo.SmartContract.Framework;
                 .AssertBuild(output);
 
             var generatedCodePath = Path.Combine(testRootPath, @"obj\Debug\net6.0\registrar.contract-interface.cs");
+            output.WriteLine($"generatedCodePath {generatedCodePath}");
             foreach (var file in Directory.EnumerateFiles(testRootPath, string.Empty, SearchOption.AllDirectories))
             {
                 output.WriteLine(file);
