@@ -95,6 +95,10 @@ using Neo.SmartContract.Framework;
                 .AssertBuild(output);
 
             var generatedCodePath = Path.Combine(testRootPath, @"obj\Debug\net6.0\registrar.contract-interface.cs");
+            foreach (var file in Directory.EnumerateFiles(testRootPath, string.Empty, SearchOption.AllDirectories))
+            {
+                output.WriteLine(file);
+            }
             Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
         }
 
