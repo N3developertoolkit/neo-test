@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <NeoBuildTasksAssembly>c:\Users\harry\Source\neo\seattle\test\test\test-build-tasks\bin\Debug\net6.0\neo-build-tasks.dll</NeoBuildTasksAssembly>
+  </PropertyGroup>
+  <Import Project="C:\Users\harry\Source\neo\seattle\test\src\build-tasks\build\Neo.BuildTasks.targets" />
+  <ItemGroup>
+    <PackageReference Include="Neo">
+      <Version>3.3.1</Version>
+    </PackageReference>
+    <!-- <ProjectReference Include="C:\Users\harry\Source\neo\seattle\test\.testgen\avts4uoy.ujh\src\registrar.csproj" /> -->
+    <NeoContractReference Include="C:\Users\harry\Source\neo\seattle\test\.testgen\avts4uoy.ujh\src\registrar.csproj" />
+  </ItemGroup>
+</Project>

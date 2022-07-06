@@ -9,15 +9,18 @@ namespace build_tasks
         {
             readonly string Value;
 
-            public TestRootPath()
+            public TestRootPath(string root = "")
             {
-                Value = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                root = string.IsNullOrEmpty(root)
+                    ? Path.GetTempPath()
+                    : root;
+                Value = Path.Combine(root, Path.GetRandomFileName());
                 Directory.CreateDirectory(Value);
             }
 
             public void Dispose()
             {
-                if (Directory.Exists(Value)) Directory.Delete(Value, true);
+                // if (Directory.Exists(Value)) Directory.Delete(Value, true);
             }
 
             public static implicit operator string(TestRootPath p) => p.Value;

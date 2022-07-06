@@ -95,22 +95,37 @@
     <Message Importance="High" Text="NeoExpress Batch -> $(NeoExpressNormalizedBatchFile)" />
   </Target>
 
-  <Target Name="ConfigureNeoContractReference"
-          BeforeTargets="ConfigureNeoContractInterface;BeforeResolveReferences">
+  <Target Name="RestoreNeoContractReferences"
+          Condition="'@(NeoContractReference)'!=''"
+          BeforeTargets="_GenerateRestoreProjectPathItemsPerFramework">
+    <ItemGroup>
+      <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PrepareNeoContractReferences"
+          Condition="'@(NeoContractReference)'!=''"
+          BeforeTargets="ResolveProjectReferences">
 
     <ItemGroup>
       <ProjectReference Include="@(NeoContractReference)" ReferenceOutputAssembly="false" />
     </ItemGroup>
  
     <MSBuild Projects="@(NeoContractReference)" Targets="GetNeoContractInfo">
-      <Output TaskParameter="TargetOutputs" ItemName="NeoContractInfo" />
+      <Output TaskParameter="TargetOutputs" ItemName="_NeoContractReferenceInfo" />
     </MSBuild>
 
-    <Message Importance="High" Text="NeoContractReference %(NeoContractReference.Identity)" />
+    <ItemGroup>
+      <NeoContractGeneration Include="%(_NeoContractReferenceInfo.Identity)">
+        <ManifestPath>%(_NeoContractReferenceInfo.ManifestPath)</ManifestPath>
+        <OutputPath>$(IntermediateOutputPath)%(Identity).contract-interface.cs</OutputPath>
+      </NeoContractGeneration>
+    </ItemGroup>
 
+    <Message Importance="High" Text="PrepareNeoContractReferences @(_NeoContractReferenceInfo) -> %(ManifestPath)" />
   </Target>
 
-  <Target Name="ConfigureNeoContractInterface" BeforeTargets="$(BuildDependsOn);Build"
+  <!-- <Target Name="ConfigureNeoContractInterface" BeforeTargets="$(BuildDependsOn);Build"
           DependsOnTargets="ConfigureNeoContractReference">
 
     <ItemGroup>
@@ -122,12 +137,14 @@
 
     <Message Importance="High" Text="NeoContractInterface %(NeoContractInfo.Identity)" />
 
-  </Target>
+  </Target> -->
 
-  <Target Name="GenerateNeoContractInterface" AfterTargets="ResolveProjectReferences" 
-    DependsOnTargets="ConfigureNeoContractInterface"
-    Condition="'@(NeoContractInfo)'!=''"
-    Inputs="%(NeoContractGeneration.ManifestPath)" Outputs="%(NeoContractGeneration.OutputPath)">
+  <Target Name="GenerateNeoContractInterface" 
+          AfterTargets="ResolveProjectReferences" 
+          Inputs="%(NeoContractGeneration.ManifestPath)" 
+          Outputs="%(NeoContractGeneration.OutputPath)">
+
+    <Message Importance="High" Text="Generating %(NeoContractGeneration.Identity) contract interface" />
 
     <NeoContractInterface
       ManifestFile="%(NeoContractGeneration.ManifestPath)"
@@ -137,8 +154,6 @@
     <ItemGroup>
       <Compile Include="%(NeoContractGeneration.OutputPath)" />
     </ItemGroup>
-
-    <Message Importance="High" Text="GenerateNeoContractInterface @(NeoContractGeneration.Identity)" />
 
   </Target>
 
