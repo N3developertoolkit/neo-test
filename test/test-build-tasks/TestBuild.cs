@@ -96,7 +96,7 @@ using Neo.SmartContract.Framework;
 
             var generatedCodePath = Path.Combine(testRootPath, "obj/Debug/net6.0/registrar.contract-interface.cs");
             output.WriteLine($"generatedCodePath: {generatedCodePath}");
-            foreach (var file in Directory.EnumerateFiles(generatedCodePath, "", SearchOption.AllDirectories))
+            foreach (var file in Directory.EnumerateFiles(testRootPath, "", SearchOption.AllDirectories))
             {
                 output.WriteLine(file);
             }
@@ -147,7 +147,7 @@ using Neo.SmartContract.Framework;
 
             var generatedCodePath = Path.Combine(testRootPath, "test/obj/Debug/net6.0/registrar.contract-interface.cs");
             output.WriteLine($"generatedCodePath: {generatedCodePath}");
-            foreach (var file in Directory.EnumerateFiles(generatedCodePath, "", SearchOption.AllDirectories))
+            foreach (var file in Directory.EnumerateFiles(testRootPath, "", SearchOption.AllDirectories))
             {
                 output.WriteLine(file);
             }
