@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Build.Utilities.ProjectCreation;
 using Neo.BuildTasks;
@@ -36,6 +37,52 @@ using Neo.SmartContract.Framework;
     }
 ";
             TestBuildContract(source);
+        }
+
+        [Fact]
+        public void can_generate_contract_from_NeoContractInfo()
+        {
+            using var testRootPath = new TestRootPath();
+            var manifestPath = Path.Combine(testRootPath, "contract.manifest.json");
+            TestFiles.CopyTo("registrar.manifest", manifestPath);
+
+            var creator = ProjectCreator.Templates.SdkCsproj(
+                path: Path.Combine(testRootPath, "tests.csproj"),
+                targetFramework: "net6.0")
+                .ImportNeoBuildTools()
+                .ReferenceNeo()
+                .ItemInclude("NeoContractInfo", "registrar", 
+                    metadata: new Dictionary<string, string?>() { { "ManifestPath", manifestPath } })
+                .Save();
+
+            creator.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
+            Assert.True(result, string.Join('\n', buildOutput.Errors));
+            Assert.True(File.Exists(Path.Combine(testRootPath, @"obj\Debug\net6.0\registrar.contract-interface.cs")),
+                "contract interface not generated");
+        }
+
+        [Fact]
+        public void can_generate_contract_from_NeoContractReference()
+        {
+            using var testRootPath = new TestRootPath();
+
+            var srcDir = Path.Combine(testRootPath, "src");
+            TestFiles.CopyTo("registrar.source", Path.Combine(srcDir, "contract.cs"));
+            var srcCreator = testRootPath.CreateNeoProject("src/registrar.csproj")
+                .Property("NeoContractName", "$(AssemblyName)")
+                .ImportNeoBuildTools()
+                .ReferenceNeoScFx()
+                .AssertBuild();
+
+            var testDir = Path.Combine(testRootPath, "test");
+            var testCreator = testRootPath.CreateNeoProject("test/registrarTests.csproj")
+                .ImportNeoBuildTools()
+                .ReferenceNeo()
+                .ItemInclude("NeoContractReference", srcCreator.FullPath)
+                .AssertBuild();
+
+            Assert.True(File.Exists(Path.Combine(testDir, @"obj\Debug\net6.0\registrar.contract-interface.cs")),
+                "contract interface not generated");
         }
 
         static void TestBuildContract(string source, string sourceName = "contract.cs")

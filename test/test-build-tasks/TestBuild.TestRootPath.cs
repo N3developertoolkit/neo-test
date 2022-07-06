@@ -5,7 +5,7 @@ namespace build_tasks
 {
     public partial class TestBuild
     {
-        class TestRootPath : IDisposable
+        internal class TestRootPath : IDisposable
         {
             readonly string Value;
 
