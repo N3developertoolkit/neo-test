@@ -94,12 +94,7 @@ using Neo.SmartContract.Framework;
                 .ItemInclude("NeoContractGeneration", "registrar", metadata: metadata)
                 .AssertBuild(output);
 
-            var generatedCodePath = Path.Combine(testRootPath, @"obj\Debug\net6.0\registrar.contract-interface.cs");
-            output.WriteLine($"generatedCodePath {generatedCodePath}");
-            foreach (var file in Directory.EnumerateFiles(testRootPath, string.Empty, SearchOption.AllDirectories))
-            {
-                output.WriteLine(file);
-            }
+            var generatedCodePath = Path.Combine(testRootPath, "obj/Debug/net6.0/registrar.contract-interface.cs");
             Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
         }
 
@@ -145,7 +140,7 @@ using Neo.SmartContract.Framework;
                 .ItemInclude("NeoContractReference", srcCreator.FullPath, metadata: metadata)
                 .AssertBuild(output);
 
-            var generatedCodePath = Path.Combine(testRootPath, @"test\obj\Debug\net6.0\registrar.contract-interface.cs");
+            var generatedCodePath = Path.Combine(testRootPath, "test/obj/Debug/net6.0/registrar.contract-interface.cs");
             Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
         }
 
