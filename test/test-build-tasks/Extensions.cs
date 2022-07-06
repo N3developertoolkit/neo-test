@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Build.Utilities.ProjectCreation;
 using Neo.BuildTasks;
+using Xunit.Abstractions;
 
 namespace build_tasks
 {
@@ -50,10 +51,26 @@ namespace build_tasks
             }
         }
 
-        public static ProjectCreator AssertBuild(this ProjectCreator @this)
+        public static ProjectCreator AssertBuild(this ProjectCreator @this, ITestOutputHelper? output = null)
         {
             @this.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
-            Xunit.Assert.True(result, string.Join('\n', buildOutput.Errors));
+            if (!result)
+            {
+                if (output != null)
+                {
+                    foreach (var m in buildOutput.Messages)
+                    {
+                        output.WriteLine(m);
+                    }
+                }
+
+                switch (buildOutput.Errors.Count)
+                {
+                    case 0: throw new Exception("TryBuild failed");
+                    case 1: throw new Exception(buildOutput.Errors.First());
+                    default: throw new AggregateException(buildOutput.Errors.Select(e => new Exception(e)));
+                }
+            }
             return @this;
         }
 

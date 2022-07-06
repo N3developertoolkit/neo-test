@@ -3,11 +3,19 @@ using System.IO;
 using Microsoft.Build.Utilities.ProjectCreation;
 using Neo.BuildTasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace build_tasks
 {
     public partial class TestBuild : MSBuildTestBase
     {
+        readonly ITestOutputHelper output;
+
+        public TestBuild(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
+
         [Fact]
         public void can_build_contract_that_calls_assert_with_message()
         {
@@ -39,7 +47,7 @@ using Neo.SmartContract.Framework;
             test_BuildContract(source);
         }
 
-        static void test_BuildContract(string source, string sourceName = "contract.cs")
+        void test_BuildContract(string source, string sourceName = "contract.cs")
         {
             using var testRootPath = new TestRootPath();
             InstallNccs(testRootPath);
@@ -51,7 +59,7 @@ using Neo.SmartContract.Framework;
                 .Property("NeoContractName", "$(AssemblyName)")
                 .ImportNeoBuildTools()
                 .ItemPackageReference("Neo.SmartContract.Framework", version: "3.3.0")
-                .AssertBuild();
+                .AssertBuild(output);
         }
 
         [Fact]
@@ -70,7 +78,7 @@ using Neo.SmartContract.Framework;
             test_NeoContractGeneration(testRootPath, manifest, "Registrar");
         }
 
-        static void test_NeoContractGeneration(string testRootPath, string manifest, string contractNameOverride = "")
+        void test_NeoContractGeneration(string testRootPath, string manifest, string contractNameOverride = "")
         {
             var manifestPath = Path.Combine(testRootPath, "contract.manifest.json");
             File.WriteAllText(manifestPath, manifest);
@@ -84,7 +92,7 @@ using Neo.SmartContract.Framework;
                 .ImportNeoBuildTools()
                 .ReferenceNeo()
                 .ItemInclude("NeoContractGeneration", "registrar", metadata: metadata)
-                .AssertBuild();
+                .AssertBuild(output);
 
             var generatedCodePath = Path.Combine(testRootPath, @"obj\Debug\net6.0\registrar.contract-interface.cs");
             Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
@@ -106,7 +114,7 @@ using Neo.SmartContract.Framework;
             test_NeoContractReference(testRootPath, source, "Registrar");
         }
 
-        static void test_NeoContractReference(string testRootPath, string source, string contractNameOverride = "")
+        void test_NeoContractReference(string testRootPath, string source, string contractNameOverride = "")
         {
             InstallNccs(testRootPath);
 
@@ -130,7 +138,7 @@ using Neo.SmartContract.Framework;
                 .ImportNeoBuildTools()
                 .ReferenceNeo()
                 .ItemInclude("NeoContractReference", srcCreator.FullPath, metadata: metadata)
-                .AssertBuild();
+                .AssertBuild(output);
 
             var generatedCodePath = Path.Combine(testRootPath, @"test\obj\Debug\net6.0\registrar.contract-interface.cs");
             Assert.True(File.Exists(generatedCodePath), "contract interface not generated");
