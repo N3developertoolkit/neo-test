@@ -40,7 +40,7 @@ using Neo.SmartContract.Framework;
         }
 
         [Fact]
-        public void can_generate_contract_from_NeoContractInfo()
+        public void can_generate_contract_from_NeoContractGeneration()
         {
             using var testRootPath = new TestRootPath();
             var manifestPath = Path.Combine(testRootPath, "contract.manifest.json");
@@ -51,22 +51,18 @@ using Neo.SmartContract.Framework;
                 targetFramework: "net6.0")
                 .ImportNeoBuildTools()
                 .ReferenceNeo()
-                .ItemInclude("NeoContractInfo", "registrar", 
+                .ItemInclude("NeoContractGeneration", "registrar", 
                     metadata: new Dictionary<string, string?>() { { "ManifestPath", manifestPath } })
-                .Save();
-
-            creator.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
-            Assert.True(result, string.Join('\n', buildOutput.Errors));
+                .AssertBuild();
             Assert.True(File.Exists(Path.Combine(testRootPath, @"obj\Debug\net6.0\registrar.contract-interface.cs")),
                 "contract interface not generated");
         }
 
-        const string TEST_ROOT_PATH = @"C:\Users\harry\Source\neo\seattle\test\.testgen";
-
         [Fact]
         public void can_generate_contract_from_NeoContractReference()
         {
-            using var testRootPath = new TestRootPath(TEST_ROOT_PATH);
+            using var testRootPath = new TestRootPath();
+            InstallNccs(testRootPath);
 
             var srcDir = Path.Combine(testRootPath, "src");
             TestFiles.CopyTo("registrar.source", Path.Combine(srcDir, "contract.cs"));
@@ -81,11 +77,10 @@ using Neo.SmartContract.Framework;
                 .ImportNeoBuildTools()
                 .ReferenceNeo()
                 .ItemInclude("NeoContractReference", srcCreator.FullPath)
-                .Save();
+                .AssertBuild();
 
-            // testCreator.AssertBuild();
-            // Assert.True(File.Exists(Path.Combine(testDir, @"obj\Debug\net6.0\registrar.contract-interface.cs")),
-            //     "contract interface not generated");
+            Assert.True(File.Exists(Path.Combine(testDir, @"obj\Debug\net6.0\registrar.contract-interface.cs")),
+                "contract interface not generated");
         }
 
         static void TestBuildContract(string source, string sourceName = "contract.cs")
@@ -96,20 +91,12 @@ using Neo.SmartContract.Framework;
             var sourcePath = Path.Combine(testRootPath, sourceName);
             File.WriteAllText(sourcePath, source);
 
-            var creator = CreateContractProject(testRootPath);
-            creator.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
-
-            Assert.True(result, string.Join('\n', buildOutput.Errors));
-        }
-
-        static ProjectCreator CreateContractProject(string rootPath, string projectName = "test.csproj")
-        {
-            return ProjectCreator.Templates.SdkCsproj(
-                path: Path.Combine(rootPath, projectName),
-                targetFramework: "net6.0")
+            var creator = testRootPath.CreateNeoProject()
                 .Property("NeoContractName", "$(AssemblyName)")
                 .ImportNeoBuildTools()
-                .ItemPackageReference("Neo.SmartContract.Framework", version: "3.3.0");
+                .ItemPackageReference("Neo.SmartContract.Framework", version: "3.3.0")
+                .AssertBuild();
+
         }
 
         static void InstallNccs(string path, string version = "3.3.0")
