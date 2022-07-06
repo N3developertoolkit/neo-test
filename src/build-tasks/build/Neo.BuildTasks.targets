@@ -127,7 +127,8 @@
 
     <ItemGroup>
       <NeoContractGeneration Include="%(_NeoContractReferenceInfo.Identity)">
-        <ManifestPath>%(_NeoContractReferenceInfo.ManifestPath)</ManifestPath>
+        <ManifestPath>%(ManifestPath)</ManifestPath>
+        <ContractNameOverride>$([MSBuild]::ValueOrDefault('%(_NeoContractReferenceInfo.ContractNameOverride)', ''))</ContractNameOverride>
       </NeoContractGeneration>
     </ItemGroup>
 
@@ -141,8 +142,8 @@
 
     <ItemGroup>
       <NeoContractGeneration Include="@(NeoContractGeneration)">
-        <ManifestPath>%(ManifestPath)</ManifestPath>
         <OutputPath>$([MSBuild]::ValueOrDefault('%(NeoContractGeneration.OutputPath)', '$(IntermediateOutputPath)%(Identity).contract-interface.cs'))</OutputPath>
+        <ContractNameOverride>$([MSBuild]::ValueOrDefault('%(NeoContractGeneration.ContractNameOverride)', ''))</ContractNameOverride>
       </NeoContractGeneration>
     </ItemGroup>
 
@@ -159,7 +160,8 @@
     <NeoContractInterface
       ManifestFile="%(NeoContractGeneration.ManifestPath)"
       OutputFile="%(NeoContractGeneration.OutputPath)"
-      RootNamespace="$(RootNamespace)"/>
+      RootNamespace="$(RootNamespace)"
+      ContractNameOverride="%(ContractNameOverride)" />
 
     <ItemGroup>
       <Compile Include="%(NeoContractGeneration.OutputPath)" />

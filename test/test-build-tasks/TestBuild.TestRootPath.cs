@@ -8,9 +8,11 @@ namespace build_tasks
         internal class TestRootPath : IDisposable
         {
             readonly string Value;
+            readonly bool deleteOnDispose;
 
             public TestRootPath(string root = "")
             {
+                deleteOnDispose = string.IsNullOrEmpty(root);
                 root = string.IsNullOrEmpty(root)
                     ? Path.GetTempPath()
                     : root;
@@ -20,7 +22,7 @@ namespace build_tasks
 
             public void Dispose()
             {
-                // if (Directory.Exists(Value)) Directory.Delete(Value, true);
+                if (deleteOnDispose && Directory.Exists(Value)) Directory.Delete(Value, true);
             }
 
             public static implicit operator string(TestRootPath p) => p.Value;

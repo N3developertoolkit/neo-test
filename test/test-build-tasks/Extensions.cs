@@ -78,13 +78,5 @@ namespace build_tasks
         {
             return @this.ItemPackageReference("Neo.SmartContract.Framework", version: version);
         }
-
-        public static ProjectCreator CreateNeoProject(this TestBuild.TestRootPath @this, string projectName = "project.csproj")
-        {
-            return ProjectCreator.Templates.SdkCsproj(
-                path: Path.Combine(@this, projectName),
-                targetFramework: "net6.0");
-        }
-        
     }
 }
