@@ -147,7 +147,7 @@ using Neo.SmartContract.Framework;
         }
 
         [Theory, CombinatorialData]
-        public void debug_info_generation([CombinatorialValues("Debug", "Release")]string config, bool generateDebugInfo)
+        public void debug_info_generation([CombinatorialValues("Debug", "Release")] string config, bool generateDebugInfo)
         {
             using var testRootPath = new TestRootPath();
             InstallNccs(testRootPath, CURRENT_NEO_VERSION);
