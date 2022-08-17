@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Build.Utilities.ProjectCreation;
@@ -51,9 +52,10 @@ namespace build_tasks
             }
         }
 
-        public static ProjectCreator AssertBuild(this ProjectCreator @this, ITestOutputHelper? output = null)
+        public static ProjectCreator AssertBuild(this ProjectCreator @this, ITestOutputHelper? output = null, string configuration = "Debug")
         {
-            @this.TryBuild(restore: true, out bool result, out BuildOutput buildOutput);
+            var props = new Dictionary<string, string> { { "Configuration", configuration } };
+            @this.TryBuild(restore: true, props, out bool result, out BuildOutput buildOutput);
             if (!result)
             {
                 if (output != null)
