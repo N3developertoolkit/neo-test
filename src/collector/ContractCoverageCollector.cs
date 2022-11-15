@@ -13,6 +13,13 @@ namespace Neo.Collector
         DataCollectionEvents events;
         DataCollectionLogger logger;
         DataCollectionContext dataCtx;
+        const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
+        readonly string coveragePath;
+
+        public ContractCoverageCollector()
+        {
+            coveragePath = GetTempPath();
+        }
 
         public override void Initialize(
                 System.Xml.XmlElement configurationElement,
@@ -21,7 +28,7 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            logger.LogWarning(environmentContext.SessionDataCollectionContext, "ContractCoverageCollector::Initialize");
+            logger.LogWarning(environmentContext.SessionDataCollectionContext, "Initialize");
 
             this.logger = logger;
             this.events = events;
@@ -36,7 +43,7 @@ namespace Neo.Collector
 
         protected override void Dispose(bool disposing)
         {
-            logger.LogWarning(dataCtx, "ContractCoverageCollector::Dispose");
+            logger.LogWarning(dataCtx, "Dispose");
 
             events.SessionStart -= OnSessionStart;
             events.SessionEnd -= OnSessionEnd;
@@ -49,11 +56,8 @@ namespace Neo.Collector
 
         public IEnumerable<KeyValuePair<string, string>> GetTestExecutionEnvironmentVariables()
         {
-            logger.LogWarning(dataCtx, $"ContractCoverageCollector::GetTestExecutionEnvironmentVariables");
-
-            const string envName = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
-            var envValue = GetTempPath();
-            yield return new KeyValuePair<string, string>(envName, envValue);
+            logger.LogWarning(dataCtx, $"GetTestExecutionEnvironmentVariables {coveragePath}");
+            yield return new KeyValuePair<string, string>(COVERAGE_PATH_ENV_NAME, coveragePath);
         }
 
         static string GetTempPath()
@@ -70,27 +74,27 @@ namespace Neo.Collector
 
         private void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"ContractCoverageCollector::OnSessionStart {e.Context.SessionId}");
+            logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
         }
 
         private void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"ContractCoverageCollector::SessionEndEventArgs {e.Context.SessionId}");
+            logger.LogWarning(dataCtx, $"SessionEndEventArgs {e.Context.SessionId}");
         }
 
         private void OnTestHostLaunched(object sender, TestHostLaunchedEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"ContractCoverageCollector::OnTestHostLaunched {e.Context.SessionId}");
+            logger.LogWarning(dataCtx, $"OnTestHostLaunched {e.Context.SessionId}");
         }
 
         private void OnTestCaseStart(object sender, TestCaseStartEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"ContractCoverageCollector::OnTestCaseStart {e.Context.SessionId} {e.TestCaseName}");
+            logger.LogWarning(dataCtx, $"OnTestCaseStart {e.Context.SessionId} {e.TestCaseName}");
         }
 
         private void OnTestCaseEnd(object sender, TestCaseEndEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"ContractCoverageCollector::OnTestCaseEnd {e.Context.SessionId} {e.TestCaseName}");
+            logger.LogWarning(dataCtx, $"OnTestCaseEnd {e.Context.SessionId} {e.TestCaseName}");
         }
     }
 }

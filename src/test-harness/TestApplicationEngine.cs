@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using Neo;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
@@ -11,7 +12,7 @@ using OneOf;
 
 namespace NeoTestHarness
 {
-    public class TestApplicationEngine : ApplicationEngine
+    public partial class TestApplicationEngine : ApplicationEngine
     {
         public static Block CreateDummyBlock(DataCache snapshot, ProtocolSettings? settings = null)
         {
@@ -63,6 +64,7 @@ namespace NeoTestHarness
         readonly Dictionary<UInt160, Dictionary<int, int>> hitMaps = new();
         readonly Dictionary<UInt160, Dictionary<int, (int branchCount, int continueCount)>> branchMaps = new();
         BranchInstructionInfo? branchInstructionInfo = null;
+        CoverageWriter? coverageWriter = null;
 
         public new event EventHandler<LogEventArgs>? Log;
         public new event EventHandler<NotifyEventArgs>? Notify;
@@ -116,6 +118,7 @@ namespace NeoTestHarness
 
         public override void Dispose()
         {
+            coverageWriter?.Dispose();
             ApplicationEngine.Log -= OnLog;
             ApplicationEngine.Notify -= OnNotify;
             base.Dispose();
@@ -158,16 +161,20 @@ namespace NeoTestHarness
             }
         }
 
+        const string envName = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
+
         public override VMState Execute()
         {
+            var coveragePath = Environment.GetEnvironmentVariable(envName);
+            coverageWriter = coveragePath is null ? null : new CoverageWriter(coveragePath);
+
             return base.Execute();
         }
 
         protected override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
-            return;
-
+ 
             var ecs = context.GetState<ExecutionContextState>();
             if (ecs.ScriptHash is null) return;
             if (!executedScripts.ContainsKey(ecs.ScriptHash))
@@ -180,67 +187,68 @@ namespace NeoTestHarness
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             base.PreExecuteInstruction(instruction);
-            return;
 
             if (CurrentContext is null) return;
             var hash = CurrentContext.GetScriptHash();
             if (hash is null) return;
 
-            var ip = CurrentContext.InstructionPointer;
-            var offset = ip + GetBranchOffset(instruction);
-            branchInstructionInfo = offset > 0
-                ? new BranchInstructionInfo(hash, ip, offset)
-                : null;
+            coverageWriter?.WriteLine($"{hash} {CurrentContext.InstructionPointer}");
 
-            if (!hitMaps.TryGetValue(hash, out var hitMap))
-            {
-                hitMap = new();
-                hitMaps.Add(hash, hitMap);
-            }
+            // var ip = CurrentContext.InstructionPointer;
+            // var offset = ip + GetBranchOffset(instruction);
+            // branchInstructionInfo = offset > 0
+            //     ? new BranchInstructionInfo(hash, ip, offset)
+            //     : null;
 
-            hitMap[ip] = hitMap.TryGetValue(ip, out var value) 
-                ? value + 1 
-                : 1;
+            // if (!hitMaps.TryGetValue(hash, out var hitMap))
+            // {
+            //     hitMap = new();
+            //     hitMaps.Add(hash, hitMap);
+            // }
 
-            static int GetBranchOffset(Instruction instruction)
-                => instruction.OpCode switch
-                {
-                    OpCode.JMPIF_L or OpCode.JMPIFNOT_L or
-                    OpCode.JMPEQ_L or OpCode.JMPNE_L or
-                    OpCode.JMPGT_L or OpCode.JMPGE_L or
-                    OpCode.JMPLT_L or OpCode.JMPLE_L => instruction.TokenI32,
-                    OpCode.JMPIF or OpCode.JMPIFNOT or
-                    OpCode.JMPEQ or OpCode.JMPNE or
-                    OpCode.JMPGT or OpCode.JMPGE or
-                    OpCode.JMPLT or OpCode.JMPLE => instruction.TokenI8,
-                    _ => 0
-                };
+            // hitMap[ip] = hitMap.TryGetValue(ip, out var value) 
+            //     ? value + 1 
+            //     : 1;
+
+            // static int GetBranchOffset(Instruction instruction)
+            //     => instruction.OpCode switch
+            //     {
+            //         OpCode.JMPIF_L or OpCode.JMPIFNOT_L or
+            //         OpCode.JMPEQ_L or OpCode.JMPNE_L or
+            //         OpCode.JMPGT_L or OpCode.JMPGE_L or
+            //         OpCode.JMPLT_L or OpCode.JMPLE_L => instruction.TokenI32,
+            //         OpCode.JMPIF or OpCode.JMPIFNOT or
+            //         OpCode.JMPEQ or OpCode.JMPNE or
+            //         OpCode.JMPGT or OpCode.JMPGE or
+            //         OpCode.JMPLT or OpCode.JMPLE => instruction.TokenI8,
+            //         _ => 0
+            //     };
         }
 
         protected override void PostExecuteInstruction(Instruction instruction)
         {
             base.PostExecuteInstruction(instruction);
-            return;
+            // return;
 
-            if (CurrentContext is null) return;
+            // if (CurrentContext is null) return;
 
-            if (branchInstructionInfo is not null)
-            {
-                var (hash, ip, offset) = branchInstructionInfo;
-                if (!branchMaps.TryGetValue(hash, out var branchMap))
-                {
-                    branchMap = new();
-                    branchMaps.Add(hash, branchMap);
-                }
+            // if (branchInstructionInfo is not null)
+            // {
+            //     var (hash, ip, offset) = branchInstructionInfo;
+            //     if (!branchMaps.TryGetValue(hash, out var branchMap))
+            //     {
+            //         branchMap = new();
+            //         branchMaps.Add(hash, branchMap);
+            //     }
 
-                (int branchCount, int continueCount) hitCount = branchMap.TryGetValue(ip, out var value) ? value : (0,0);
-                hitCount = CurrentContext.InstructionPointer == offset
-                    ? (hitCount.branchCount + 1, hitCount.continueCount)
-                    : CurrentContext.InstructionPointer == ip
-                        ? (hitCount.branchCount, hitCount.continueCount + 1)
-                        : throw new InvalidOperationException($"Unexpected InstructionPointer {CurrentContext.InstructionPointer}");
-                branchMap[ip] = hitCount;
-            }
+            //     (int branchCount, int continueCount) hitCount = branchMap.TryGetValue(ip, out var value) ? value : (0,0);
+            //     hitCount = CurrentContext.InstructionPointer == offset
+            //         ? (hitCount.branchCount + 1, hitCount.continueCount)
+            //         : CurrentContext.InstructionPointer == ip
+            //             ? (hitCount.branchCount, hitCount.continueCount + 1)
+            //             : throw new InvalidOperationException($"Unexpected InstructionPointer {CurrentContext.InstructionPointer}");
+            //     branchMap[ip] = hitCount;
+            // }
         }
     }
 }
