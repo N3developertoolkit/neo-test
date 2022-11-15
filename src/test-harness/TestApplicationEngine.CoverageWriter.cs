@@ -15,7 +15,7 @@ namespace NeoTestHarness
             public CoverageWriter(string coveragePath)
             {
                 if (!Directory.Exists(coveragePath)) Directory.CreateDirectory(coveragePath);
-                var filename = Path.Combine(coveragePath, $"{Guid.NewGuid()}.neo.coverage");
+                var filename = Path.Combine(coveragePath, $"{Guid.NewGuid()}.neo-coverage");
 
                 stream = File.Create(filename);
                 Writer = new StreamWriter(stream);
