@@ -12,6 +12,16 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
   </PropertyGroup>
 
+  <!-- 
+    Neo BuildTasks was built with C# 10 originally though C# 7.3 is the latest supported version for
+    .NET Standard 2.0 and any version of .NET Framework. At some point, we should revert this project
+    to an older version of C#  
+  -->
+  <PropertyGroup>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="test-build-tasks" />
   </ItemGroup>
