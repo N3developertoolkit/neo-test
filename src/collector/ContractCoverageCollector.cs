@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
@@ -50,8 +51,22 @@ namespace Neo.Collector
         {
             logger.LogWarning(dataCtx, $"ContractCoverageCollector::GetTestExecutionEnvironmentVariables");
 
-            return Enumerable.Empty<KeyValuePair<string, string>>();
+            const string envName = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
+            var envValue = GetTempPath();
+            yield return new KeyValuePair<string, string>(envName, envValue);
         }
+
+        static string GetTempPath()
+        {
+            string tempPath;
+            do
+            {
+                tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            }
+            while (Directory.Exists(tempPath));
+            return tempPath;
+        }
+
 
         private void OnSessionStart(object sender, SessionStartEventArgs e)
         {
