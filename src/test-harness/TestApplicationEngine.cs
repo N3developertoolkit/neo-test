@@ -194,7 +194,7 @@ namespace NeoTestHarness
             if (hash is null) return;
 
             var ip = CurrentContext.InstructionPointer;
-            var offset = ip + GetBranchOffset(instruction);
+            var offset = GetBranchOffset(instruction);
 
             coverageWriter.WriteLine($"{hash} {ip} {offset}");
 
@@ -226,7 +226,7 @@ namespace NeoTestHarness
 
             var (hash, ip, offset) = branchInstructionInfo;
             var currentIP = CurrentContext is null ? "<>" : $"{CurrentContext.InstructionPointer}";
-            coverageWriter?.WriteLine($"{hash} {currentIP} {ip} {offset}");
+            coverageWriter?.WriteLine($"{hash} {ip} {ip + offset} {currentIP} ");
         }
     }
 }
