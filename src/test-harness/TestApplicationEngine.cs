@@ -175,13 +175,9 @@ namespace NeoTestHarness
         {
             base.LoadContext(context);
  
-            var ecs = context.GetState<ExecutionContextState>();
-            if (ecs.ScriptHash is null) return;
-            if (!executedScripts.ContainsKey(ecs.ScriptHash))
-            {
-                OneOf<ContractState, Script> value = ecs.Contract is null ? context.Script : ecs.Contract;
-                executedScripts.Add(ecs.ScriptHash, value);
-            }
+            if (coverageWriter is null) return;
+            var hash = context.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
+            coverageWriter.WriteLine($"{hash}");
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
@@ -189,14 +185,13 @@ namespace NeoTestHarness
             base.PreExecuteInstruction(instruction);
 
             if (coverageWriter is null) return;
-            if (CurrentContext is null) return;
-            var hash = CurrentContext.GetScriptHash();
-            if (hash is null) return;
-
-            var ip = CurrentContext.InstructionPointer;
+            
+            var hash = CurrentContext?.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
+            var ip = CurrentContext?.InstructionPointer ?? 0;
             var offset = GetBranchOffset(instruction);
 
-            coverageWriter.WriteLine($"{hash} {ip} {offset}");
+            coverageWriter.Write($"{ip}");
+            if (offset > 0) coverageWriter.Write($" {ip + offset}");
 
             branchInstructionInfo = offset > 0
                 ? new BranchInstructionInfo(hash, ip, offset)
@@ -222,11 +217,15 @@ namespace NeoTestHarness
             base.PostExecuteInstruction(instruction);
 
             if (coverageWriter is null) return;
-            if (branchInstructionInfo is null) return;
 
-            var (hash, ip, offset) = branchInstructionInfo;
-            var currentIP = CurrentContext is null ? "<>" : $"{CurrentContext.InstructionPointer}";
-            coverageWriter?.WriteLine($"{hash} {ip} {ip + offset} {currentIP} ");
+            if (branchInstructionInfo is not null)
+            {
+                coverageWriter.WriteLine($" {CurrentContext?.InstructionPointer ?? 0}");
+            }
+            else
+            {
+                coverageWriter.WriteLine("");
+            }
         }
     }
 }

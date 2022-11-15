@@ -22,6 +22,7 @@ namespace NeoTestHarness
             }
 
             public void WriteLine(string? value) => Writer.WriteLine(value);
+            public void Write(string? value) => Writer.Write(value);
 
             public void Dispose()
             {
