@@ -20,7 +20,7 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            logger.LogWarning(dataCtx, "ContractCoverageCollector::Initialize");
+            logger.LogWarning(environmentContext.SessionDataCollectionContext, "ContractCoverageCollector::Initialize");
 
             this.logger = logger;
             this.events = events;
