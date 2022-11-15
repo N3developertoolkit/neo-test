@@ -166,6 +166,7 @@ namespace NeoTestHarness
         protected override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
+            return;
 
             var ecs = context.GetState<ExecutionContextState>();
             if (ecs.ScriptHash is null) return;
@@ -179,6 +180,7 @@ namespace NeoTestHarness
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             base.PreExecuteInstruction(instruction);
+            return;
 
             if (CurrentContext is null) return;
             var hash = CurrentContext.GetScriptHash();
@@ -218,6 +220,7 @@ namespace NeoTestHarness
         protected override void PostExecuteInstruction(Instruction instruction)
         {
             base.PostExecuteInstruction(instruction);
+            return;
 
             if (CurrentContext is null) return;
 
