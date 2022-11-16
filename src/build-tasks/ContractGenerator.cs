@@ -8,9 +8,9 @@ namespace Neo.BuildTasks
     public static class ContractGenerator
     {
         public static string GenerateContractInterface(NeoManifest manifest,string contractNameOverride, string @namespace)
-            => GenerateContractInterface(manifest, "", contractNameOverride, @namespace);
+            => GenerateContractInterface(manifest, null, contractNameOverride, @namespace);
 
-        public static string GenerateContractInterface(NeoManifest manifest, string debugInfoPath, string contractNameOverride, string @namespace)
+        public static string GenerateContractInterface(NeoManifest manifest, NeoDebugInfo? debugInfo, string contractNameOverride, string @namespace)
         {
             var contractName = string.IsNullOrEmpty(contractNameOverride)
                 ? Regex.Replace(manifest.Name, "^.*\\.", string.Empty)
@@ -45,9 +45,9 @@ namespace Neo.BuildTasks
 ");
             builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\")]");
 
-            if (!string.IsNullOrEmpty(debugInfoPath))
+            if (debugInfo is not null)
             {
-                builder.AppendLine($"[NeoTestHarness.DebugInfoPath(\"{debugInfoPath}\")]");
+                builder.AppendLine($"[NeoTestHarness.DebugInfoPath(@\"{debugInfo.Hash}\")]");
             }
 
             builder.AppendLine($"interface {contractName} {{");

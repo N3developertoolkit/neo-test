@@ -18,7 +18,8 @@ namespace Neo.BuildTasks
                 try
                 {
                     var manifest = NeoManifest.Load(ManifestFile);
-                    var source = ContractGenerator.GenerateContractInterface(manifest, DebugInfoFile, ContractNameOverride, RootNamespace);
+                    var debugInfo = NeoDebugInfo.TryLoad(DebugInfoFile);
+                    var source = ContractGenerator.GenerateContractInterface(manifest, debugInfo, ContractNameOverride, RootNamespace);
                     if (!string.IsNullOrEmpty(source))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
