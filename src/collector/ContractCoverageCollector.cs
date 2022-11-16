@@ -33,29 +33,15 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            // logger.LogWarning(environmentContext.SessionDataCollectionContext, "Initialize");
-
             this.logger = logger;
             this.events = events;
             dataCtx = environmentContext.SessionDataCollectionContext;
-
-            events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
-            events.TestHostLaunched += OnTestHostLaunched;
-            events.TestCaseStart += OnTestCaseStart;
-            events.TestCaseEnd += OnTestCaseEnd;
         }
 
         protected override void Dispose(bool disposing)
         {
-            // logger.LogWarning(dataCtx, "Dispose");
-
-            events.SessionStart -= OnSessionStart;
             events.SessionEnd -= OnSessionEnd;
-            events.TestHostLaunched -= OnTestHostLaunched;
-            events.TestCaseStart -= OnTestCaseStart;
-            events.TestCaseEnd -= OnTestCaseEnd;
-
             base.Dispose(disposing);
         }
 
@@ -76,31 +62,9 @@ namespace Neo.Collector
             return tempPath;
         }
 
-
-        private void OnSessionStart(object sender, SessionStartEventArgs e)
-        {
-            // logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
-        }
-
         private void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            // logger.LogWarning(dataCtx, $"SessionEndEventArgs {e.Context.SessionId}");
             ParseCoverageFiles();
-        }
-
-        private void OnTestHostLaunched(object sender, TestHostLaunchedEventArgs e)
-        {
-            // logger.LogWarning(dataCtx, $"OnTestHostLaunched {e.Context.SessionId}");
-        }
-
-        private void OnTestCaseStart(object sender, TestCaseStartEventArgs e)
-        {
-            // logger.LogWarning(dataCtx, $"OnTestCaseStart {e.Context.SessionId} {e.TestCaseName}");
-        }
-
-        private void OnTestCaseEnd(object sender, TestCaseEndEventArgs e)
-        {
-            // logger.LogWarning(dataCtx, $"OnTestCaseEnd {e.Context.SessionId} {e.TestCaseName}");
         }
 
         void ParseCoverageFiles()
