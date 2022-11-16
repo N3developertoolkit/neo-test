@@ -9,6 +9,8 @@ namespace Neo.BuildTasks
     {
         public override bool Execute()
         {
+            Log.LogWarning("DebugInfoFile: " + DebugInfoFile ?? "<none>");
+
             if (string.IsNullOrEmpty(ManifestFile))
             {
                 Log.LogError("Invalid ManifestFile " + ManifestFile);
@@ -45,6 +47,8 @@ namespace Neo.BuildTasks
 
         [Required]
         public string ManifestFile { get; set; } = "";
+
+        public string DebugInfoFile { get; set; } = "";
 
         public string RootNamespace { get; set; } = "";
 

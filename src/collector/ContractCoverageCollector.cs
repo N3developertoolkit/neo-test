@@ -44,7 +44,7 @@ namespace Neo.Collector
             dataCtx = environmentContext.SessionDataCollectionContext;
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
-            events.TestCaseStart += OnTestCaseStart;
+
             // var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
             // for (var i = 0; i < debugInfoPaths.Count; i++)
             // {
