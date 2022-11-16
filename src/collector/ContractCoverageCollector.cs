@@ -39,9 +39,10 @@ namespace Neo.Collector
             events.SessionEnd += OnSessionEnd;
 
             var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
-            foreach (var path in debugInfoPaths)
+            for (var i = 0; i < debugInfoPaths.Count; i++)
             {
-                logger.LogWarning(dataCtx, $"Initialize {path}");
+                var pathNode = debugInfoPaths[i];
+                logger.LogWarning(dataCtx, $"Initialize {pathNode.Value}");
             }
         }
 
