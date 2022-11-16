@@ -33,6 +33,8 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
+            logger.LogWarning(dataCtx, $"Initialize {configurationElement.OuterXml}");
+
             this.logger = logger;
             this.events = events;
             dataCtx = environmentContext.SessionDataCollectionContext;
@@ -64,31 +66,33 @@ namespace Neo.Collector
 
         private void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            ParseCoverageFiles();
+            var (hitMaps, branchMaps) = ParseCoverageFiles();
         }
 
-        void ParseCoverageFiles()
+        (HitMaps hitMaps, BranchMaps branchMaps) ParseCoverageFiles()
         {
+            var hitMaps = new HitMaps();
+            var branchMaps = new BranchMaps();
+
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
                 try
                 {
                     if (Path.GetExtension(filename) != COVERAGE_FILE_EXT) continue;
-                    var (hitMaps, branchMaps) = ParseCoverageFile(filename);
+                    ParseCoverageFile(filename, hitMaps, branchMaps);
                 }
                 catch (Exception ex)
                 {
                     logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Error);
                 }
             }
+
+            return (hitMaps, branchMaps);
         }
 
-        (HitMaps, BranchMaps) ParseCoverageFile(string filename)
+        void ParseCoverageFile(string filename, HitMaps hitMaps, BranchMaps branchMaps)
         {
             logger.LogWarning(dataCtx, $"ParseCoverageFile {filename}");
-
-            var hitMaps = new HitMaps();
-            var branchMaps = new BranchMaps();
 
             using (var stream = File.OpenRead(filename))
             using (var reader = new StreamReader(stream))
@@ -136,13 +140,12 @@ namespace Neo.Collector
                                             : throw new FormatException();
                                 }
                                 break;
-                            default: throw new FormatException();
+                            default:
+                                throw new FormatException();
                         }
                     }
                 }
             }
-
-            return (hitMaps, branchMaps);
         }
     }
 }
