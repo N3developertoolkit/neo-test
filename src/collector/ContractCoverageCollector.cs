@@ -42,7 +42,7 @@ namespace Neo.Collector
             for (var i = 0; i < debugInfoPaths.Count; i++)
             {
                 var pathNode = debugInfoPaths[i];
-                logger.LogWarning(dataCtx, $"Initialize {pathNode.Value}");
+                logger.LogWarning(dataCtx, $"Initialize {pathNode.InnerText}");
             }
         }
 
