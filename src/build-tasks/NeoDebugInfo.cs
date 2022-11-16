@@ -30,9 +30,6 @@ namespace Neo.BuildTasks
         public IReadOnlyList<string> Documents { get; set; } = Array.Empty<string>();
         public IReadOnlyList<Method> Methods { get; set; } = Array.Empty<Method>();
 
-
-        // public IEnumerable<()
-
         public static NeoDebugInfo? TryLoad(string? debugInfoPath)
         {
             if (string.IsNullOrEmpty(debugInfoPath)) return null;

@@ -43,13 +43,25 @@ namespace Neo.BuildTasks
 [System.CodeDom.Compiler.GeneratedCode(""Neo.BuildTasks"",""{ThisAssembly.AssemblyFileVersion}"")]
 #endif
 ");
-            builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\")]");
-
-            if (debugInfo is not null)
+            builder.AppendLine($"[System.ComponentModel.Description(\"{manifest.Name}\")]");
+            builder.AppendLine("#if TEST_HARNESS_ATTRIBUTES");
+            if (debugInfo is null)
             {
-                builder.AppendLine($"[NeoTestHarness.DebugInfoPath(@\"{debugInfo.Hash}\")]");
+                builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\")]");
             }
-
+            else
+            {
+                builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\", \"{debugInfo.Hash}\")]");
+                foreach (var method in debugInfo.Methods)
+                {
+                    foreach (var sp in method.SequencePoints)
+                    {
+                        var doc = debugInfo.Documents[sp.Document];
+                        builder.AppendLine($"[NeoTestHarness.SequencePoint(\"{doc}\", \"{method.Name}\", {sp.Address}, {sp.Start.Line}, {sp.Start.Column}, {sp.End.Line}, {sp.End.Column})]");
+                    }
+                }
+            }
+            builder.AppendLine("#endif");
             builder.AppendLine($"interface {contractName} {{");
             builder.IncrementIndent();
             for (int i = 0; i < manifest.Methods.Count; i++)
