@@ -57,7 +57,7 @@ namespace Neo.BuildTasks
                     foreach (var sp in method.SequencePoints)
                     {
                         var doc = debugInfo.Documents[sp.Document];
-                        builder.AppendLine($"[NeoTestHarness.SequencePoint(\"{doc}\", \"{method.Name}\", {sp.Address}, {sp.Start.Line}, {sp.Start.Column}, {sp.End.Line}, {sp.End.Column})]");
+                        builder.AppendLine($"[NeoTestHarness.SequencePoint(@\"{doc}\", {sp.Address}, {sp.Start.Line}, {sp.Start.Column}, {sp.End.Line}, {sp.End.Column})]");
                     }
                 }
             }
