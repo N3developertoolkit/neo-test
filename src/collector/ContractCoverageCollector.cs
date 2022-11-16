@@ -109,6 +109,7 @@ namespace Neo.Collector
             {
                 try
                 {
+                    if (Path.GetExtension(filename) != COVERAGE_FILE_EXT) continue;
                     var (hitMaps, branchMaps) = ParseCoverageFile(filename);
                 }
                 catch (Exception ex)
