@@ -24,7 +24,11 @@ namespace Neo.Collector
 
         public ContractCoverageCollector()
         {
-            coveragePath = GetTempPath();
+            do
+            {
+                coveragePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            }
+            while (Directory.Exists(coveragePath));
         }
 
         public override void Initialize(
@@ -37,19 +41,21 @@ namespace Neo.Collector
             this.logger = logger;
             this.events = events;
             dataCtx = environmentContext.SessionDataCollectionContext;
+            events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
 
-            var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
-            for (var i = 0; i < debugInfoPaths.Count; i++)
-            {
-                var path = debugInfoPaths[i].InnerText;
+            // var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
+            // for (var i = 0; i < debugInfoPaths.Count; i++)
+            // {
+            //     var path = debugInfoPaths[i].InnerText;
                 
-                logger.LogWarning(dataCtx, $"Initialize {path}");
-            }
+            //     logger.LogWarning(dataCtx, $"Initialize {path}");
+            // }
         }
 
         protected override void Dispose(bool disposing)
         {
+            events.SessionStart -= OnSessionStart;
             events.SessionEnd -= OnSessionEnd;
             base.Dispose(disposing);
         }
@@ -60,18 +66,42 @@ namespace Neo.Collector
             yield return new KeyValuePair<string, string>(COVERAGE_PATH_ENV_NAME, coveragePath);
         }
 
-        static string GetTempPath()
+        void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            string tempPath;
-            do
+            logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
+
+            var iter = e.GetProperties();
+            while (iter.MoveNext())
             {
-                tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                var kvp = iter.Current;
+                logger.LogWarning(dataCtx, $"  Property {kvp.Key} = {kvp.Value ?? "<null>"}");
             }
-            while (Directory.Exists(tempPath));
-            return tempPath;
+
+            if (!(e.Context.TestCase is null))
+            {
+                var @case = e.Context.TestCase;
+                logger.LogWarning(dataCtx, $"  Test Case ID = {@case.Id}");
+                logger.LogWarning(dataCtx, $"  Test Case CodeFilePath = {@case.CodeFilePath}");
+                logger.LogWarning(dataCtx, $"  Test Case DisplayName = {@case.DisplayName}");
+                logger.LogWarning(dataCtx, $"  Test Case ExecutorUri = {@case.ExecutorUri}");
+                logger.LogWarning(dataCtx, $"  Test Case FullyQualifiedName = {@case.FullyQualifiedName}");
+                logger.LogWarning(dataCtx, $"  Test Case LineNumber = {@case.LineNumber}");
+                logger.LogWarning(dataCtx, $"  Test Case Source = {@case.Source}");
+
+                foreach (var prop in @case.Properties)
+                {
+                    logger.LogWarning(dataCtx, $"  Test Case Property {prop.Id} {prop.Label} {prop.ValueType}");
+                }
+
+                foreach (var trait in @case.Traits)
+                {
+                    logger.LogWarning(dataCtx, $"  Test Case trait {trait.Name} {trait.Value}");
+                }
+
+            }
         }
 
-        private void OnSessionEnd(object sender, SessionEndEventArgs e)
+        void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
             var (hitMaps, branchMaps) = ParseCoverageFiles();
         }
