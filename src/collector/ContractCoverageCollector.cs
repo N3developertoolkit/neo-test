@@ -100,7 +100,7 @@ namespace Neo.Collector
 
                 foreach (var prop in @case.Properties)
                 {
-                    logger.LogWarning(dataCtx, $"  Test Case Property {prop.Id} {prop.Label} {prop.ValueType}");
+                    logger.LogWarning(dataCtx, $"  Test Case Property {prop.Id} {prop.Label} {@case.GetPropertyValue(prop)}");
                 }
 
                 foreach (var trait in @case.Traits)
