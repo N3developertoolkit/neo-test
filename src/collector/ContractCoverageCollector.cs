@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
 namespace Neo.Collector
@@ -43,7 +44,7 @@ namespace Neo.Collector
             dataCtx = environmentContext.SessionDataCollectionContext;
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
-
+            events.TestCaseStart += OnTestCaseStart;
             // var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
             // for (var i = 0; i < debugInfoPaths.Count; i++)
             // {
@@ -51,6 +52,12 @@ namespace Neo.Collector
                 
             //     logger.LogWarning(dataCtx, $"Initialize {path}");
             // }
+        }
+
+        private void OnTestCaseStart(object sender, TestCaseStartEventArgs e)
+        {
+            logger.LogWarning(dataCtx, $"OnTestCaseStart {e.TestCaseId} {e.TestCaseName}");
+            DumpTestCase(e.TestElement);
         }
 
         protected override void Dispose(bool disposing)
@@ -70,16 +77,19 @@ namespace Neo.Collector
         {
             logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
 
-            var iter = e.GetProperties();
-            while (iter.MoveNext())
+            var testSources = e.GetPropertyValue<IList<string>>("TestSources");
+            foreach (var src in testSources)
             {
-                var kvp = iter.Current;
-                logger.LogWarning(dataCtx, $"  Property {kvp.Key} = {kvp.Value ?? "<null>"}");
+                logger.LogWarning(dataCtx, $"  TestSource {src}");
             }
 
-            if (!(e.Context.TestCase is null))
+            DumpTestCase(e.Context.TestCase);
+        }
+
+        void DumpTestCase(TestCase @case)
+        {
+            if (!(@case is null))
             {
-                var @case = e.Context.TestCase;
                 logger.LogWarning(dataCtx, $"  Test Case ID = {@case.Id}");
                 logger.LogWarning(dataCtx, $"  Test Case CodeFilePath = {@case.CodeFilePath}");
                 logger.LogWarning(dataCtx, $"  Test Case DisplayName = {@case.DisplayName}");
@@ -97,7 +107,6 @@ namespace Neo.Collector
                 {
                     logger.LogWarning(dataCtx, $"  Test Case trait {trait.Name} {trait.Value}");
                 }
-
             }
         }
 
