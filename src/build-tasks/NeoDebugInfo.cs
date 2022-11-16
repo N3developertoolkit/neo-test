@@ -34,14 +34,14 @@ namespace Neo.BuildTasks
         {
             if (string.IsNullOrEmpty(debugInfoPath)) return null;
 
-            // try
-            // {
-            //     using var fileStream = File.OpenRead(debugInfoPath);
-            //     using var archive = new ZipArchive(fileStream);
-            //     using var stream = archive.Entries[0].Open();
-            //     return Load(stream);
-            // }
-            // catch {}
+            try
+            {
+                using var fileStream = File.OpenRead(debugInfoPath);
+                using var archive = new ZipArchive(fileStream);
+                using var stream = archive.Entries[0].Open();
+                return Load(stream);
+            }
+            catch {}
 
             try
             {
