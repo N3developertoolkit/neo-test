@@ -9,8 +9,6 @@ namespace Neo.BuildTasks
     {
         public override bool Execute()
         {
-            Log.LogWarning("DebugInfoFile: " + DebugInfoFile ?? "<none>");
-
             if (string.IsNullOrEmpty(ManifestFile))
             {
                 Log.LogError("Invalid ManifestFile " + ManifestFile);
@@ -20,7 +18,7 @@ namespace Neo.BuildTasks
                 try
                 {
                     var manifest = NeoManifest.Load(ManifestFile);
-                    var source = ContractGenerator.GenerateContractInterface(manifest, ContractNameOverride, RootNamespace);
+                    var source = ContractGenerator.GenerateContractInterface(manifest, DebugInfoFile, ContractNameOverride, RootNamespace);
                     if (!string.IsNullOrEmpty(source))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
