@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using static Neo.BuildTasks.CSharpHelpers;
@@ -57,9 +56,7 @@ namespace Neo.BuildTasks
                 {
                     foreach (var sp in method.SequencePoints)
                     {
-                        // TODO: once relative path documents support is added to NCCS, don't use Path.GetFileName
-                        //       https://github.com/neo-project/neo-devpack-dotnet/pull/770
-                        var doc = Path.GetFileName(debugInfo.Documents[sp.Document]);
+                        var doc = debugInfo.Documents[sp.Document];
                         builder.AppendLine($"[NeoTestHarness.SequencePoint(\"{doc}\", \"{method.Name}\", {sp.Address}, {sp.Start.Line}, {sp.Start.Column}, {sp.End.Line}, {sp.End.Column})]");
                     }
                 }
