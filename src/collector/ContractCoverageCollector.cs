@@ -33,12 +33,12 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            logger.LogWarning(dataCtx, $"Initialize {configurationElement.OuterXml}");
-
             this.logger = logger;
             this.events = events;
             dataCtx = environmentContext.SessionDataCollectionContext;
             events.SessionEnd += OnSessionEnd;
+
+            logger.LogWarning(dataCtx, $"Initialize {configurationElement.OuterXml}");
         }
 
         protected override void Dispose(bool disposing)
