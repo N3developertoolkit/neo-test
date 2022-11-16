@@ -58,7 +58,7 @@ namespace NeoTestHarness
             Witnesses = Array.Empty<Witness>(),
         };
 
-        record BranchInstructionInfo(UInt160 ContractHash, int InstructionPointer, int BranchOffset);
+        record BranchInstructionInfo(int InstructionPointer, int BranchOffset);
 
         readonly Dictionary<UInt160, OneOf<ContractState, Script>> executedScripts = new();
         readonly Dictionary<UInt160, Dictionary<int, int>> hitMaps = new();
@@ -168,11 +168,7 @@ namespace NeoTestHarness
             var coveragePath = Environment.GetEnvironmentVariable(envName);
             coverageWriter = coveragePath is null ? null : new CoverageWriter(coveragePath);
 
-            if (coverageWriter is not null)
-            {
-                var hash = CurrentContext?.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
-                coverageWriter.WriteLine($"{hash}");
-            }
+            WriteScriptHash(CurrentContext);
 
             return base.Execute();
         }
@@ -180,9 +176,13 @@ namespace NeoTestHarness
         protected override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
- 
+            WriteScriptHash(context);
+         }
+
+        private void WriteScriptHash(ExecutionContext? context)
+        {
             if (coverageWriter is null) return;
-            var hash = context.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
+            var hash = context?.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
             coverageWriter.WriteLine($"{hash}");
         }
 
@@ -192,17 +192,18 @@ namespace NeoTestHarness
 
             if (coverageWriter is null) return;
             
-            var hash = CurrentContext?.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
             var ip = CurrentContext?.InstructionPointer ?? 0;
             var offset = GetBranchOffset(instruction);
 
-
-            if (offset > 0) coverageWriter.WriteLine($"{ip} {ip + offset}");
-            else coverageWriter.WriteLine($"{ip}");
-
-            branchInstructionInfo = offset > 0
-                ? new BranchInstructionInfo(hash, ip, offset)
-                : null;
+            if (offset == 0)
+            {
+                branchInstructionInfo = null;
+                coverageWriter.WriteLine($"{ip}");
+            }
+            else
+            {
+                branchInstructionInfo = new BranchInstructionInfo(ip, offset);
+            }
 
             static int GetBranchOffset(Instruction instruction)
                 => instruction.OpCode switch
@@ -225,7 +226,8 @@ namespace NeoTestHarness
 
             if (coverageWriter is null) return;
             if (branchInstructionInfo is null) return;
-            coverageWriter.WriteLine($"br {CurrentContext?.InstructionPointer ?? 0}");
+            var (ip, offset) = branchInstructionInfo;
+            coverageWriter.WriteLine($"{ip} {ip + offset} {CurrentContext?.InstructionPointer ?? 0}");
         }
     }
 }

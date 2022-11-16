@@ -105,11 +105,13 @@ namespace Neo.Collector
 
         void ParseCoverageFiles()
         {
-            foreach (var file in Directory.EnumerateFiles(coveragePath))
+            foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
-                if (Path.GetExtension(file) == COVERAGE_FILE_EXT)
+                logger.LogWarning(dataCtx, $"ParseCoverageFile {filename}");
+
+                if (Path.GetExtension(filename) == COVERAGE_FILE_EXT)
                 {
-                    var (hitMaps, branchMaps) = ParseCoverageFile(file);
+                    var (hitMaps, branchMaps) = ParseCoverageFile(filename);
                 }
             }
         }
@@ -120,6 +122,7 @@ namespace Neo.Collector
 
             var hitMaps = new HitMaps();
             var branchMaps = new BranchMaps();
+            return (hitMaps, branchMaps);
 
             using (var stream = File.OpenRead(filename))
             using (var reader = new StreamReader(stream))
@@ -147,12 +150,10 @@ namespace Neo.Collector
                         {
                             case 1:
                                 break;
-                            case 2:
+                            case 3:
                                 {
                                     var offset = uint.Parse(values[1].Trim());
-                                    var brLine = reader.ReadLine();
-                                    if (!brLine.StartsWith("br")) throw new FormatException();
-                                    var branchResult = uint.Parse(line.Substring(2).Trim());
+                                    var branchResult = uint.Parse(values[2].Trim());
 
                                     if (!branchMaps.TryGetValue(hash, out var branchMap))
                                     {
