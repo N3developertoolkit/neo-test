@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using Neo;
+using Neo.BlockchainToolkit;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -182,7 +183,7 @@ namespace NeoTestHarness
         private void WriteScriptHash(ExecutionContext? context)
         {
             if (coverageWriter is null) return;
-            var hash = context?.GetState<ExecutionContextState>().ScriptHash ?? UInt160.Zero;
+            var hash = context?.Script.AsSpan().ToScriptHash() ?? UInt160.Zero;
             coverageWriter.WriteLine($"{hash}");
         }
 

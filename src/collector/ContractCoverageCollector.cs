@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
@@ -41,8 +42,9 @@ namespace Neo.Collector
             var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
             for (var i = 0; i < debugInfoPaths.Count; i++)
             {
-                var pathNode = debugInfoPaths[i];
-                logger.LogWarning(dataCtx, $"Initialize {pathNode.InnerText}");
+                var path = debugInfoPaths[i].InnerText;
+                
+                logger.LogWarning(dataCtx, $"Initialize {path}");
             }
         }
 
