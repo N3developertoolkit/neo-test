@@ -18,7 +18,7 @@ namespace Neo.Collector
         DataCollectionContext dataCtx;
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
         const string COVERAGE_FILE_EXT = ".neo-coverage";
-
+        const string DEBUG_INFO_PATH_ELEMENT = "DebugInfoPath";
         readonly string coveragePath;
 
         public ContractCoverageCollector()
@@ -38,7 +38,11 @@ namespace Neo.Collector
             dataCtx = environmentContext.SessionDataCollectionContext;
             events.SessionEnd += OnSessionEnd;
 
-            logger.LogWarning(dataCtx, $"Initialize {configurationElement.OuterXml}");
+            var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
+            foreach (var path in debugInfoPaths)
+            {
+                logger.LogWarning(dataCtx, $"Initialize {path}");
+            }
         }
 
         protected override void Dispose(bool disposing)
