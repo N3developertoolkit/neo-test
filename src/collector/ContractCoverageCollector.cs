@@ -107,11 +107,13 @@ namespace Neo.Collector
         {
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
-                logger.LogWarning(dataCtx, $"ParseCoverageFile {filename}");
-
-                if (Path.GetExtension(filename) == COVERAGE_FILE_EXT)
+                try
                 {
                     var (hitMaps, branchMaps) = ParseCoverageFile(filename);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Error);
                 }
             }
         }
@@ -122,7 +124,6 @@ namespace Neo.Collector
 
             var hitMaps = new HitMaps();
             var branchMaps = new BranchMaps();
-            return (hitMaps, branchMaps);
 
             using (var stream = File.OpenRead(filename))
             using (var reader = new StreamReader(stream))
