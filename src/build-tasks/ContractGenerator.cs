@@ -51,7 +51,7 @@ namespace Neo.BuildTasks
             }
             else
             {
-                builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\", \"{debugInfo.Hash}\")]");
+                builder.AppendLine($"[NeoTestHarness.Contract(@\"{manifest.Name}\", \"{debugInfo.Hash}\")]");
                 foreach (var method in debugInfo.Methods)
                 {
                     foreach (var sp in method.SequencePoints)

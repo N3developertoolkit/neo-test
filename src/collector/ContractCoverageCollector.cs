@@ -9,6 +9,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
 namespace Neo.Collector
 {
+    using ContractMap = Dictionary<(string name, string hash), IEnumerable<SequencePoint>>;
     using HitMaps = Dictionary<string, Dictionary<uint, uint>>;
     using BranchMaps = Dictionary<string, Dictionary<uint, (uint branchCount, uint continueCount)>>;
 
@@ -23,8 +24,7 @@ namespace Neo.Collector
         const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
-        readonly Dictionary<string, IReadOnlyDictionary<uint, SequencePoint>> contractSequencePoints 
-            = new Dictionary<string, IReadOnlyDictionary<uint, SequencePoint>>();
+        readonly ContractMap contractSequencePoints = new ContractMap();
         DataCollectionEvents events;
         DataCollectionSink dataSink;
         DataCollectionLogger logger;
@@ -84,12 +84,12 @@ namespace Neo.Collector
                 foreach (var type in asm.DefinedTypes)
                 {
                     if (TryGetContractAttribute(type, out var name, out var _hash)
-                        && TryParseScriptHash(_hash, out var hash))
+                        && _hash.TryParseScriptHash(out var hash))
                     {
-                        var spMap = GetSequencePoints(type).ToDictionary(sp => sp.Address);
-                        if (spMap.Count > 0)
+                        var sequencePoints = GetSequencePoints(type).ToList();
+                        if (sequencePoints.Count > 0)
                         {
-                            contractSequencePoints[hash] = spMap;
+                            contractSequencePoints[(name, hash)] = sequencePoints;
                         }
                     }
                 }
@@ -121,47 +121,17 @@ namespace Neo.Collector
                 if (a.AttributeType.Name == SEQUENCE_POINT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
                 {
                     var path = (string)a.ConstructorArguments[0].Value;
-                    var address = (uint)a.ConstructorArguments[1].Value;
-                    var startLine = (uint)a.ConstructorArguments[2].Value;
-                    var startColumn = (uint)a.ConstructorArguments[3].Value;
-                    var endLine = (uint)a.ConstructorArguments[4].Value;
-                    var endColumn = (uint)a.ConstructorArguments[5].Value;
+                    var @namespace = (string)a.ConstructorArguments[1].Value;
+                    var name = (string)a.ConstructorArguments[2].Value;
+                    var address = (uint)a.ConstructorArguments[3].Value;
+                    var startLine = (uint)a.ConstructorArguments[4].Value;
+                    var startColumn = (uint)a.ConstructorArguments[5].Value;
+                    var endLine = (uint)a.ConstructorArguments[6].Value;
+                    var endColumn = (uint)a.ConstructorArguments[7].Value;
 
-                    yield return new SequencePoint(path, address, (startLine, startColumn), (endLine, endColumn));
+                    yield return new SequencePoint(path, @namespace, name, address, (startLine, startColumn), (endLine, endColumn));
                 }
             }
-        }
-
-        static bool TryParseScriptHash(string text, out string hash)
-        {
-            if (TryParseHexString(text, out var buffer)
-                && buffer.Length == 20)
-            {
-                hash = BitConverter.ToString(buffer);
-                return true;
-            }
-
-            hash = string.Empty;
-            return false;
-        }
-
-        static bool TryParseHexString(string text, out byte[] buffer)
-        {
-            buffer = Array.Empty<byte>();
-            if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) text = text.Substring(2);
-            if (text.Length % 2 != 0) return false;
-
-            var length = text.Length / 2;
-            buffer = new byte[length];
-            for (var i = 0; i < length; i++)
-            {
-                var str = text.Substring(i * 2, 2);
-                if (!byte.TryParse(str, NumberStyles.AllowHexSpecifier, null, out buffer[i]))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
@@ -171,39 +141,11 @@ namespace Neo.Collector
             var (hitMaps, branchMaps) = ParseRawCoverageFiles();
 
             var reportPath = Path.Combine(coveragePath, "neo.coverage.xml");
-            using (var stream = File.OpenWrite(reportPath))
-            using (var writer = new XmlTextWriter(stream, System.Text.Encoding.UTF8))
+            using (var writer = new ContractCoverageWriter(reportPath, contractSequencePoints, hitMaps, branchMaps))
             {
-                writer.Formatting = Formatting.Indented;
-                WriteCoberturaCoverageFile(writer, hitMaps, branchMaps);
                 writer.Flush();
-                stream.Flush();
             }
             dataSink.SendFileAsync(dataCtx, reportPath, false);
-        }
-
-        // https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-loose.dtd
-        void WriteCoberturaCoverageFile(XmlWriter writer, HitMaps hitMaps, BranchMaps branchMaps)
-        {
-            using (var doc = writer.StartDocument())
-            using (var coverage = writer.StartElement("coverage"))
-            {
-                writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
-
-                using (var packages = writer.StartElement("packages"))
-                using (var package = writer.StartElement("package"))
-                {
-                    writer.WriteAttributeString("name", "<Contract name TBD>");
-
-                    using (var classes = writer.StartElement("classes"))
-                    using (var @class = writer.StartElement("class"))
-                    {
-                        writer.WriteAttributeString("name", "<class name TBD>");
-                        writer.WriteAttributeString("filename", "<class filename TBD>");
-                    }
-                }
-            }
         }
 
         (HitMaps hitMaps, BranchMaps branchMaps) ParseRawCoverageFiles()
@@ -238,7 +180,7 @@ namespace Neo.Collector
                     var line = reader.ReadLine();
                     if (line.StartsWith("0x"))
                     {
-                        hash = TryParseScriptHash(line, out var value) 
+                        hash = line.TryParseScriptHash(out var value) 
                             ? value 
                             : throw new FormatException($"could not parse script hash {line}");
                     }
