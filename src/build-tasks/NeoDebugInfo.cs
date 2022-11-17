@@ -36,9 +36,10 @@ namespace Neo.BuildTasks
 
             try
             {
-                using var fileStream = File.OpenRead(debugInfoPath);
-                using var archive = new ZipArchive(fileStream);
-                using var stream = archive.Entries[0].Open();
+                using var zip = ZipStorer.Open(debugInfoPath, FileAccess.Read);
+                var dir = zip.ReadCentralDir();
+                zip.ExtractFile(dir[0], out byte[] buffer);
+                using var stream = new MemoryStream(buffer);
                 return Load(stream);
             }
             catch {}
