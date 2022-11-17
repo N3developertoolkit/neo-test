@@ -15,13 +15,14 @@ namespace Neo.Collector
     [DataCollectorTypeUri("my://new/datacollector")]
     public class ContractCoverageCollector : DataCollector, ITestExecutionEnvironmentSpecifier
     {
+        const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
+        const string COVERAGE_FILE_EXT = ".neo-coverage";
+
+        readonly string coveragePath;
         DataCollectionEvents events;
         DataCollectionLogger logger;
         DataCollectionContext dataCtx;
-        const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
-        const string COVERAGE_FILE_EXT = ".neo-coverage";
-        const string DEBUG_INFO_PATH_ELEMENT = "DebugInfoPath";
-        readonly string coveragePath;
+        IList<string> testSources;
 
         public ContractCoverageCollector()
         {
@@ -44,20 +45,6 @@ namespace Neo.Collector
             dataCtx = environmentContext.SessionDataCollectionContext;
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
-
-            // var debugInfoPaths = configurationElement.GetElementsByTagName(DEBUG_INFO_PATH_ELEMENT);
-            // for (var i = 0; i < debugInfoPaths.Count; i++)
-            // {
-            //     var path = debugInfoPaths[i].InnerText;
-                
-            //     logger.LogWarning(dataCtx, $"Initialize {path}");
-            // }
-        }
-
-        private void OnTestCaseStart(object sender, TestCaseStartEventArgs e)
-        {
-            logger.LogWarning(dataCtx, $"OnTestCaseStart {e.TestCaseId} {e.TestCaseName}");
-            DumpTestCase(e.TestElement);
         }
 
         protected override void Dispose(bool disposing)
@@ -76,43 +63,19 @@ namespace Neo.Collector
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
             logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
-
-            var testSources = e.GetPropertyValue<IList<string>>("TestSources");
-            foreach (var src in testSources)
-            {
-                logger.LogWarning(dataCtx, $"  TestSource {src}");
-            }
-
-            DumpTestCase(e.Context.TestCase);
-        }
-
-        void DumpTestCase(TestCase @case)
-        {
-            if (!(@case is null))
-            {
-                logger.LogWarning(dataCtx, $"  Test Case ID = {@case.Id}");
-                logger.LogWarning(dataCtx, $"  Test Case CodeFilePath = {@case.CodeFilePath}");
-                logger.LogWarning(dataCtx, $"  Test Case DisplayName = {@case.DisplayName}");
-                logger.LogWarning(dataCtx, $"  Test Case ExecutorUri = {@case.ExecutorUri}");
-                logger.LogWarning(dataCtx, $"  Test Case FullyQualifiedName = {@case.FullyQualifiedName}");
-                logger.LogWarning(dataCtx, $"  Test Case LineNumber = {@case.LineNumber}");
-                logger.LogWarning(dataCtx, $"  Test Case Source = {@case.Source}");
-
-                foreach (var prop in @case.Properties)
-                {
-                    logger.LogWarning(dataCtx, $"  Test Case Property {prop.Id} {prop.Label} {@case.GetPropertyValue(prop)}");
-                }
-
-                foreach (var trait in @case.Traits)
-                {
-                    logger.LogWarning(dataCtx, $"  Test Case trait {trait.Name} {trait.Value}");
-                }
-            }
+            testSources = e.GetPropertyValue<IList<string>>("TestSources");
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
+            logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
+
             var (hitMaps, branchMaps) = ParseCoverageFiles();
+
+            foreach (var src in testSources)
+            {
+                logger.LogWarning(dataCtx, $"  TestSource {src}");
+            }
         }
 
         (HitMaps hitMaps, BranchMaps branchMaps) ParseCoverageFiles()
