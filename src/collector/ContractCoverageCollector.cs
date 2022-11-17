@@ -71,25 +71,32 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetAttribute(type, "NeoTestHarness.ContractAttribute", out var data))
+                    if (TryGetContractAttribute(type, out var name, out var hash))
                     {
-                        logger.LogWarning(dataCtx, $"  {type.Namespace}.{type.Name}");
+                        logger.LogWarning(dataCtx, $"  {type.Namespace}.{type.Name}: {name} ({hash})");
                     }
                 }
             }
         }
 
-        bool TryGetAttribute(TypeInfo type, string name, out CustomAttributeData value)
+        bool TryGetContractAttribute(TypeInfo type, out string name, out string hash)
         {
+            const string NAMESPACE = "NeoTestHarness";
+            const string NAME = "ContractAttribute";
+
             foreach (var a in type.GetCustomAttributesData())
             {
-                if ($"{a.AttributeType.Namespace}.{a.AttributeType.Name}" == name)
+                if (a.AttributeType.Name == NAME && a.AttributeType.Namespace == NAMESPACE)
                 {
-                    value = a;
+                    name = (string)a.ConstructorArguments[0].Value;
+                    hash = a.ConstructorArguments.Count == 2
+                        ? (string)a.ConstructorArguments[1].Value
+                        : string.Empty;
                     return true;
                 }
             }
-            value = null;
+            name = string.Empty;
+            hash = string.Empty;
             return false;
         }
 
