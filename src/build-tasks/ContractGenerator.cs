@@ -47,11 +47,11 @@ namespace Neo.BuildTasks
             builder.AppendLine("#if TEST_HARNESS_ATTRIBUTES");
             if (!string.IsNullOrEmpty(manifestFile))
             {
-                builder.AppendLine($"[NeoTestHarness.ManifestFile(\"{manifest.Name}\")]");
+                builder.AppendLine($"[NeoTestHarness.ManifestFile(@\"{manifestFile}\")]");
             }
             if (debugInfo is null)
             {
-                builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\")]");
+                builder.AppendLine($"[NeoTestHarness.Contract(@\"{manifest.Name}\")]");
             }
             else
             {
