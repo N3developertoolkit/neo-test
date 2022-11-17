@@ -12,12 +12,31 @@ namespace Neo.Collector
     using HitMaps = Dictionary<string, Dictionary<uint, uint>>;
     using BranchMaps = Dictionary<string, Dictionary<uint, (uint branchCount, uint continueCount)>>;
 
+    public class SequencePoint
+    {
+        public string Document { get; }
+        public uint Address { get; }
+        public (uint Line, uint Column) Start { get; }
+        public (uint Line, uint Column) End { get; }
+
+        public SequencePoint(string document, uint address, (uint Line, uint Column) start, (uint Line, uint Column) end)
+        {
+            Document = document;
+            Address = address;
+            Start = start;
+            End = end;
+        }
+    }
+
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
     public class ContractCoverageCollector : DataCollector, ITestExecutionEnvironmentSpecifier
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
         const string COVERAGE_FILE_EXT = ".neo-coverage";
+        const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
+        const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
+        const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
         DataCollectionEvents events;
@@ -74,6 +93,12 @@ namespace Neo.Collector
                     if (TryGetContractAttribute(type, out var name, out var hash))
                     {
                         logger.LogWarning(dataCtx, $"  {type.Namespace}.{type.Name}: {name} ({hash})");
+
+                        foreach (var sp in GetSequencePoints(type))
+                        {
+                            var doc = Path.GetFileName(sp.Document);
+                            logger.LogWarning(dataCtx, $"    {doc} {sp.address} {sp.Start.Line}");   
+                        }
                     }
                 }
             }
@@ -81,12 +106,9 @@ namespace Neo.Collector
 
         bool TryGetContractAttribute(TypeInfo type, out string name, out string hash)
         {
-            const string NAMESPACE = "NeoTestHarness";
-            const string NAME = "ContractAttribute";
-
             foreach (var a in type.GetCustomAttributesData())
             {
-                if (a.AttributeType.Name == NAME && a.AttributeType.Namespace == NAMESPACE)
+                if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
                 {
                     name = (string)a.ConstructorArguments[0].Value;
                     hash = a.ConstructorArguments.Count == 2
@@ -98,6 +120,24 @@ namespace Neo.Collector
             name = string.Empty;
             hash = string.Empty;
             return false;
+        }
+
+        IEnumerable<SequencePoint> GetSequencePoints(TypeInfo type)
+        {
+            foreach (var a in type.GetCustomAttributesData())
+            {
+                if (a.AttributeType.Name == SEQUENCE_POINT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
+                {
+                    var path = (string)a.ConstructorArguments[0].Value;
+                    var address = (uint)a.ConstructorArguments[1].Value;
+                    var startLine = (uint)a.ConstructorArguments[2].Value;
+                    var startColumn = (uint)a.ConstructorArguments[3].Value;
+                    var endLine = (uint)a.ConstructorArguments[4].Value;
+                    var endColumn = (uint)a.ConstructorArguments[5].Value;
+
+                    yield return new SequencePoint(path, address, (startLine, startColumn), (endLine, endColumn));
+                }
+            }
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
