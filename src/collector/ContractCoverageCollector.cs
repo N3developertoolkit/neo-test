@@ -224,7 +224,7 @@ namespace Neo.Collector
 
                         if (!map.TryGetValue(ip, out var sp)) continue;
 
-                        logger.LogWarning(dataCtx, $"  {hash} {ip}");
+                        logger.LogWarning(dataCtx, $"  {hash} {ip} {sp.Document} {sp.Start.Line}");
 
                         if (!hitMaps.TryGetValue(hash, out var hitMap))
                         {
