@@ -147,6 +147,40 @@ namespace Neo.Collector
                 writer.Flush();
             }
             dataSink.SendFileAsync(dataCtx, reportPath, false);
+
+            var hitMapPath = Path.Combine(coveragePath, "hitmap.txt");
+            using (var stream = File.OpenWrite(hitMapPath))
+            using (var writer = new StreamWriter(stream))
+            {
+                foreach (var kvp in hitMaps)
+                {
+                    writer.WriteLine(kvp.Key);
+                    foreach (var hit in kvp.Value)
+                    {
+                        writer.WriteLine($"{hit.Key} {hit.Value}");
+                    }
+                }
+                writer.Flush();
+                stream.Flush();
+            }
+            dataSink.SendFileAsync(dataCtx, hitMapPath, false);
+
+            var branchMapPath = Path.Combine(coveragePath, "branchmap.txt");
+            using (var stream = File.OpenWrite(branchMapPath))
+            using (var writer = new StreamWriter(stream))
+            {
+                foreach (var kvp in branchMaps)
+                {
+                    writer.WriteLine(kvp.Key);
+                    foreach (var branch in kvp.Value)
+                    {
+                        writer.WriteLine($"{branch.Key} {branch.Value.branchCount} {branch.Value.continueCount}");
+                    }
+                }
+                writer.Flush();
+                stream.Flush();
+            }
+            dataSink.SendFileAsync(dataCtx, branchMapPath, false);
         }
 
         (HitMaps hitMaps, BranchMaps branchMaps) ParseRawCoverageFiles()
