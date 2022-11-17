@@ -102,7 +102,7 @@ namespace Neo.Collector
                             contractSequencePoints[hashStr] = spMap;
                         }
 
-                        logger.LogWarning(dataCtx, $"  {name} ({hashStr}) ({spMap.Count})");
+                        // logger.LogWarning(dataCtx, $"  {name} ({hashStr}) ({spMap.Count})");
                     }
                 }
             }
@@ -208,7 +208,7 @@ namespace Neo.Collector
                             && _hash.Length == 20)
                         {
                             hash = BitConverter.ToString(_hash);
-                            logger.LogWarning(dataCtx, $"  {hash}");
+                            // logger.LogWarning(dataCtx, $"  {hash}");
                         }
                         else
                         {
@@ -217,8 +217,15 @@ namespace Neo.Collector
                     }
                     else
                     {
+                        if (!contractSequencePoints.TryGetValue(hash, out var map)) continue;
+                        
                         var values = line.Trim().Split(' ');
                         var ip = uint.Parse(values[0].Trim());
+
+                        if (!map.TryGetValue(ip, out var sp)) continue;
+
+                        logger.LogWarning(dataCtx, $"  {hash} {ip}");
+
                         if (!hitMaps.TryGetValue(hash, out var hitMap))
                         {
                             hitMap = new Dictionary<uint, uint>();
