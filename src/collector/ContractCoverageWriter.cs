@@ -109,10 +109,15 @@ namespace Neo.Collector
                 writer.WriteAttributeString("signature", "{TBD}");
                 using (var __ = writer.StartElement("lines"))
                 {
-                    // foreach (var group in sequencePoints.GroupBy(sp => sp.Namespace))
-                    // {
-
-                    // }
+                    foreach (var sp in sequencePoints)
+                    {
+                        using (var ___ = writer.StartElement("line"))
+                        {
+                            writer.WriteAttributeString("name", $"{sp.Start.Line}");
+                            writer.WriteAttributeString("hits", $"0");
+                            writer.WriteAttributeString("branch", $"False");
+                        }
+                    }
                 }
             }
         }
