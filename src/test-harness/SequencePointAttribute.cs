@@ -2,7 +2,7 @@ using System;
 
 namespace NeoTestHarness
 {
-    [AttributeUsage(AttributeTargets.Interface, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Interface, AllowMultiple = true)]
     public class SequencePointAttribute : Attribute
     {
         public string FileName { get; } = string.Empty;
