@@ -2,32 +2,15 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
 namespace Neo.Collector
 {
     using HitMaps = Dictionary<string, Dictionary<uint, uint>>;
     using BranchMaps = Dictionary<string, Dictionary<uint, (uint branchCount, uint continueCount)>>;
-
-    public class SequencePoint
-    {
-        public string Document { get; }
-        public uint Address { get; }
-        public (uint Line, uint Column) Start { get; }
-        public (uint Line, uint Column) End { get; }
-
-        public SequencePoint(string document, uint address, (uint Line, uint Column) start, (uint Line, uint Column) end)
-        {
-            Document = document;
-            Address = address;
-            Start = start;
-            End = end;
-        }
-    }
 
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
@@ -43,27 +26,36 @@ namespace Neo.Collector
         readonly Dictionary<string, IReadOnlyDictionary<uint, SequencePoint>> contractSequencePoints 
             = new Dictionary<string, IReadOnlyDictionary<uint, SequencePoint>>();
         DataCollectionEvents events;
+        DataCollectionSink dataSink;
         DataCollectionLogger logger;
         DataCollectionContext dataCtx;
 
         public ContractCoverageCollector()
         {
+            coveragePath = GetTempFile();
+        }
+
+        static string GetTempFile()
+        {
+            string tempPath;
             do
             {
-                coveragePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             }
-            while (Directory.Exists(coveragePath));
+            while (Directory.Exists(tempPath));
+            return tempPath;
         }
 
         public override void Initialize(
-                System.Xml.XmlElement configurationElement,
+                XmlElement configurationElement,
                 DataCollectionEvents events,
                 DataCollectionSink dataSink,
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            this.logger = logger;
             this.events = events;
+            this.dataSink = dataSink;
+            this.logger = logger;
             dataCtx = environmentContext.SessionDataCollectionContext;
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
@@ -92,17 +84,13 @@ namespace Neo.Collector
                 foreach (var type in asm.DefinedTypes)
                 {
                     if (TryGetContractAttribute(type, out var name, out var _hash)
-                        && TryParseHexString(_hash, out var hash)
-                        && hash.Length == 20)
+                        && TryParseScriptHash(_hash, out var hash))
                     {
-                        var hashStr = BitConverter.ToString(hash);
                         var spMap = GetSequencePoints(type).ToDictionary(sp => sp.Address);
                         if (spMap.Count > 0)
                         {
-                            contractSequencePoints[hashStr] = spMap;
+                            contractSequencePoints[hash] = spMap;
                         }
-
-                        // logger.LogWarning(dataCtx, $"  {name} ({hashStr}) ({spMap.Count})");
                     }
                 }
             }
@@ -144,6 +132,19 @@ namespace Neo.Collector
             }
         }
 
+        static bool TryParseScriptHash(string text, out string hash)
+        {
+            if (TryParseHexString(text, out var buffer)
+                && buffer.Length == 20)
+            {
+                hash = BitConverter.ToString(buffer);
+                return true;
+            }
+
+            hash = string.Empty;
+            return false;
+        }
+
         static bool TryParseHexString(string text, out byte[] buffer)
         {
             buffer = Array.Empty<byte>();
@@ -167,10 +168,45 @@ namespace Neo.Collector
         {
             logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
 
-            var (hitMaps, branchMaps) = ParseCoverageFiles();
+            var (hitMaps, branchMaps) = ParseRawCoverageFiles();
+
+            var reportPath = Path.Combine(coveragePath, "neo.coverage.xml");
+            using (var stream = File.OpenWrite(reportPath))
+            using (var writer = new XmlTextWriter(stream, System.Text.Encoding.UTF8))
+            {
+                writer.Formatting = Formatting.Indented;
+                WriteCoberturaCoverageFile(writer, hitMaps, branchMaps);
+                writer.Flush();
+                stream.Flush();
+            }
+            dataSink.SendFileAsync(dataCtx, reportPath, false);
         }
 
-        (HitMaps hitMaps, BranchMaps branchMaps) ParseCoverageFiles()
+        // https://github.com/cobertura/cobertura/blob/master/cobertura/src/site/htdocs/xml/coverage-loose.dtd
+        void WriteCoberturaCoverageFile(XmlWriter writer, HitMaps hitMaps, BranchMaps branchMaps)
+        {
+            using (var doc = writer.StartDocument())
+            using (var coverage = writer.StartElement("coverage"))
+            {
+                writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+
+                using (var packages = writer.StartElement("packages"))
+                using (var package = writer.StartElement("package"))
+                {
+                    writer.WriteAttributeString("name", "<Contract name TBD>");
+
+                    using (var classes = writer.StartElement("classes"))
+                    using (var @class = writer.StartElement("class"))
+                    {
+                        writer.WriteAttributeString("name", "<class name TBD>");
+                        writer.WriteAttributeString("filename", "<class filename TBD>");
+                    }
+                }
+            }
+        }
+
+        (HitMaps hitMaps, BranchMaps branchMaps) ParseRawCoverageFiles()
         {
             var hitMaps = new HitMaps();
             var branchMaps = new BranchMaps();
@@ -180,7 +216,7 @@ namespace Neo.Collector
                 try
                 {
                     if (Path.GetExtension(filename) != COVERAGE_FILE_EXT) continue;
-                    ParseCoverageFile(filename, hitMaps, branchMaps);
+                    ParseRawCoverageFile(filename, hitMaps, branchMaps);
                 }
                 catch (Exception ex)
                 {
@@ -191,10 +227,8 @@ namespace Neo.Collector
             return (hitMaps, branchMaps);
         }
 
-        void ParseCoverageFile(string filename, HitMaps hitMaps, BranchMaps branchMaps)
+        void ParseRawCoverageFile(string filename, HitMaps hitMaps, BranchMaps branchMaps)
         {
-            logger.LogWarning(dataCtx, $"ParseCoverageFile {filename}");
-
             using (var stream = File.OpenRead(filename))
             using (var reader = new StreamReader(stream))
             {
@@ -204,27 +238,14 @@ namespace Neo.Collector
                     var line = reader.ReadLine();
                     if (line.StartsWith("0x"))
                     {
-                        if (TryParseHexString(line, out var _hash)
-                            && _hash.Length == 20)
-                        {
-                            hash = BitConverter.ToString(_hash);
-                            // logger.LogWarning(dataCtx, $"  {hash}");
-                        }
-                        else
-                        {
-                            throw new FormatException($"could not parse script hash {line}");
-                        }
+                        hash = TryParseScriptHash(line, out var value) 
+                            ? value 
+                            : throw new FormatException($"could not parse script hash {line}");
                     }
                     else
                     {
-                        if (!contractSequencePoints.TryGetValue(hash, out var map)) continue;
-                        
                         var values = line.Trim().Split(' ');
                         var ip = uint.Parse(values[0].Trim());
-
-                        if (!map.TryGetValue(ip, out var sp)) continue;
-
-                        logger.LogWarning(dataCtx, $"  {hash} {ip} {sp.Document} {sp.Start.Line}");
 
                         if (!hitMaps.TryGetValue(hash, out var hitMap))
                         {
@@ -254,11 +275,11 @@ namespace Neo.Collector
                                         ? (branchCount, continueCount + 1)
                                         : branchResult == ip
                                             ? (branchCount + 1, continueCount)
-                                            : throw new FormatException();
+                                            : throw new FormatException($"Branch result {branchResult} did not equal {ip} or {offset}");
                                 }
                                 break;
                             default:
-                                throw new FormatException();
+                                throw new FormatException($"Unexpected number of values ({values.Length})");
                         }
                     }
                 }
