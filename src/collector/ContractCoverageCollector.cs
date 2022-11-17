@@ -204,7 +204,16 @@ namespace Neo.Collector
                     var line = reader.ReadLine();
                     if (line.StartsWith("0x"))
                     {
-                        hash = line.Trim();
+                        if (TryParseHexString(line, out var _hash)
+                            && _hash.Length == 20)
+                        {
+                            hash = BitConverter.ToString(_hash);
+                            logger.LogWarning(dataCtx, $"  {hash}");
+                        }
+                        else
+                        {
+                            throw new FormatException($"could not parse script hash {line}");
+                        }
                     }
                     else
                     {
