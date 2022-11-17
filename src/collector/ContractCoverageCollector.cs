@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -39,10 +40,11 @@ namespace Neo.Collector
         const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
+        readonly Dictionary<string, IReadOnlyDictionary<uint, SequencePoint>> contractSequencePoints 
+            = new Dictionary<string, IReadOnlyDictionary<uint, SequencePoint>>();
         DataCollectionEvents events;
         DataCollectionLogger logger;
         DataCollectionContext dataCtx;
-        IList<string> testSources;
 
         public ContractCoverageCollector()
         {
@@ -73,7 +75,6 @@ namespace Neo.Collector
             events.SessionEnd -= OnSessionEnd;
             base.Dispose(disposing);
         }
-
         public IEnumerable<KeyValuePair<string, string>> GetTestExecutionEnvironmentVariables()
         {
             logger.LogWarning(dataCtx, $"GetTestExecutionEnvironmentVariables {coveragePath}");
@@ -90,15 +91,18 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetContractAttribute(type, out var name, out var hash))
+                    if (TryGetContractAttribute(type, out var name, out var _hash)
+                        && TryParseHexString(_hash, out var hash)
+                        && hash.Length == 20)
                     {
-                        logger.LogWarning(dataCtx, $"  {type.Namespace}.{type.Name}: {name} ({hash})");
-
-                        foreach (var sp in GetSequencePoints(type))
+                        var hashStr = BitConverter.ToString(hash);
+                        var spMap = GetSequencePoints(type).ToDictionary(sp => sp.Address);
+                        if (spMap.Count > 0)
                         {
-                            var doc = Path.GetFileName(sp.Document);
-                            logger.LogWarning(dataCtx, $"    {doc} {sp.Address} {sp.Start.Line}");   
+                            contractSequencePoints[hashStr] = spMap;
                         }
+
+                        logger.LogWarning(dataCtx, $"  {name} ({hashStr}) ({spMap.Count})");
                     }
                 }
             }
@@ -138,6 +142,25 @@ namespace Neo.Collector
                     yield return new SequencePoint(path, address, (startLine, startColumn), (endLine, endColumn));
                 }
             }
+        }
+
+        static bool TryParseHexString(string text, out byte[] buffer)
+        {
+            buffer = Array.Empty<byte>();
+            if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) text = text.Substring(2);
+            if (text.Length % 2 != 0) return false;
+
+            var length = text.Length / 2;
+            buffer = new byte[length];
+            for (var i = 0; i < length; i++)
+            {
+                var str = text.Substring(i * 2, 2);
+                if (!byte.TryParse(str, NumberStyles.AllowHexSpecifier, null, out buffer[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
