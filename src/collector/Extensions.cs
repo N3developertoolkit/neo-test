@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Text;
 using System.Xml;
 
 namespace Neo.Collector
@@ -17,19 +19,6 @@ namespace Neo.Collector
         {
             @this.WriteStartElement(localName);
             return new DelegateDisposable(() => @this.WriteEndElement());
-        }
-
-        public static bool TryParseScriptHash(this string @this, out string hash)
-        {
-            if (TryParseHexString(@this, out var buffer)
-                && buffer.Length == 20)
-            {
-                hash = BitConverter.ToString(buffer);
-                return true;
-            }
-
-            hash = string.Empty;
-            return false;
         }
 
         public static bool TryParseHexString(this string @this, out byte[] buffer)
@@ -49,6 +38,40 @@ namespace Neo.Collector
                 }
             }
             return true;
+        }
+
+        public static ulong ReadVarInt(this BinaryReader @this, ulong max = ulong.MaxValue)
+        {
+            byte b = @this.ReadByte();
+            ulong value;
+            switch (b)
+            {
+                case 0xfd:
+                    value = @this.ReadUInt16();
+                    break;
+                case 0xfe:
+                    value = @this.ReadUInt32();
+                    break;
+                case 0xff:
+                    value = @this.ReadUInt64();
+                    break;
+                default:
+                    value = b;
+                    break;
+            }
+            if (value > max) throw new FormatException();
+            return value;
+        }
+
+        public static byte[] ReadVarMemory(this BinaryReader @this, int max = 0x1000000)
+        {
+            var length = (int)@this.ReadVarInt((ulong)max);
+            return @this.ReadBytes(length);
+        }
+
+        public static string ReadVarString(this BinaryReader @this, int max = 0x1000000)
+        {
+            return Encoding.UTF8.GetString(@this.ReadVarMemory(max));
         }
     }
 }

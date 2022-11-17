@@ -6,9 +6,9 @@ using System.Xml;
 
 namespace Neo.Collector
 {
-    using ContractMap = Dictionary<(string name, string hash), IEnumerable<SequencePoint>>;
-    using HitMaps = Dictionary<string, Dictionary<uint, uint>>;
-    using BranchMaps = Dictionary<string, Dictionary<uint, (uint branchCount, uint continueCount)>>;
+    using ContractMap = Dictionary<(string name, Hash160 hash), IEnumerable<SequencePoint>>;
+    using HitMaps = Dictionary<Hash160, Dictionary<uint, uint>>;
+    using BranchMaps = Dictionary<Hash160, Dictionary<uint, (uint branchCount, uint continueCount)>>;
 
     public class ContractCoverageWriter : IDisposable
     {

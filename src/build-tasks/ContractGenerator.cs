@@ -8,9 +8,9 @@ namespace Neo.BuildTasks
     public static class ContractGenerator
     {
         public static string GenerateContractInterface(NeoManifest manifest,string contractNameOverride, string @namespace)
-            => GenerateContractInterface(manifest, null, contractNameOverride, @namespace);
+            => GenerateContractInterface(manifest, null, null, contractNameOverride, @namespace);
 
-        public static string GenerateContractInterface(NeoManifest manifest, NeoDebugInfo? debugInfo, string contractNameOverride, string @namespace)
+        public static string GenerateContractInterface(NeoManifest manifest, string? manifestFile, NeoDebugInfo? debugInfo, string contractNameOverride, string @namespace)
         {
             var contractName = string.IsNullOrEmpty(contractNameOverride)
                 ? Regex.Replace(manifest.Name, "^.*\\.", string.Empty)
@@ -45,6 +45,10 @@ namespace Neo.BuildTasks
 ");
             builder.AppendLine($"[System.ComponentModel.Description(\"{manifest.Name}\")]");
             builder.AppendLine("#if TEST_HARNESS_ATTRIBUTES");
+            if (!string.IsNullOrEmpty(manifestFile))
+            {
+                builder.AppendLine($"[NeoTestHarness.ManifestFile(\"{manifest.Name}\")]");
+            }
             if (debugInfo is null)
             {
                 builder.AppendLine($"[NeoTestHarness.Contract(\"{manifest.Name}\")]");
@@ -52,14 +56,14 @@ namespace Neo.BuildTasks
             else
             {
                 builder.AppendLine($"[NeoTestHarness.Contract(@\"{manifest.Name}\", \"{debugInfo.Hash}\")]");
-                foreach (var method in debugInfo.Methods)
-                {
-                    foreach (var sp in method.SequencePoints)
-                    {
-                        var doc = debugInfo.Documents[sp.Document];
-                        builder.AppendLine($"[NeoTestHarness.SequencePoint(@\"{doc}\", @\"{method.Namespace}\", @\"{method.Name}\", {sp.Address}, {sp.Start.Line}, {sp.Start.Column}, {sp.End.Line}, {sp.End.Column})]");
-                    }
-                }
+                // foreach (var method in debugInfo.Methods)
+                // {
+                //     foreach (var sp in method.SequencePoints)
+                //     {
+                //         var doc = debugInfo.Documents[sp.Document];
+                //         builder.AppendLine($"[NeoTestHarness.SequencePoint(@\"{doc}\", @\"{method.Namespace}\", @\"{method.Name}\", {sp.Address}, {sp.Start.Line}, {sp.Start.Column}, {sp.End.Line}, {sp.End.Column})]");
+                //     }
+                // }
             }
             builder.AppendLine("#endif");
             builder.AppendLine($"interface {contractName} {{");

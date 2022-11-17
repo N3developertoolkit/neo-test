@@ -9,9 +9,9 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
 namespace Neo.Collector
 {
-    using ContractMap = Dictionary<(string name, string hash), IEnumerable<SequencePoint>>;
-    using HitMaps = Dictionary<string, Dictionary<uint, uint>>;
-    using BranchMaps = Dictionary<string, Dictionary<uint, (uint branchCount, uint continueCount)>>;
+    using ContractMap = Dictionary<(string name, Hash160 hash), IEnumerable<SequencePoint>>;
+    using HitMaps = Dictionary<Hash160, Dictionary<uint, uint>>;
+    using BranchMaps = Dictionary<Hash160, Dictionary<uint, (uint branchCount, uint continueCount)>>;
 
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
@@ -84,7 +84,7 @@ namespace Neo.Collector
                 foreach (var type in asm.DefinedTypes)
                 {
                     if (TryGetContractAttribute(type, out var name, out var _hash)
-                        && _hash.TryParseScriptHash(out var hash))
+                        && Hash160.TryParse(_hash, out var hash))
                     {
                         var sequencePoints = GetSequencePoints(type).ToList();
                         if (sequencePoints.Count > 0)
@@ -209,13 +209,13 @@ namespace Neo.Collector
             using (var stream = File.OpenRead(filename))
             using (var reader = new StreamReader(stream))
             {
-                var hash = string.Empty;
+                var hash = Hash160.Zero;
                 while (!reader.EndOfStream)
                 {
                     var line = reader.ReadLine();
                     if (line.StartsWith("0x"))
                     {
-                        hash = line.TryParseScriptHash(out var value) 
+                        hash = Hash160.TryParse(line, out var value) 
                             ? value 
                             : throw new FormatException($"could not parse script hash {line}");
                     }
