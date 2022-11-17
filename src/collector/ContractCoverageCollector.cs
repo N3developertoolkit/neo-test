@@ -136,13 +136,14 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
+            logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
 
             var (hitMaps, branchMaps) = ParseRawCoverageFiles();
 
             var reportPath = Path.Combine(coveragePath, "neo.coverage.xml");
             using (var writer = new ContractCoverageWriter(reportPath, contractSequencePoints, hitMaps, branchMaps))
             {
+                writer.WriteCoberturaCoverage();
                 writer.Flush();
             }
             dataSink.SendFileAsync(dataCtx, reportPath, false);
