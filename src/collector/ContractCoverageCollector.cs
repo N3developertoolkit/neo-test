@@ -71,10 +71,32 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    logger.LogWarning(dataCtx, $"   {type.Namespace}.{type.Name}");
+                    if (TryGetAttribute(type, "Contract", out var _))
+                    {
+                        logger.LogWarning(dataCtx, $"   {type.Namespace}.{type.Name}");
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
             }
         }
+
+        static bool TryGetAttribute(TypeInfo type, string name, out Attribute value)
+        {
+            foreach (var attrib in type.GetCustomAttributes())
+            {
+                if (attrib.GetType().Name == name)
+                {
+                    value = attrib;
+                    return true;
+                }
+            }
+
+            value = default;
+            return false;
+        } 
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
