@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
@@ -63,7 +64,16 @@ namespace Neo.Collector
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
             logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
-            testSources = e.GetPropertyValue<IList<string>>("TestSources");
+            var testSources = e.GetPropertyValue<IList<string>>("TestSources");
+
+            foreach (var src in testSources)
+            {
+                var asm = Assembly.LoadFile(src);
+                foreach (var type in asm.DefinedTypes)
+                {
+                    logger.LogWarning(dataCtx, $"   {type.Namespace}.{type.Name}");
+                }
+            }
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
@@ -71,11 +81,6 @@ namespace Neo.Collector
             logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
 
             var (hitMaps, branchMaps) = ParseCoverageFiles();
-
-            foreach (var src in testSources)
-            {
-                logger.LogWarning(dataCtx, $"  TestSource {src}");
-            }
         }
 
         (HitMaps hitMaps, BranchMaps branchMaps) ParseCoverageFiles()
