@@ -155,7 +155,7 @@ namespace Neo.Collector
                 foreach (var kvp in hitMaps)
                 {
                     writer.WriteLine(kvp.Key);
-                    foreach (var hit in kvp.Value)
+                    foreach (var hit in kvp.Value.OrderBy(k => k.Key))
                     {
                         writer.WriteLine($"{hit.Key} {hit.Value}");
                     }
@@ -172,7 +172,7 @@ namespace Neo.Collector
                 foreach (var kvp in branchMaps)
                 {
                     writer.WriteLine(kvp.Key);
-                    foreach (var branch in kvp.Value)
+                    foreach (var branch in kvp.Value.OrderBy(k => k.Key))
                     {
                         writer.WriteLine($"{branch.Key} {branch.Value.branchCount} {branch.Value.continueCount}");
                     }
