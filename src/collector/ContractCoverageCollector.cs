@@ -97,7 +97,7 @@ namespace Neo.Collector
                         foreach (var sp in GetSequencePoints(type))
                         {
                             var doc = Path.GetFileName(sp.Document);
-                            logger.LogWarning(dataCtx, $"    {doc} {sp.address} {sp.Start.Line}");   
+                            logger.LogWarning(dataCtx, $"    {doc} {sp.Address} {sp.Start.Line}");   
                         }
                     }
                 }
