@@ -33,6 +33,7 @@ namespace Neo.Collector.Models
             if (@string.TryParseHexString(out var buffer)
                 && buffer.Length == Size)
             {
+                Array.Reverse(buffer);
                 using (var stream = new MemoryStream(buffer))
                 using (var reader = new BinaryReader(stream))
                 {
