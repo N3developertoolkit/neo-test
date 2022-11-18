@@ -160,6 +160,8 @@ namespace Neo.Collector
 
         void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
         {
+            logger.LogWarning(dataCtx, $"  WriteAttachment {filename}");
+
             using (var stream = File.OpenWrite(filename))
             using (var writer = new StreamWriter(stream))
             {
