@@ -160,16 +160,23 @@ namespace Neo.Collector
 
         void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
         {
-            logger.LogWarning(dataCtx, $"  WriteAttachment {filename}");
-
-            using (var stream = File.OpenWrite(filename))
-            using (var writer = new StreamWriter(stream))
+            try
             {
-                writeAttachment(writer);
-                writer.Flush();
-                stream.Flush();
+                logger.LogWarning(dataCtx, $"  WriteAttachment {filename}");
+
+                using (var stream = File.OpenWrite(filename))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writeAttachment(writer);
+                    writer.Flush();
+                    stream.Flush();
+                }
+                dataSink.SendFileAsync(dataCtx, filename, false);
             }
-            dataSink.SendFileAsync(dataCtx, filename, false);
+            catch (Exception ex)
+            {
+                logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Error);
+            }
         }
 
         void ParseRawCoverageFile(string filename)
