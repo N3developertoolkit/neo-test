@@ -89,7 +89,7 @@ namespace Neo.Collector
         //     }
         // }
 
-        void WriteCoberturaPackage(XmlWriter writer)
+        public void WriteCoberturaPackage(XmlWriter writer)
         {
             using (var _ = writer.StartElement("package"))
             {

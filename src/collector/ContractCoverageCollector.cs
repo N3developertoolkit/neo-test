@@ -118,12 +118,32 @@ namespace Neo.Collector
                 }
             }
 
+            var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
+            WriteAttachment(coverageReportPath, textWriter =>
+            {
+                using (var writer = new XmlTextWriter(textWriter))
+                {
+                    using (var _ = writer.StartDocument())
+                    using (var __ = writer.StartElement("coverage"))
+                    {
+                        writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                        writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+
+                        using (var ___ = writer.StartElement("packages"))
+                        {
+                            foreach (var coverage in contractMap.Values)
+                            {
+                                coverage.WriteCoberturaPackage(writer);
+                            }
+                        }
+                    }
+                }
+            });
+
             foreach (var coverage in contractMap)
             {
-                var reportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
-                using (var stream = File.OpenWrite(reportPath))
-                using (var writer = new StreamWriter(stream))
-                {
+                var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
+                WriteAttachment(rawReportPath, writer => {
                     writer.WriteLine("HITS");
                     foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
                     {
@@ -134,12 +154,20 @@ namespace Neo.Collector
                     {
                         writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
                     }
-
-                    writer.Flush();
-                    stream.Flush();
-                }
-                dataSink.SendFileAsync(dataCtx, reportPath, false);
+                });
             }
+        }
+
+        void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
+        {
+            using (var stream = File.OpenWrite(filename))
+            using (var writer = new StreamWriter(stream))
+            {
+                writeAttachment(writer);
+                writer.Flush();
+                stream.Flush();
+            }
+            dataSink.SendFileAsync(dataCtx, filename, false);
         }
 
         void ParseRawCoverageFile(string filename)
