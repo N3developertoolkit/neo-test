@@ -10,9 +10,6 @@ using Neo.Collector.Models;
 
 namespace Neo.Collector
 {
-    using ContractMap = Dictionary<(string name, Hash160 hash), IEnumerable<SequencePoint>>;
-    using HitMaps = Dictionary<Hash160, Dictionary<uint, uint>>;
-    using BranchMaps = Dictionary<Hash160, Dictionary<uint, (uint branchCount, uint continueCount)>>;
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
     public class ContractCoverageCollector : DataCollector, ITestExecutionEnvironmentSpecifier
@@ -80,6 +77,7 @@ namespace Neo.Collector
                     if (TryGetManifestFileAttribute(type, out var manifestPath)
                         && ContractCoverage.TryCreate(manifestPath, out var coverage))
                     {
+                        logger.LogWarning(dataCtx, $"  {manifestPath} {coverage.ScriptHash}");
                         contractMap.Add(coverage.ScriptHash, coverage);
                     }
                 }
