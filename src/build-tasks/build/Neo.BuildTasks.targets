@@ -59,7 +59,6 @@
       <NeoContractInfo Include="$(NeoContractName)">
         <NefPath>$(NeoCscContractPath)</NefPath>
         <ManifestPath>$(NeoCscManifestPath)</ManifestPath>
-        <DebugInfoPath>$(NeoCscDebugInfoPath)</DebugInfoPath>
       </NeoContractInfo>
     </ItemGroup>
   </Target>
@@ -128,7 +127,6 @@
     <ItemGroup>
       <NeoContractGeneration Include="%(_NeoContractReferenceInfo.Identity)">
         <ManifestPath>%(ManifestPath)</ManifestPath>
-        <DebugInfoPath>%(DebugInfoPath)</DebugInfoPath>
         <ContractNameOverride>$([MSBuild]::ValueOrDefault('%(_NeoContractReferenceInfo.ContractNameOverride)', ''))</ContractNameOverride>
       </NeoContractGeneration>
     </ItemGroup>
@@ -160,7 +158,6 @@
 
     <NeoContractInterface
       ManifestFile="%(NeoContractGeneration.ManifestPath)"
-      DebugInfoFile="%(NeoContractGeneration.DebugInfoPath)"
       OutputFile="%(NeoContractGeneration.OutputPath)"
       RootNamespace="$(RootNamespace)"
       ContractNameOverride="%(ContractNameOverride)" />

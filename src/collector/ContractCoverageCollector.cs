@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
+using Neo.Collector.Models;
 
 namespace Neo.Collector
 {
@@ -21,6 +22,7 @@ namespace Neo.Collector
         const string COVERAGE_FILE_EXT = ".neo-coverage";
         const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
         const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
+        const string MANIFEST_FILE_ATTRIBUTE_NAME = "ManifestFileAttribute";
         const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
@@ -83,34 +85,61 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetContractAttribute(type, out var name, out var _hash)
-                        && Hash160.TryParse(_hash, out var hash))
+                    if (TryGetManifestFileAttribute(type, out var manifestPath))
                     {
-                        var sequencePoints = GetSequencePoints(type).ToList();
-                        if (sequencePoints.Count > 0)
+                        if (!manifestPath.EndsWith(".manifest.json")) continue;
+                        var dirName = Path.GetDirectoryName(manifestPath);
+                        var basename = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(manifestPath));
+                        
+                        var nefPath = Path.Combine(dirName, $"{basename}.nef");
+                        if (!NefFile.TryLoad(nefPath, out var nefFile))
                         {
-                            contractSequencePoints[(name, hash)] = sequencePoints;
+                            logger.LogWarning(dataCtx, $"  Failed to load {nefPath}");
+                            continue;
                         }
+                        if (!NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
+                        {
+                            logger.LogWarning(dataCtx, $"  Failed to load {Path.GetFileName(nefPath)} debug info");
+                        }
+
+                        var hash = nefFile.CalculateScriptHash();
+                        var instructions = nefFile.EnumerateInstructions()
+                            .Select(t => (t.address, t.instruction.IsBranchInstruction()))
+                            .ToArray();
+
+
+                        // TODO: Load sequence points from nefFile.Script and line mappings from debugInfo
                     }
                 }
             }
         }
 
-        bool TryGetContractAttribute(TypeInfo type, out string name, out string hash)
+        bool TryGetManifestFileAttribute(TypeInfo type, out string filename)
+        {
+            foreach (var a in type.GetCustomAttributesData())
+            {
+                if (a.AttributeType.Name == MANIFEST_FILE_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
+                {
+                    filename = (string)a.ConstructorArguments[0].Value;
+                    return true;
+                }
+            }
+
+            filename = "";
+            return false;
+        }
+
+        bool TryGetContractAttribute(TypeInfo type, out string name)
         {
             foreach (var a in type.GetCustomAttributesData())
             {
                 if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
                 {
                     name = (string)a.ConstructorArguments[0].Value;
-                    hash = a.ConstructorArguments.Count == 2
-                        ? (string)a.ConstructorArguments[1].Value
-                        : string.Empty;
                     return true;
                 }
             }
             name = string.Empty;
-            hash = string.Empty;
             return false;
         }
 

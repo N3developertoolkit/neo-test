@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Neo.Collector
+namespace Neo.Collector.Models
 {
     public class SequencePoint
     {

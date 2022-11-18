@@ -9,7 +9,6 @@ using System.Text;
     using System.Threading.Tasks;
 #endif
 
-#nullable disable
 namespace System.IO.Compression
 {
     /// <summary>
@@ -1140,4 +1139,3 @@ namespace System.IO.Compression
 #endregion
     }
 }
-#nullable restore

@@ -5,7 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Neo.BuildTasks
+namespace Neo.Collector.Models
 {
     public class NeoDebugInfo
     {
@@ -26,48 +26,90 @@ namespace Neo.BuildTasks
             public (int Line, int Column) End { get; set; }
         }
 
-        public string Hash { get; set; } = "";
+        public Hash160 Hash { get; set; } = Hash160.Zero;
         public IReadOnlyList<string> Documents { get; set; } = Array.Empty<string>();
         public IReadOnlyList<Method> Methods { get; set; } = Array.Empty<Method>();
 
-        public static NeoDebugInfo? TryLoad(string? debugInfoPath)
+        public static bool TryLoadContractDebugInfo(string nefPath, out NeoDebugInfo debugInfo)
         {
-            if (string.IsNullOrEmpty(debugInfoPath)) return null;
+            if (string.IsNullOrEmpty(nefPath))
+            {
+                debugInfo = null;
+                return false;
+            }
 
+            const string NEF_DBG_NFO_EXTENSION = ".nefdbgnfo";
+            const string DEBUG_JSON_EXTENSION = ".debug.json";
+
+            var nefdbgnfoPath = Path.ChangeExtension(nefPath, NEF_DBG_NFO_EXTENSION);
+            if (TryLoadCompressed(nefdbgnfoPath, out debugInfo)) return true;
+
+            var debugJsonPath = Path.ChangeExtension(nefPath, DEBUG_JSON_EXTENSION);
+            if (TryLoadUncompressed(debugJsonPath, out debugInfo)) return true;
+
+            return false;
+        }
+
+        static bool TryLoadCompressed(string debugInfoPath, out NeoDebugInfo debugInfo)
+        {
             try
             {
-                using var zip = ZipStorer.Open(debugInfoPath, FileAccess.Read);
-                var dir = zip.ReadCentralDir();
-                zip.ExtractFile(dir[0], out byte[] buffer);
-                using var stream = new MemoryStream(buffer);
-                return Load(stream);
+                if (File.Exists(debugInfoPath))
+                {
+                    using (var zip = ZipStorer.Open(debugInfoPath, FileAccess.Read))
+                    {
+                        var dir = zip.ReadCentralDir();
+                        zip.ExtractFile(dir[0], out byte[] buffer);
+                        using (var stream = new MemoryStream(buffer))
+                        {
+                            debugInfo = Load(stream);
+                        }
+                    }
+                }
             }
-            catch {}
+            catch { }
 
+            debugInfo = null;
+            return false;
+        }
+
+        static bool TryLoadUncompressed(string debugInfoPath, out NeoDebugInfo debugInfo)
+        {
             try
             {
-                using var fileStream = File.OpenRead(debugInfoPath);
-                return Load(fileStream);
+                if (File.Exists(debugInfoPath))
+                {
+                    using (var fileStream = File.OpenRead(debugInfoPath))
+                    {
+                        debugInfo = Load(fileStream);
+                        return true;
+                    }
+                }
             }
-            catch {}
+            catch { }
 
-            return null;
+            debugInfo = null;
+            return false;
         }
 
         static NeoDebugInfo Load(Stream stream)
         {
-            using var reader = new StreamReader(stream);
-            var text = reader.ReadToEnd();
-            var json = SimpleJSON.JSON.Parse(text) ?? throw new InvalidOperationException();
-            return FromDebugInfoJson(json);
+            using (var reader = new StreamReader(stream))
+            {
+                var text = reader.ReadToEnd();
+                var json = SimpleJSON.JSON.Parse(text) ?? throw new InvalidOperationException();
+                return FromDebugInfoJson(json);
+            }
         }
 
         public static NeoDebugInfo FromDebugInfoJson(SimpleJSON.JSONNode json)
         {
-            // TODO: parse events and static variables
-            var hash = json["hash"].Value;
+            var hash = Hash160.TryParse(json["hash"].Value, out var _hash)
+                ? _hash
+                : throw new FormatException($"Invalid hash {json["hash"].Value}");
             var documents = json["documents"].Linq.Select(kvp => kvp.Value.Value);
             var methods = json["methods"].Linq.Select(kvp => MethodFromJson(kvp.Value));
+            // TODO: parse events and static variables
 
             return new NeoDebugInfo
             {
@@ -111,7 +153,7 @@ namespace Neo.BuildTasks
                 : throw new FormatException($"Invalid range '{json.Value}'");
         }
 
-        static readonly Regex spRegex = new(@"^(\d+)\[(-?\d+)\](\d+)\:(\d+)\-(\d+)\:(\d+)$");
+        static readonly Regex spRegex = new Regex(@"^(\d+)\[(-?\d+)\](\d+)\:(\d+)\-(\d+)\:(\d+)$");
 
         static SequencePoint SequencePointFromJson(SimpleJSON.JSONNode json)
         {

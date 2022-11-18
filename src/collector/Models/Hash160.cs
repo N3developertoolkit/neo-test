@@ -2,12 +2,12 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Neo.Collector
+namespace Neo.Collector.Models
 {
     public struct Hash160 : IComparable<Hash160>, IEquatable<Hash160>
     {
         public static readonly Hash160 Zero = new Hash160(0, 0, 0);
-        public const int Size = (2 * sizeof(ulong)) + sizeof(uint);
+        public const int Size = 2 * sizeof(ulong) + sizeof(uint);
 
         readonly ulong data1;
         readonly ulong data2;
@@ -59,11 +59,11 @@ namespace Neo.Collector
         }
 
         public bool Equals(Hash160 other)
-            => (data1 == other.data1)
-                && (data2 == other.data2)
-                && (data3 == other.data3);
+            => data1 == other.data1
+                && data2 == other.data2
+                && data3 == other.data3;
 
-        public override bool Equals(object obj) => (obj is Hash160 value) && Equals(value);
+        public override bool Equals(object obj) => obj is Hash160 value && Equals(value);
 
         public override int GetHashCode()
         {
@@ -80,7 +80,7 @@ namespace Neo.Collector
 
         public override string ToString()
         {
-            var builder = new StringBuilder("0x", 2 + (Size * 2));
+            var builder = new StringBuilder("0x", 2 + Size * 2);
             builder.AppendFormat("{0:x}", data1);
             builder.AppendFormat("{0:x}", data2);
             builder.AppendFormat("{0:x}", data3);

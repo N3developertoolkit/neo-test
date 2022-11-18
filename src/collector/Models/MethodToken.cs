@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace Neo.Collector
+namespace Neo.Collector.Models
 {
     public class MethodToken
     {

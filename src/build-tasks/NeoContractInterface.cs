@@ -18,8 +18,7 @@ namespace Neo.BuildTasks
                 try
                 {
                     var manifest = NeoManifest.Load(ManifestFile);
-                    var debugInfo = NeoDebugInfo.TryLoad(DebugInfoFile);
-                    var source = ContractGenerator.GenerateContractInterface(manifest, ManifestFile, debugInfo, ContractNameOverride, RootNamespace);
+                    var source = ContractGenerator.GenerateContractInterface(manifest, ManifestFile, ContractNameOverride, RootNamespace);
                     if (!string.IsNullOrEmpty(source))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(this.OutputFile));
@@ -46,8 +45,6 @@ namespace Neo.BuildTasks
 
         [Required]
         public string ManifestFile { get; set; } = "";
-
-        public string DebugInfoFile { get; set; } = "";
 
         public string RootNamespace { get; set; } = "";
 

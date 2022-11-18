@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>neo-collector</AssemblyName>
     <PackageId>Neo.Collector</PackageId>
     <RootNamespace>Neo.Collector</RootNamespace>

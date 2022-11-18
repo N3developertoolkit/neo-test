@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Neo.Collector
+namespace Neo.Collector.Models
 {
     public class NefFile
     {
@@ -26,14 +26,16 @@ namespace Neo.Collector
         {
             try
             {
-                nefFile = Load(filename);
-                return true;
+                if (File.Exists(filename))
+                {
+                    nefFile = Load(filename);
+                    return true;
+                }
             }
-            catch
-            {
-                nefFile = default;
-                return false;
-            }
+            catch {}
+
+            nefFile = default;
+            return false;
         }
 
         public static NefFile Load(string filename)
@@ -66,5 +68,8 @@ namespace Neo.Collector
                 return new NefFile(compiler, source, tokens, script, checksum);
             }
         }
+
+
+
     }
 }
