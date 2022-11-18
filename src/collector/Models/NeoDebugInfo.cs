@@ -7,25 +7,8 @@ using System.Text.RegularExpressions;
 
 namespace Neo.Collector.Models
 {
-    public class NeoDebugInfo
+    public partial class NeoDebugInfo
     {
-        public class Method
-        {
-            public string Id { get; set; } = "";
-            public string Namespace { get; set; } = "";
-            public string Name { get; set; } = "";
-            public (int Start, int End) Range { get; set; }
-            public IReadOnlyList<SequencePoint> SequencePoints { get; set; } = Array.Empty<SequencePoint>();
-        }
-
-        public class SequencePoint
-        {
-            public int Address { get; set; }
-            public int Document { get; set; }
-            public (int Line, int Column) Start { get; set; }
-            public (int Line, int Column) End { get; set; }
-        }
-
         public Hash160 Hash { get; set; } = Hash160.Zero;
         public IReadOnlyList<string> Documents { get; set; } = Array.Empty<string>();
         public IReadOnlyList<Method> Methods { get; set; } = Array.Empty<Method>();

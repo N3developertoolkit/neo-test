@@ -13,7 +13,6 @@ namespace Neo.Collector
     using ContractMap = Dictionary<(string name, Hash160 hash), IEnumerable<SequencePoint>>;
     using HitMaps = Dictionary<Hash160, Dictionary<uint, uint>>;
     using BranchMaps = Dictionary<Hash160, Dictionary<uint, (uint branchCount, uint continueCount)>>;
-
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
     public class ContractCoverageCollector : DataCollector, ITestExecutionEnvironmentSpecifier
@@ -26,7 +25,7 @@ namespace Neo.Collector
         const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
-        readonly ContractMap contractSequencePoints = new ContractMap();
+        readonly IDictionary<Hash160, ContractCoverage> contractMap = new Dictionary<Hash160, ContractCoverage>();
         DataCollectionEvents events;
         DataCollectionSink dataSink;
         DataCollectionLogger logger;
@@ -34,18 +33,11 @@ namespace Neo.Collector
 
         public ContractCoverageCollector()
         {
-            coveragePath = GetTempFile();
-        }
-
-        static string GetTempFile()
-        {
-            string tempPath;
             do
             {
-                tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                coveragePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             }
-            while (Directory.Exists(tempPath));
-            return tempPath;
+            while (Directory.Exists(coveragePath));
         }
 
         public override void Initialize(
@@ -85,30 +77,10 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetManifestFileAttribute(type, out var manifestPath))
+                    if (TryGetManifestFileAttribute(type, out var manifestPath)
+                        && ContractCoverage.TryCreate(manifestPath, out var coverage))
                     {
-                        if (!manifestPath.EndsWith(".manifest.json")) continue;
-                        var dirName = Path.GetDirectoryName(manifestPath);
-                        var basename = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(manifestPath));
-                        
-                        var nefPath = Path.Combine(dirName, $"{basename}.nef");
-                        if (!NefFile.TryLoad(nefPath, out var nefFile))
-                        {
-                            logger.LogWarning(dataCtx, $"  Failed to load {nefPath}");
-                            continue;
-                        }
-                        if (!NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
-                        {
-                            logger.LogWarning(dataCtx, $"  Failed to load {Path.GetFileName(nefPath)} debug info");
-                        }
-
-                        var hash = nefFile.CalculateScriptHash();
-                        var instructions = nefFile.EnumerateInstructions()
-                            .Select(t => (t.address, t.instruction.IsBranchInstruction()))
-                            .ToArray();
-
-
-                        // TODO: Load sequence points from nefFile.Script and line mappings from debugInfo
+                        contractMap.Add(coverage.ScriptHash, coverage);
                     }
                 }
             }
@@ -129,100 +101,16 @@ namespace Neo.Collector
             return false;
         }
 
-        bool TryGetContractAttribute(TypeInfo type, out string name)
-        {
-            foreach (var a in type.GetCustomAttributesData())
-            {
-                if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
-                {
-                    name = (string)a.ConstructorArguments[0].Value;
-                    return true;
-                }
-            }
-            name = string.Empty;
-            return false;
-        }
-
-        IEnumerable<SequencePoint> GetSequencePoints(TypeInfo type)
-        {
-            foreach (var a in type.GetCustomAttributesData())
-            {
-                if (a.AttributeType.Name == SEQUENCE_POINT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
-                {
-                    var path = (string)a.ConstructorArguments[0].Value;
-                    var @namespace = (string)a.ConstructorArguments[1].Value;
-                    var name = (string)a.ConstructorArguments[2].Value;
-                    var address = (uint)a.ConstructorArguments[3].Value;
-                    var startLine = (uint)a.ConstructorArguments[4].Value;
-                    var startColumn = (uint)a.ConstructorArguments[5].Value;
-                    var endLine = (uint)a.ConstructorArguments[6].Value;
-                    var endColumn = (uint)a.ConstructorArguments[7].Value;
-
-                    yield return new SequencePoint(path, @namespace, name, address, (startLine, startColumn), (endLine, endColumn));
-                }
-            }
-        }
-
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
             logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
-
-            var (hitMaps, branchMaps) = ParseRawCoverageFiles();
-
-            var reportPath = Path.Combine(coveragePath, "neo.coverage.xml");
-            using (var writer = new ContractCoverageWriter(reportPath, contractSequencePoints, hitMaps, branchMaps))
-            {
-                writer.WriteCoberturaCoverage();
-                writer.Flush();
-            }
-            dataSink.SendFileAsync(dataCtx, reportPath, false);
-
-            var hitMapPath = Path.Combine(coveragePath, "hitmap.txt");
-            using (var stream = File.OpenWrite(hitMapPath))
-            using (var writer = new StreamWriter(stream))
-            {
-                foreach (var kvp in hitMaps)
-                {
-                    writer.WriteLine(kvp.Key);
-                    foreach (var hit in kvp.Value.OrderBy(k => k.Key))
-                    {
-                        writer.WriteLine($"{hit.Key} {hit.Value}");
-                    }
-                }
-                writer.Flush();
-                stream.Flush();
-            }
-            dataSink.SendFileAsync(dataCtx, hitMapPath, false);
-
-            var branchMapPath = Path.Combine(coveragePath, "branchmap.txt");
-            using (var stream = File.OpenWrite(branchMapPath))
-            using (var writer = new StreamWriter(stream))
-            {
-                foreach (var kvp in branchMaps)
-                {
-                    writer.WriteLine(kvp.Key);
-                    foreach (var branch in kvp.Value.OrderBy(k => k.Key))
-                    {
-                        writer.WriteLine($"{branch.Key} {branch.Value.branchCount} {branch.Value.continueCount}");
-                    }
-                }
-                writer.Flush();
-                stream.Flush();
-            }
-            dataSink.SendFileAsync(dataCtx, branchMapPath, false);
-        }
-
-        (HitMaps hitMaps, BranchMaps branchMaps) ParseRawCoverageFiles()
-        {
-            var hitMaps = new HitMaps();
-            var branchMaps = new BranchMaps();
 
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
                 try
                 {
                     if (Path.GetExtension(filename) != COVERAGE_FILE_EXT) continue;
-                    ParseRawCoverageFile(filename, hitMaps, branchMaps);
+                    ParseRawCoverageFile(filename);
                 }
                 catch (Exception ex)
                 {
@@ -230,10 +118,31 @@ namespace Neo.Collector
                 }
             }
 
-            return (hitMaps, branchMaps);
+            foreach (var coverage in contractMap)
+            {
+                var reportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
+                using (var stream = File.OpenWrite(reportPath))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine("HITS");
+                    foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
+                    {
+                        writer.WriteLine($"{hit.Key} {hit.Value}");
+                    }
+                    writer.WriteLine("BRANCHES");
+                    foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
+                    {
+                        writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
+                    }
+
+                    writer.Flush();
+                    stream.Flush();
+                }
+                dataSink.SendFileAsync(dataCtx, reportPath, false);
+            }
         }
 
-        void ParseRawCoverageFile(string filename, HitMaps hitMaps, BranchMaps branchMaps)
+        void ParseRawCoverageFile(string filename)
         {
             using (var stream = File.OpenRead(filename))
             using (var reader = new StreamReader(stream))
@@ -250,42 +159,25 @@ namespace Neo.Collector
                     }
                     else
                     {
-                        var values = line.Trim().Split(' ');
-                        var ip = uint.Parse(values[0].Trim());
-
-                        if (!hitMaps.TryGetValue(hash, out var hitMap))
+                        if (contractMap.TryGetValue(hash, out var coverage))
                         {
-                            hitMap = new Dictionary<uint, uint>();
-                            hitMaps[hash] = hitMap;
-                        }
-                        hitMap[ip] = hitMap.TryGetValue(ip, out var hitCount) ? hitCount + 1 : 1;
+                            var values = line.Trim().Split(' ');
+                            var ip = uint.Parse(values[0].Trim());
 
-                        switch (values.Length)
-                        {
-                            case 1:
-                                break;
-                            case 3:
-                                {
-                                    var offset = uint.Parse(values[1].Trim());
-                                    var branchResult = uint.Parse(values[2].Trim());
-
-                                    if (!branchMaps.TryGetValue(hash, out var branchMap))
-                                    {
-                                        branchMap = new Dictionary<uint, (uint branchCount, uint continueCount)>();
-                                        branchMaps[hash] = branchMap;
-                                    }
-                                    var (branchCount, continueCount) = branchMap.TryGetValue(ip, out var _branchHit)
-                                        ? _branchHit 
-                                        : (branchCount: 0, continueCount: 0);
-                                    branchMap[ip] = branchResult == offset
-                                        ? (branchCount, continueCount + 1)
-                                        : branchResult == ip
-                                            ? (branchCount + 1, continueCount)
-                                            : throw new FormatException($"Branch result {branchResult} did not equal {ip} or {offset}");
-                                }
-                                break;
-                            default:
+                            if (values.Length == 1)
+                            {
+                                coverage.RecordHit(ip);
+                            }
+                            else if (values.Length == 3)
+                            {
+                                var offset = uint.Parse(values[1].Trim());
+                                var branchResult = uint.Parse(values[2].Trim());
+                                coverage.RecordBranch(ip, offset, branchResult);
+                            }
+                            else
+                            {
                                 throw new FormatException($"Unexpected number of values ({values.Length})");
+                            }
                         }
                     }
                 }

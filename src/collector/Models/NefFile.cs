@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Neo.Collector.Models
 {
-    public class NefFile
+    public partial class NefFile
     {
         public string Compiler { get; }
         public string Source { get; }
@@ -56,7 +56,7 @@ namespace Neo.Collector.Models
                 var tokens = new List<MethodToken>(tokenCount);
                 for (int i = 0; i < tokenCount; i++)
                 {
-                    tokens.Add(MethodToken.Read(reader));
+                    tokens.Add(ReadMethodToken(reader));
                 }
                 var reserve2 = reader.ReadUInt16();
                 if (reserve2 != 0) throw new FormatException($"Reserve bytes must be 0");
@@ -69,7 +69,15 @@ namespace Neo.Collector.Models
             }
         }
 
+        static MethodToken ReadMethodToken(BinaryReader reader)
+        {
+            var hash = Hash160.Read(reader);
+            var method = reader.ReadVarString(32);
+            var parametersCount = reader.ReadUInt16();
+            var hasReturnValue = reader.ReadBoolean();
+            var callFlags = reader.ReadByte();
 
-
+            return new MethodToken(hash, method, parametersCount, hasReturnValue, callFlags);
+        }
     }
 }
