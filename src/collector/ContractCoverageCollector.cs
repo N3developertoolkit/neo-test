@@ -74,28 +74,30 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetManifestFileAttribute(type, out var manifestPath)
-                        && ContractCoverage.TryCreate(manifestPath, out var coverage))
+                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath)
+                        && ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
                     {
-                        logger.LogWarning(dataCtx, $"  {manifestPath} {coverage.ScriptHash}");
+                        logger.LogWarning(dataCtx, $"  {contractName} {coverage.ScriptHash}");
                         contractMap.Add(coverage.ScriptHash, coverage);
                     }
                 }
             }
         }
 
-        bool TryGetManifestFileAttribute(TypeInfo type, out string filename)
+        bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
         {
             foreach (var a in type.GetCustomAttributesData())
             {
-                if (a.AttributeType.Name == MANIFEST_FILE_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
+                if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
                 {
-                    filename = (string)a.ConstructorArguments[0].Value;
+                    name = (string)a.ConstructorArguments[0].Value;
+                    manifestPath = (string)a.ConstructorArguments[1].Value;
                     return true;
                 }
             }
 
-            filename = "";
+            name = "";
+            manifestPath = "";
             return false;
         }
 

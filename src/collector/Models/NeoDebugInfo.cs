@@ -108,6 +108,7 @@ namespace Neo.Collector.Models
             var id = json["id"].Value;
             var (@namespace, name) = NameFromJson(json["name"]);
             var range = RangeFromJson(json["range"]);
+            var @params = json["params"].Linq.Select(kvp => ParamFromJson(kvp.Value));
             var sequencePoints = json["sequence-points"].Linq.Select(kvp => SequencePointFromJson(kvp.Value));
 
             return new Method
@@ -116,8 +117,28 @@ namespace Neo.Collector.Models
                 Namespace = @namespace,
                 Name = name,
                 Range = range,
+                Parameters = @params.ToArray(),
                 SequencePoints = sequencePoints.ToArray(),
             };
+        }
+
+        static Parameter ParamFromJson(SimpleJSON.JSONNode json)
+        {
+            var values = json.Value.Split(',');
+            if (values.Length == 2 || values.Length == 3)
+            {
+                var index = values.Length == 3 
+                    && int.TryParse(values[2], out var _index)
+                    && _index >= 0 ? _index : -1;
+
+                return new Parameter
+                {
+                    Name = values[0],
+                    Type = values[1],
+                    Index = -index
+                };
+            }
+            throw new FormatException($"invalid parameter \"{json.Value}\"");
         }
 
         static (string, string) NameFromJson(SimpleJSON.JSONNode json)
