@@ -80,10 +80,14 @@ namespace Neo.Collector.Models
 
         public override string ToString()
         {
+            var buffer = new byte[Size];
+            BitConverter.GetBytes(data1).CopyTo(buffer, 0);
+            BitConverter.GetBytes(data2).CopyTo(buffer, sizeof(ulong));
+            BitConverter.GetBytes(data3).CopyTo(buffer, 2 * sizeof(ulong));
+
             var builder = new StringBuilder("0x", 2 + Size * 2);
-            builder.AppendFormat("{0:x}", data1);
-            builder.AppendFormat("{0:x}", data2);
-            builder.AppendFormat("{0:x}", data3);
+            for (int i = 0; i < buffer.Length; i++)
+                builder.AppendFormat("{0:x2}", buffer[buffer.Length - i - 1]);
             return builder.ToString();
         }
     }
