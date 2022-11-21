@@ -154,14 +154,12 @@ namespace Neo.Collector
             if (instructions is null) { throw new NotImplementedException(); }
 
             var sequencePoint = method.SequencePoints[index];
-            var nextSeqPointAddress = -1; 
-            // index < method.SequencePoints.Count
-            //     ? method.SequencePoints[index + 1].Address : -1;
+            var nextSeqPointAddress = int.MaxValue;
+            if (index < method.SequencePoints.Count)
+            {
+                nextSeqPointAddress = method.SequencePoints[index + 1].Address;
+            }
 
-            // var sp = method.SequencePoints[sequencePointIndex];
-            // var nextSeqPointAddress = sequencePointIndex < method.SequencePoints.Count
-            //     ? method.SequencePoints[sequencePointIndex + 1].Address
-            //     : -1;
             var pointInstructions = instructions.Where(t => t.address >= sequencePoint.Address);
             foreach (var (address, instruction) in pointInstructions)
             { 
