@@ -141,9 +141,9 @@ namespace Neo.Collector
                         }
                     }
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
-                    logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Warning);
+                    logger.LogWarning(dataCtx, ex.Message);
                 }
 
             });
