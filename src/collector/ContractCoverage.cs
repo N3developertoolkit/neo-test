@@ -96,7 +96,6 @@ namespace Neo.Collector
             }
         }
 
-
         void WriteCoberturaClass(XmlWriter writer, string name, IEnumerable<NeoDebugInfo.Method> methods)
         {
             var doc = methods
@@ -133,11 +132,10 @@ namespace Neo.Collector
                     for (int i = 0; i < method.SequencePoints.Count; i++)
                     {
                         NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
-                        // Note, end may not be a valid 
-                        // var end = i < method.SequencePoints.Count
-                        //     ? method.SequencePoints[i + 1]
-                        //     : null;
-                        var isBranch = IsBranchInstruction(method, i);
+                        var endAddress = i + 1 < method.SequencePoints.Count
+                            ? method.SequencePoints[i + 1].Address
+                            : (int?)null;
+                        var isBranch = IsBranchInstruction(sp, endAddress, method.Range);
                         using (var _3 = writer.StartElement("line"))
                         {
                             writer.WriteAttributeString("name", $"{sp.Start.Line}");
@@ -151,22 +149,15 @@ namespace Neo.Collector
             }
         }
 
-        int? IsBranchInstruction(NeoDebugInfo.Method method, int index)
+        int? IsBranchInstruction(NeoDebugInfo.SequencePoint sequencePoint, int? nextAddress, (int Start, int End) methodRange)
         {
             if (instructions is null) { throw new NotImplementedException(); }
-
-            var sequencePoint = method.SequencePoints[index];
-            var nextSeqPointAddress = int.MaxValue;
-            if (index + 1 < method.SequencePoints.Count)
-            {
-                nextSeqPointAddress = method.SequencePoints[index + 1].Address;
-            }
 
             var pointInstructions = instructions.Where(t => t.address >= sequencePoint.Address);
             foreach (var (address, instruction) in pointInstructions)
             { 
-                if (address > method.Range.End) break;
-                if (address >= nextSeqPointAddress) break;
+                if (address > methodRange.End) break;
+                if (address >= nextAddress) break;
                 if (instruction.IsBranchInstruction()) return address;
             }
             return null;
