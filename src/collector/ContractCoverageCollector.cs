@@ -125,10 +125,11 @@ namespace Neo.Collector
                 {
                     using (var writer = new XmlTextWriter(textWriter))
                     {
-                        writer.WriteStartDocument();
-                        writer.WriteStartElement("coverage");
-                        writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                        writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+                        using (var _ = writer.StartDocument())
+                        using (var __ = writer.StartElement("coverage"))
+                        {
+                            writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                            writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
 
                             // using (var ___ = writer.StartElement("packages"))
                             // {
@@ -137,9 +138,7 @@ namespace Neo.Collector
                             //         coverage.WriteCoberturaPackage(writer);
                             //     }
                             // }
-
-                        writer.WriteEndElement();
-                        writer.WriteEndDocument();
+                        }
                     }
                 }
                 catch (Exception ex)
