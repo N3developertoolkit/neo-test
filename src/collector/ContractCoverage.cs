@@ -157,7 +157,7 @@ namespace Neo.Collector
 
             var sequencePoint = method.SequencePoints[index];
             var nextSeqPointAddress = int.MaxValue;
-            if (index < method.SequencePoints.Count)
+            if (index + 1 < method.SequencePoints.Count)
             {
                 nextSeqPointAddress = method.SequencePoints[index + 1].Address;
             }
