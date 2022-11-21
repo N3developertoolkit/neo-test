@@ -121,24 +121,23 @@ namespace Neo.Collector
             var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
             WriteAttachment(coverageReportPath, textWriter =>
             {
-                textWriter.WriteLine("foo!");
-                // using (var writer = new XmlTextWriter(textWriter))
-                // {
-                //     using (var _ = writer.StartDocument())
-                //     using (var __ = writer.StartElement("coverage"))
-                //     {
-                //         writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                //         writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+                using (var writer = new XmlTextWriter(textWriter))
+                {
+                    using (var _ = writer.StartDocument())
+                    using (var __ = writer.StartElement("coverage"))
+                    {
+                        writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                        writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
 
-                //         using (var ___ = writer.StartElement("packages"))
-                //         {
-                //             foreach (var coverage in contractMap.Values)
-                //             {
-                //                 coverage.WriteCoberturaPackage(writer);
-                //             }
-                //         }
-                //     }
-                // }
+                        // using (var ___ = writer.StartElement("packages"))
+                        // {
+                        //     foreach (var coverage in contractMap.Values)
+                        //     {
+                        //         coverage.WriteCoberturaPackage(writer);
+                        //     }
+                        // }
+                    }
+                }
             });
 
             foreach (var coverage in contractMap)
