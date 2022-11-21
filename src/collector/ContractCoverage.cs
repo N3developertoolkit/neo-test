@@ -154,6 +154,8 @@ namespace Neo.Collector
             if (instructions is null) { throw new NotImplementedException(); }
 
             var sequencePoint = method.SequencePoints[index];
+            var nextSeqPointAddress = index < method.SequencePoints.Count
+                ? method.SequencePoints[index + 1].Address : -1;
 
             // var sp = method.SequencePoints[sequencePointIndex];
             // var nextSeqPointAddress = sequencePointIndex < method.SequencePoints.Count
@@ -163,7 +165,7 @@ namespace Neo.Collector
             foreach (var (address, instruction) in pointInstructions)
             { 
                 if (address > method.Range.End) break;
-                // if (address >= nextSeqPointAddress) break;
+                if (address >= nextSeqPointAddress) break;
                 if (instruction.IsBranchInstruction()) return address;
             }
             return null;
