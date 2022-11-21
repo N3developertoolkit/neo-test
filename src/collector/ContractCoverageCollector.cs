@@ -121,29 +121,38 @@ namespace Neo.Collector
             var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
             WriteAttachment(coverageReportPath, textWriter =>
             {
-                using (var writer = new XmlTextWriter(textWriter))
+                try
                 {
-                    using (var _ = writer.StartDocument())
-                    using (var __ = writer.StartElement("coverage"))
+                    using (var writer = new XmlTextWriter(textWriter))
                     {
-                        writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                        writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+                        using (var _ = writer.StartDocument())
+                        using (var __ = writer.StartElement("coverage"))
+                        {
+                            writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                            writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
 
-                        // using (var ___ = writer.StartElement("packages"))
-                        // {
-                        //     foreach (var coverage in contractMap.Values)
-                        //     {
-                        //         coverage.WriteCoberturaPackage(writer);
-                        //     }
-                        // }
+                            // using (var ___ = writer.StartElement("packages"))
+                            // {
+                            //     foreach (var coverage in contractMap.Values)
+                            //     {
+                            //         coverage.WriteCoberturaPackage(writer);
+                            //     }
+                            // }
+                        }
                     }
                 }
+                catch (System.Exception ex)
+                {
+                    logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Warning);
+                }
+
             });
 
             foreach (var coverage in contractMap)
             {
                 var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
-                WriteAttachment(rawReportPath, writer => {
+                WriteAttachment(rawReportPath, writer =>
+                {
                     writer.WriteLine("HITS");
                     foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
                     {
@@ -190,8 +199,8 @@ namespace Neo.Collector
                     var line = reader.ReadLine();
                     if (line.StartsWith("0x"))
                     {
-                        hash = Hash160.TryParse(line, out var value) 
-                            ? value 
+                        hash = Hash160.TryParse(line, out var value)
+                            ? value
                             : throw new FormatException($"could not parse script hash {line}");
                     }
                     else
