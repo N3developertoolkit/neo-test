@@ -143,7 +143,7 @@ namespace Neo.Collector
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(dataCtx, ex.Message);
+                    logger.LogError(dataCtx, ex.Message);
                 }
 
             });
@@ -184,7 +184,7 @@ namespace Neo.Collector
             }
             catch (Exception ex)
             {
-                logger.LogWarning(dataCtx, ex.Message);
+                logger.LogError(dataCtx, ex.Message);
             }
         }
 
