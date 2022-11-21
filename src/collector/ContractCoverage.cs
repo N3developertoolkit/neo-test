@@ -133,8 +133,9 @@ namespace Neo.Collector
                     {
                         NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
                         // Note, end may not be a valid 
-                        var end = i == method.SequencePoints.Count
-                            ? null : method.SequencePoints[i + 1];
+                        var end = i < method.SequencePoints.Count
+                            ? method.SequencePoints[i + 1]
+                            : null;
                         var isBranch = IsBranchInstruction(sp, end);
                         using (var _3 = writer.StartElement("line"))
                         {
