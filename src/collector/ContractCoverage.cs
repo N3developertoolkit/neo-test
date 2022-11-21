@@ -143,6 +143,8 @@ namespace Neo.Collector
                             writer.WriteAttributeString("name", $"{sp.Start.Line}");
                             writer.WriteAttributeString("branch", $"{isBranch.HasValue}");
                             writer.WriteAttributeString("address", $"{sp.Address}");
+                            writer.WriteAttributeString("index", $"{i}");
+                            writer.WriteAttributeString("count", $"{method.SequencePoints.Count}");
                         }
                     }
                 }
