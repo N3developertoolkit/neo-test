@@ -15,13 +15,12 @@ namespace Neo.Collector
         readonly string contractName;
         readonly NeoDebugInfo debugInfo;
         readonly IReadOnlyList<(int address, Instruction instruction)> instructions;
-        readonly IDictionary<int, uint> hitMap = new Dictionary<int, uint>();
-        readonly IDictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
+        readonly Dictionary<int, uint> hitMap = new Dictionary<int, uint>();
+        readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
 
         public Hash160 ScriptHash { get; }
-        public IReadOnlyDictionary<uint, uint> HitMap => (IReadOnlyDictionary<uint, uint>)hitMap;
-        public IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)> BranchMap =>
-            (IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)>)branchMap;
+        public IReadOnlyDictionary<int, uint> HitMap => hitMap;
+        public IReadOnlyDictionary<int, (uint branchCount, uint continueCount)> BranchMap => branchMap;
 
         public ContractCoverage(string contractName, NeoDebugInfo debugInfo, NefFile nefFile)
         {
