@@ -10,9 +10,8 @@ namespace Neo.Collector
     class ContractCoverage
     {
         readonly string contractName;
-        readonly string manifestPath;
         readonly NeoDebugInfo debugInfo;
-        readonly NefFile nefFile;
+        readonly IReadOnlyList<(int address, Instruction instruction)> instructions;
         readonly IDictionary<uint, uint> hitMap = new Dictionary<uint, uint>();
         readonly IDictionary<uint, (uint branchCount, uint continueCount)> branchMap = new Dictionary<uint, (uint branchCount, uint continueCount)>();
 
@@ -21,20 +20,24 @@ namespace Neo.Collector
         public IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)> BranchMap => 
             (IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)>)branchMap;
 
-        public ContractCoverage(string contractName, string manifestPath, NeoDebugInfo debugInfo, NefFile nefFile)
+        public ContractCoverage(string contractName, NeoDebugInfo debugInfo, NefFile nefFile)
         {
+            if (string.IsNullOrEmpty(contractName)) throw new ArgumentException("Invalid contract name", nameof(contractName));
+            if (debugInfo is null) throw new ArgumentNullException(nameof(debugInfo));
+
             this.contractName = contractName;
-            this.manifestPath = manifestPath;
             this.debugInfo = debugInfo;
-            this.nefFile = nefFile;
             ScriptHash = debugInfo.Hash;
+
             if (!(nefFile is null))
             {
                 var hash = nefFile.CalculateScriptHash();
                 if (!hash.Equals(debugInfo.Hash))
                 {
-                    throw new ArgumentException("Script hashes don't match");
+                    throw new ArgumentException("DebugInfo script hash doesn't match NefFile script hash");
                 }
+
+                instructions = nefFile.EnumerateInstructions().ToArray();
             }
         }
 
@@ -70,24 +73,13 @@ namespace Neo.Collector
             if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
             {
                 var nefFile = NefFile.TryLoad(nefPath, out var _nefFile) ? _nefFile : null;
-                value = new ContractCoverage(contractName, manifestPath, debugInfo, nefFile);
+                value = new ContractCoverage(contractName, debugInfo, nefFile);
                 return true;
             }
 
             value = null;
             return false;
         }
-
-        // public void WriteCoberturaPackage(string filename)
-        // {
-        //     using (var stream = File.OpenWrite(filename))
-        //     using (var writer = new XmlTextWriter(stream, System.Text.Encoding.UTF8))
-        //     {
-        //         WriteCoberturaCoverage(writer);
-        //         writer.Flush();
-        //         stream.Flush();
-        //     }
-        // }
 
         public void WriteCoberturaPackage(XmlWriter writer)
         {
@@ -102,22 +94,6 @@ namespace Neo.Collector
                     }
                 }
             }
-
-            // using (var _ = writer.StartDocument())
-            // using (var __ = writer.StartElement("coverage"))
-            // {
-            //     writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-            //     writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
-
-            //     using (var ___ = writer.StartElement("packages"))
-            //     {
-            //         foreach (var kvp in contracts)
-            //         {
-            //             WriteCoberturaPackage(kvp.Key.name, kvp.Value);
-            //         }
-            //     }
-            // }
-
         }
 
 
@@ -146,25 +122,47 @@ namespace Neo.Collector
         {
             using (var _ = writer.StartElement("method"))
             {
-                var sig = string.Join(",", method.Parameters.Select(p => p.Type));
+                var @params = method.Parameters
+                    .Where(p => !(p.Name == "this" && p.Type == "Any" && p.Index == 0))
+                    .Select(p => p.Type);
                 writer.WriteAttributeString("name", method.Name);
-                writer.WriteAttributeString("signature", $"({sig})");
-                using (var __ = writer.StartElement("lines"))
+                writer.WriteAttributeString("signature", $"({string.Join(",", @params)})");
+                using (var _2 = writer.StartElement("lines"))
                 {
-                    foreach (var sp in method.SequencePoints)
+                    for (int i = 0; i < method.SequencePoints.Count; i++)
                     {
-                        WriteCoberturaLine(writer, sp);
+                        NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
+                        // Note, end may not be a valid 
+                        var end = i == method.SequencePoints.Count
+                            ? method.Range.End 
+                            : method.SequencePoints[i + 1].Address - 1;
+                        var isBranch = IsBranchInstruction(sp, end);
+                        using (var _3 = writer.StartElement("line"))
+                        {
+                            writer.WriteAttributeString("name", $"{sp.Start.Line}");
+                            writer.WriteAttributeString("branch", $"{isBranch}");
+                        }
                     }
                 }
             }
         }
 
-        private void WriteCoberturaLine(XmlWriter writer, NeoDebugInfo.SequencePoint sp)
+        bool IsBranchInstruction(NeoDebugInfo.SequencePoint sp, int end)
         {
-            using (var _ = writer.StartElement("line"))
+            if (instructions is null)
             {
-                writer.WriteAttributeString("name", $"{sp.Start.Line}");
+                throw new NotImplementedException();
+            }
+            else
+            {
+                var lineIns = instructions.Where(t => t.address >= sp.Address && t.address <= end);
+                foreach (var (_, instruction) in lineIns)
+                {
+                    if (instruction.IsBranchInstruction()) return true;
+                }
+                return false;
             }
         }
+
     }
 }
