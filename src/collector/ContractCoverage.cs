@@ -133,14 +133,14 @@ namespace Neo.Collector
                     {
                         NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
                         // Note, end may not be a valid 
-                        var end = i < method.SequencePoints.Count
-                            ? method.SequencePoints[i + 1]
-                            : null;
-                        var isBranch = IsBranchInstruction(sp, end);
+                        // var end = i < method.SequencePoints.Count
+                        //     ? method.SequencePoints[i + 1]
+                        //     : null;
+                        // var isBranch = IsBranchInstruction(sp, end);
                         using (var _3 = writer.StartElement("line"))
                         {
                             writer.WriteAttributeString("name", $"{sp.Start.Line}");
-                            writer.WriteAttributeString("branch", $"{isBranch}");
+                            // writer.WriteAttributeString("branch", $"{isBranch}");
                         }
                     }
                 }
