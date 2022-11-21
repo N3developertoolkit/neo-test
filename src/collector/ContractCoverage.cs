@@ -7,17 +7,20 @@ using Neo.Collector.Models;
 
 namespace Neo.Collector
 {
+    using Method = NeoDebugInfo.Method;
+    using SequencePoint = NeoDebugInfo.SequencePoint;
+
     class ContractCoverage
     {
         readonly string contractName;
         readonly NeoDebugInfo debugInfo;
         readonly IReadOnlyList<(int address, Instruction instruction)> instructions;
-        readonly IDictionary<uint, uint> hitMap = new Dictionary<uint, uint>();
-        readonly IDictionary<uint, (uint branchCount, uint continueCount)> branchMap = new Dictionary<uint, (uint branchCount, uint continueCount)>();
+        readonly IDictionary<int, uint> hitMap = new Dictionary<int, uint>();
+        readonly IDictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
 
         public Hash160 ScriptHash { get; }
         public IReadOnlyDictionary<uint, uint> HitMap => (IReadOnlyDictionary<uint, uint>)hitMap;
-        public IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)> BranchMap => 
+        public IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)> BranchMap =>
             (IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)>)branchMap;
 
         public ContractCoverage(string contractName, NeoDebugInfo debugInfo, NefFile nefFile)
@@ -41,13 +44,13 @@ namespace Neo.Collector
             }
         }
 
-        public void RecordHit(uint address)
+        public void RecordHit(int address)
         {
             var hitCount = hitMap.TryGetValue(address, out var value) ? value : 0;
             hitMap[address] = hitCount + 1;
         }
 
-        public void RecordBranch(uint address, uint offsetAddress, uint branchResult)
+        public void RecordBranch(int address, int offsetAddress, int branchResult)
         {
             RecordHit(address);
             var (branchCount, continueCount) = branchMap.TryGetValue(address, out var value)
@@ -62,8 +65,8 @@ namespace Neo.Collector
         public static bool TryCreate(string contractName, string manifestPath, out ContractCoverage value)
         {
             var dirname = Path.GetDirectoryName(manifestPath);
-            var basename = Path.GetFileNameWithoutExtension(manifestPath); 
-            
+            var basename = Path.GetFileNameWithoutExtension(manifestPath);
+
             if (manifestPath.EndsWith(".manifest.json"))
             {
                 basename = Path.GetFileNameWithoutExtension(basename);
@@ -96,7 +99,7 @@ namespace Neo.Collector
             }
         }
 
-        void WriteCoberturaClass(XmlWriter writer, string name, IEnumerable<NeoDebugInfo.Method> methods)
+        void WriteCoberturaClass(XmlWriter writer, string name, IEnumerable<Method> methods)
         {
             var doc = methods
                 .SelectMany(m => m.SequencePoints)
@@ -117,7 +120,7 @@ namespace Neo.Collector
             }
         }
 
-        private void WriteCoberturaMethod(XmlWriter writer, NeoDebugInfo.Method method)
+        private void WriteCoberturaMethod(XmlWriter writer, Method method)
         {
             using (var _ = writer.StartElement("method"))
             {
@@ -126,41 +129,53 @@ namespace Neo.Collector
                     .Select(p => p.Type);
                 writer.WriteAttributeString("name", method.Name);
                 writer.WriteAttributeString("signature", $"({string.Join(",", @params)})");
-                writer.WriteAttributeString("range", $"{method.Range.Start}-{method.Range.End}");
+                // writer.WriteAttributeString("range", $"{method.Range.Start}-{method.Range.End}");
                 using (var _2 = writer.StartElement("lines"))
                 {
                     for (int i = 0; i < method.SequencePoints.Count; i++)
                     {
-                        NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
-                        var endAddress = i + 1 < method.SequencePoints.Count
-                            ? method.SequencePoints[i + 1].Address
-                            : (int?)null;
-                        var isBranch = IsBranchInstruction(sp, endAddress, method.Range);
+                        var sp = method.SequencePoints[i];
+
                         using (var _3 = writer.StartElement("line"))
                         {
-                            writer.WriteAttributeString("name", $"{sp.Start.Line}");
-                            writer.WriteAttributeString("branch", $"{isBranch.HasValue}");
-                            writer.WriteAttributeString("address", $"{sp.Address}");
-                            writer.WriteAttributeString("index", $"{i}");
-                            writer.WriteAttributeString("count", $"{method.SequencePoints.Count}");
+                            writer.WriteAttributeString("number", $"{sp.Start.Line}");
+
+                            if (TryGetBranchAddress(sp, method.SequencePoints.GetNextOrDefault(i), method.Range, out var branchAddress))
+                            {
+                                writer.WriteAttributeString("branch", "True");
+                            }
+                            else
+                            {
+                                var hits = hitMap.TryGetValue(sp.Address, out var value) ? value : 0;
+                                writer.WriteAttributeString("hits", $"{hits}");
+                                writer.WriteAttributeString("branch", "False");
+                            }
                         }
                     }
                 }
             }
         }
 
-        int? IsBranchInstruction(NeoDebugInfo.SequencePoint sequencePoint, int? nextAddress, (int Start, int End) methodRange)
+        bool TryGetBranchAddress(SequencePoint sequencePoint, SequencePoint nextSequencePoint, (int Start, int End) methodRange, out int branchAddress)
         {
             if (instructions is null) { throw new NotImplementedException(); }
 
+            var nextAddress = nextSequencePoint is null ? int.MaxValue : nextSequencePoint.Address;
+
             var pointInstructions = instructions.Where(t => t.address >= sequencePoint.Address);
             foreach (var (address, instruction) in pointInstructions)
-            { 
+            {
                 if (address > methodRange.End) break;
                 if (address >= nextAddress) break;
-                if (instruction.IsBranchInstruction()) return address;
+                if (instruction.IsBranchInstruction())
+                {
+                    branchAddress = address;
+                    return true;
+                }
             }
-            return null;
+
+            branchAddress = default;
+            return false;
         }
     }
 }

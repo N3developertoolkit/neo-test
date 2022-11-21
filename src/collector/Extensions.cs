@@ -78,7 +78,7 @@ namespace Neo.Collector
 
         public static IEnumerable<(int address, Instruction instruction)> EnumerateInstructions(this NefFile @this)
         {
-            var address = 0;
+            int address = 0;
             var script = @this.Script;
             while (address < script.Length)
             {
@@ -87,6 +87,11 @@ namespace Neo.Collector
                 address += instruction.Size;
             }
         }
+
+        public static T GetNextOrDefault<T>(this IReadOnlyList<T> @this, int index) 
+            => index + 1 < @this.Count ? @this[index + 1] : default;
+
+
 
         public static bool IsBranchInstruction(this Instruction instruction)
             => instruction.OpCode >= OpCode.JMPIF

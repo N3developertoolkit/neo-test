@@ -124,7 +124,10 @@ namespace Neo.Collector
                 {
                     // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
                     // and close the stream
-                    var writer = new XmlTextWriter(textWriter);
+                    var writer = new XmlTextWriter(textWriter)
+                    {
+                        Formatting = Formatting.Indented,
+                    };
                     using (var _ = writer.StartDocument())
                     using (var __ = writer.StartElement("coverage"))
                     {
@@ -208,7 +211,7 @@ namespace Neo.Collector
                         if (contractMap.TryGetValue(hash, out var coverage))
                         {
                             var values = line.Trim().Split(' ');
-                            var ip = uint.Parse(values[0].Trim());
+                            var ip = int.Parse(values[0].Trim());
 
                             if (values.Length == 1)
                             {
@@ -216,8 +219,8 @@ namespace Neo.Collector
                             }
                             else if (values.Length == 3)
                             {
-                                var offset = uint.Parse(values[1].Trim());
-                                var branchResult = uint.Parse(values[2].Trim());
+                                var offset = int.Parse(values[1].Trim());
+                                var branchResult = int.Parse(values[2].Trim());
                                 coverage.RecordBranch(ip, offset, branchResult);
                             }
                             else
