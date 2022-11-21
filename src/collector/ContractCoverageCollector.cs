@@ -184,7 +184,7 @@ namespace Neo.Collector
             }
             catch (Exception ex)
             {
-                logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Error);
+                logger.LogWarning(dataCtx, ex.Message);
             }
         }
 
