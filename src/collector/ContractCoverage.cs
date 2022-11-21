@@ -134,8 +134,8 @@ namespace Neo.Collector
                         NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
                         // Note, end may not be a valid 
                         var end = i == method.SequencePoints.Count
-                            ? method.Range.End 
-                            : method.SequencePoints[i + 1].Address - 1;
+                            ? method.Range.End + 1
+                            : method.SequencePoints[i + 1].Address;
                         var isBranch = IsBranchInstruction(sp, end);
                         using (var _3 = writer.StartElement("line"))
                         {
@@ -155,7 +155,7 @@ namespace Neo.Collector
             }
             else
             {
-                var lineIns = instructions.Where(t => t.address >= sp.Address && t.address <= end);
+                var lineIns = instructions.Where(t => t.address >= sp.Address && t.address < end);
                 foreach (var (_, instruction) in lineIns)
                 {
                     if (instruction.IsBranchInstruction()) return true;
