@@ -136,7 +136,7 @@ namespace Neo.Collector
                         // var end = i < method.SequencePoints.Count
                         //     ? method.SequencePoints[i + 1]
                         //     : null;
-                        var isBranch = IsBranchInstruction(method, i);
+                        var isBranch = IsBranchInstruction(sp);
                         using (var _3 = writer.StartElement("line"))
                         {
                             writer.WriteAttributeString("name", $"{sp.Start.Line}");
@@ -147,31 +147,22 @@ namespace Neo.Collector
             }
         }
 
-        int? IsBranchInstruction(NeoDebugInfo.Method method, int sequencePointIndex)
+        int? IsBranchInstruction(NeoDebugInfo.SequencePoint sequencePoint)
         {
             if (instructions is null) { throw new NotImplementedException(); }
 
-            try
-            {
-                var sp = method.SequencePoints[sequencePointIndex];
-                var nextSeqPointAddress = sequencePointIndex < method.SequencePoints.Count
-                    ? method.SequencePoints[sequencePointIndex + 1].Address
-                    : -1;
-                var pointInstructions = instructions.Where(t => t.address >= sp.Address);
-                foreach (var (address, instruction) in pointInstructions)
-                { 
-                    if (address > method.Range.End) break;
-                    if (address >= nextSeqPointAddress) break;
-                    if (instruction.IsBranchInstruction()) return address;
-                }
-                return null;
-                
+            // var sp = method.SequencePoints[sequencePointIndex];
+            // var nextSeqPointAddress = sequencePointIndex < method.SequencePoints.Count
+            //     ? method.SequencePoints[sequencePointIndex + 1].Address
+            //     : -1;
+            var pointInstructions = instructions.Where(t => t.address >= sequencePoint.Address);
+            foreach (var (address, instruction) in pointInstructions)
+            { 
+                // if (address > method.Range.End) break;
+                // if (address >= nextSeqPointAddress) break;
+                if (instruction.IsBranchInstruction()) return address;
             }
-            catch (System.Exception ex)
-            {
-                throw new Exception($"IsBranchInstruction {sequencePointIndex} of {method.SequencePoints.Count}", ex);
-            }
+            return null;
         }
-
     }
 }
