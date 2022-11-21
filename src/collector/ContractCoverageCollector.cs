@@ -123,23 +123,24 @@ namespace Neo.Collector
             {
                 try
                 {
-                    using (var writer = new XmlTextWriter(textWriter))
+                    // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
+                    // and close the stream
+                    var writer = new XmlTextWriter(textWriter);
+                    using (var _ = writer.StartDocument())
+                    using (var __ = writer.StartElement("coverage"))
                     {
-                        using (var _ = writer.StartDocument())
-                        using (var __ = writer.StartElement("coverage"))
-                        {
-                            writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                            writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+                        writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                        writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
 
-                            // using (var ___ = writer.StartElement("packages"))
-                            // {
-                            //     foreach (var coverage in contractMap.Values)
-                            //     {
-                            //         coverage.WriteCoberturaPackage(writer);
-                            //     }
-                            // }
+                        using (var ___ = writer.StartElement("packages"))
+                        {
+                            foreach (var coverage in contractMap.Values)
+                            {
+                                coverage.WriteCoberturaPackage(writer);
+                            }
                         }
                     }
+                    writer.Flush();
                 }
                 catch (Exception ex)
                 {
