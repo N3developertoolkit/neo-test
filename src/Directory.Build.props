@@ -24,9 +24,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <BlockchainToolkitLibraryVersion>3.4.13</BlockchainToolkitLibraryVersion>
+      <!-- <BlockchainToolkitLibraryVersion>3.4.13</BlockchainToolkitLibraryVersion> -->
+    <BlockchainToolkitLibraryVersion>local</BlockchainToolkitLibraryVersion>
     <!-- <BlockchainToolkitLibraryVersion>local</BlockchainToolkitLibraryVersion> -->
-    <BlockchainToolkitLibraryLocalPath>..\..\..\lib-bctk</BlockchainToolkitLibraryLocalPath>
+    <!-- <BlockchainToolkitLibraryLocalPath>..\..\..\lib-bctk</BlockchainToolkitLibraryLocalPath> -->
+    <BlockchainToolkitLibraryLocalPath>../../../neo-blockchaintoolkit-library/</BlockchainToolkitLibraryLocalPath>
     <NeoVersion>3.4.0</NeoVersion>
     <NeoMonorepoPath>..\..\..\..\official\3neo-monorepo</NeoMonorepoPath>
 

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Neo;
 using Neo.BlockchainToolkit;
+using Neo.BlockchainToolkit.Utilities;
 using Neo.Persistence;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
