@@ -15,6 +15,7 @@ namespace Neo.Collector
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
         const string COVERAGE_FILE_EXT = ".neo-coverage";
+        const string SCRIPT_FILE_EXT = ".neo-script";
         const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
         const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
         const string MANIFEST_FILE_ATTRIBUTE_NAME = "ManifestFileAttribute";
@@ -102,6 +103,7 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
+            // TODO: Read .neo-script files
             logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
 
             foreach (var filename in Directory.EnumerateFiles(coveragePath))

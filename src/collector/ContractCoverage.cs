@@ -11,7 +11,6 @@ namespace Neo.Collector
     {
         readonly string contractName;
         readonly NeoDebugInfo debugInfo;
-        readonly IReadOnlyList<(int address, Instruction instruction)> instructions;
         readonly IDictionary<uint, uint> hitMap = new Dictionary<uint, uint>();
         readonly IDictionary<uint, (uint branchCount, uint continueCount)> branchMap = new Dictionary<uint, (uint branchCount, uint continueCount)>();
 
@@ -20,7 +19,7 @@ namespace Neo.Collector
         public IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)> BranchMap => 
             (IReadOnlyDictionary<uint, (uint branchCount, uint continueCount)>)branchMap;
 
-        public ContractCoverage(string contractName, NeoDebugInfo debugInfo, NefFile nefFile)
+        public ContractCoverage(string contractName, NeoDebugInfo debugInfo)
         {
             if (string.IsNullOrEmpty(contractName)) throw new ArgumentException("Invalid contract name", nameof(contractName));
             if (debugInfo is null) throw new ArgumentNullException(nameof(debugInfo));
@@ -28,17 +27,6 @@ namespace Neo.Collector
             this.contractName = contractName;
             this.debugInfo = debugInfo;
             ScriptHash = debugInfo.Hash;
-
-            if (!(nefFile is null))
-            {
-                var hash = nefFile.CalculateScriptHash();
-                if (!hash.Equals(debugInfo.Hash))
-                {
-                    throw new ArgumentException("DebugInfo script hash doesn't match NefFile script hash");
-                }
-
-                instructions = nefFile.EnumerateInstructions().ToArray();
-            }
         }
 
         public void RecordHit(uint address)
@@ -72,8 +60,7 @@ namespace Neo.Collector
             var nefPath = Path.Combine(dirname, $"{basename}.nef");
             if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
             {
-                var nefFile = NefFile.TryLoad(nefPath, out var _nefFile) ? _nefFile : null;
-                value = new ContractCoverage(contractName, debugInfo, nefFile);
+                value = new ContractCoverage(contractName, debugInfo);
                 return true;
             }
 
@@ -153,22 +140,22 @@ namespace Neo.Collector
 
         int? IsBranchInstruction(NeoDebugInfo.Method method, int index)
         {
-            if (instructions is null) { throw new NotImplementedException(); }
+            // if (instructions is null) { throw new NotImplementedException(); }
 
-            var sequencePoint = method.SequencePoints[index];
-            var nextSeqPointAddress = int.MaxValue;
-            if (index + 1 < method.SequencePoints.Count)
-            {
-                nextSeqPointAddress = method.SequencePoints[index + 1].Address;
-            }
+            // var sequencePoint = method.SequencePoints[index];
+            // var nextSeqPointAddress = int.MaxValue;
+            // if (index + 1 < method.SequencePoints.Count)
+            // {
+            //     nextSeqPointAddress = method.SequencePoints[index + 1].Address;
+            // }
 
-            var pointInstructions = instructions.Where(t => t.address >= sequencePoint.Address);
-            foreach (var (address, instruction) in pointInstructions)
-            { 
-                if (address > method.Range.End) break;
-                if (address >= nextSeqPointAddress) break;
-                if (instruction.IsBranchInstruction()) return address;
-            }
+            // var pointInstructions = instructions.Where(t => t.address >= sequencePoint.Address);
+            // foreach (var (address, instruction) in pointInstructions)
+            // { 
+            //     if (address > method.Range.End) break;
+            //     if (address >= nextSeqPointAddress) break;
+            //     if (instruction.IsBranchInstruction()) return address;
+            // }
             return null;
         }
     }
