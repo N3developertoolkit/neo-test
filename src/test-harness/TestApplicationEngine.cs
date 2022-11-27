@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using Neo;
-using Neo.BlockchainToolkit;
 using Neo.Network.P2P.Payloads;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -59,7 +57,7 @@ namespace NeoTestHarness
             Witnesses = Array.Empty<Witness>(),
         };
 
-        record BranchInstructionInfo(int InstructionPointer, int BranchOffset);
+        record BranchInstructionInfo(UInt160 ContractHash, int InstructionPointer, int BranchOffset);
 
         readonly Dictionary<UInt160, OneOf<ContractState, Script>> executedScripts = new();
         readonly Dictionary<UInt160, Dictionary<int, int>> hitMaps = new();
@@ -111,7 +109,7 @@ namespace NeoTestHarness
         }
 
         public TestApplicationEngine(DataCache snapshot, TriggerType? trigger = null, IVerifiable? container = null, Block? persistingBlock = null, ProtocolSettings? settings = null, long? gas = null, IDiagnostic? diagnostic = null)
-            : base(trigger ?? TriggerType.Application, container ?? CreateTestTransaction(), snapshot, persistingBlock, settings ?? ProtocolSettings.Default, gas ?? TestModeGas,diagnostic)
+            : base(trigger ?? TriggerType.Application, container ?? CreateTestTransaction(), snapshot, persistingBlock, settings ?? ProtocolSettings.Default, gas ?? TestModeGas, diagnostic)
         {
             ApplicationEngine.Log += OnLog;
             ApplicationEngine.Notify += OnNotify;
@@ -169,41 +167,41 @@ namespace NeoTestHarness
             var coveragePath = Environment.GetEnvironmentVariable(envName);
             coverageWriter = coveragePath is null ? null : new CoverageWriter(coveragePath);
 
-            WriteScriptHash(CurrentContext);
-
+            coverageWriter?.WriteContext(CurrentContext);
             return base.Execute();
         }
 
         protected override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
-            WriteScriptHash(context);
-         }
-
-        private void WriteScriptHash(ExecutionContext? context)
-        {
-            if (coverageWriter is null) return;
-            coverageWriter.WriteScript(context);
+            coverageWriter?.WriteContext(context);
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
         {
             base.PreExecuteInstruction(instruction);
 
-            if (coverageWriter is null) return;
-            
-            var ip = CurrentContext?.InstructionPointer ?? 0;
-            var offset = GetBranchOffset(instruction);
+            branchInstructionInfo = null;
+            if (CurrentContext == null) return;
+            var ip = CurrentContext.InstructionPointer;
+            coverageWriter?.WriteAddress(ip);
 
-            if (offset == 0)
+            var hash = CurrentContext.GetScriptHash()
+                ?? throw new InvalidOperationException("CurrentContext.GetScriptHash returned null");
+
+            var offset = GetBranchOffset(instruction);
+            if (offset != 0)
             {
-                branchInstructionInfo = null;
-                coverageWriter.WriteLine($"{ip}");
+                branchInstructionInfo = new BranchInstructionInfo(hash, ip, ip + offset);
             }
-            else
+
+            if (!hitMaps.TryGetValue(hash, out var hitMap))
             {
-                branchInstructionInfo = new BranchInstructionInfo(ip, offset);
+                hitMap = new Dictionary<int, int>();
+                hitMaps.Add(hash, hitMap);
             }
+            var hitCount = hitMap.TryGetValue(ip, out var value) ? value : 0;
+            hitMap[ip] = hitCount + 1;
 
             static int GetBranchOffset(Instruction instruction)
                 => instruction.OpCode switch
@@ -224,10 +222,26 @@ namespace NeoTestHarness
         {
             base.PostExecuteInstruction(instruction);
 
-            if (coverageWriter is null) return;
             if (branchInstructionInfo is null) return;
-            var (ip, offset) = branchInstructionInfo;
-            coverageWriter.WriteLine($"{ip} {ip + offset} {CurrentContext?.InstructionPointer ?? 0}");
+            var (hash, ip, offset) = branchInstructionInfo;
+            coverageWriter?.WriteBranch(ip, offset, CurrentContext?.InstructionPointer);
+
+            if (CurrentContext == null) return;
+
+            if (!branchMaps.TryGetValue(hash, out var branchMap))
+            {
+                branchMap = new Dictionary<int, (int, int)>();
+                branchMaps.Add(hash, branchMap);
+            }
+
+            var (branchCount, continueCount) = branchMap.TryGetValue(branchInstructionInfo.InstructionPointer, out var value)
+                ? value : (0, 0);
+            (branchCount, continueCount) = CurrentContext.InstructionPointer == offset
+                ? (branchCount + 1, continueCount)
+                : CurrentContext.InstructionPointer == ip
+                    ? (branchCount, continueCount + 1)
+                    : throw new InvalidOperationException($"Unexpected InstructionPointer {CurrentContext.InstructionPointer}");
+            branchMap[ip] = (branchCount, continueCount);
         }
     }
 }

@@ -26,10 +26,10 @@ namespace NeoTestHarness
                 Writer = new StreamWriter(stream);
             }
 
-            public void WriteScript(ExecutionContext? context)
+            public void WriteContext(ExecutionContext? context)
             {
                 var hash = context?.Script.CalculateScriptHash() ?? UInt160.Zero; 
-                WriteLine($"{hash}");
+                Writer.WriteLine($"{hash}");
 
                 if (context is null) return;
                 var scriptPath = Path.Combine(coveragePath, $"{hash}.neo-script");
@@ -39,16 +39,18 @@ namespace NeoTestHarness
                     {
                         using var scriptStream = File.Open(scriptPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
                         scriptStream.Write(context.Script.AsSpan());
+                        scriptStream.Flush();
                     }
-                    catch (System.IO.IOException)
+                    catch (IOException)
                     {
                         // ignore IOException thrown because file already exists
                     }
                 }
             }
 
-            public void WriteLine(string? value) => Writer.WriteLine(value);
-            public void Write(string? value) => Writer.Write(value);
+            public void WriteAddress(int ip) => Writer.WriteLine($"{ip}");
+
+            public void WriteBranch(int ip, int offset, int? result) => Writer.WriteLine($"{ip} {offset} {result ?? 0}");
 
             public void Dispose()
             {
