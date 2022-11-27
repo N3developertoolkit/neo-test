@@ -183,8 +183,7 @@ namespace NeoTestHarness
         private void WriteScriptHash(ExecutionContext? context)
         {
             if (coverageWriter is null) return;
-            var hash = context?.Script.AsSpan().ToScriptHash() ?? UInt160.Zero;
-            coverageWriter.WriteLine($"{hash}");
+            coverageWriter.WriteScript(context);
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)

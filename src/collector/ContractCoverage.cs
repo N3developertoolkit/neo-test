@@ -22,7 +22,7 @@ namespace Neo.Collector
         public IReadOnlyDictionary<int, uint> HitMap => hitMap;
         public IReadOnlyDictionary<int, (uint branchCount, uint continueCount)> BranchMap => branchMap;
 
-        public ContractCoverage(string contractName, NeoDebugInfo debugInfo, NefFile nefFile)
+        public ContractCoverage(string contractName, NeoDebugInfo debugInfo)
         {
             if (string.IsNullOrEmpty(contractName)) throw new ArgumentException("Invalid contract name", nameof(contractName));
             if (debugInfo is null) throw new ArgumentNullException(nameof(debugInfo));
@@ -30,17 +30,6 @@ namespace Neo.Collector
             this.contractName = contractName;
             this.debugInfo = debugInfo;
             ScriptHash = debugInfo.Hash;
-
-            if (!(nefFile is null))
-            {
-                var hash = nefFile.CalculateScriptHash();
-                if (!hash.Equals(debugInfo.Hash))
-                {
-                    throw new ArgumentException("DebugInfo script hash doesn't match NefFile script hash");
-                }
-
-                instructions = nefFile.EnumerateInstructions().ToArray();
-            }
         }
 
         public void RecordHit(int address)
@@ -74,8 +63,7 @@ namespace Neo.Collector
             var nefPath = Path.Combine(dirname, $"{basename}.nef");
             if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
             {
-                var nefFile = NefFile.TryLoad(nefPath, out var _nefFile) ? _nefFile : null;
-                value = new ContractCoverage(contractName, debugInfo, nefFile);
+                value = new ContractCoverage(contractName, debugInfo);
                 return true;
             }
 
@@ -157,7 +145,7 @@ namespace Neo.Collector
 
         bool TryGetBranchAddress(SequencePoint sequencePoint, SequencePoint nextSequencePoint, (int Start, int End) methodRange, out int branchAddress)
         {
-            if (instructions is null) { throw new NotImplementedException(); }
+            // if (instructions is null) { throw new NotImplementedException(); }
 
             var nextAddress = nextSequencePoint is null ? int.MaxValue : nextSequencePoint.Address;
 
