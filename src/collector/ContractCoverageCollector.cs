@@ -132,7 +132,11 @@ namespace Neo.Collector
                         logger.LogWarning(dataCtx, $"      {method.Name}");
                         foreach (var line in method.Lines)
                         {
-                            logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start} #{line.BranchInstructionCount}");
+                            logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start.Line}");
+                            foreach (var br in line.BranchInstructions)
+                            {
+                                logger.LogWarning(dataCtx, $"          {br.address} {br.instruction.OpCode}");
+                            }
                             // foreach (var (address, instruction) in line.Instructions)
                             // {
                             //     logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
