@@ -107,6 +107,8 @@ namespace Neo.Collector
 
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
+                logger.LogWarning(dataCtx, $"  {filename}");
+
                 try
                 {
                     var ext = Path.GetExtension(filename);
