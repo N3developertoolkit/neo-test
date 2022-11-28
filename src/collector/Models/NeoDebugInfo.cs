@@ -46,6 +46,7 @@ namespace Neo.Collector.Models
                         using (var stream = new MemoryStream(buffer))
                         {
                             debugInfo = Load(stream);
+                            return true;
                         }
                     }
                 }

@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.4.0" />
     <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
   </ItemGroup>
 
 </Project>
