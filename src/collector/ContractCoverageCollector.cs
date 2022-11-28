@@ -122,9 +122,13 @@ namespace Neo.Collector
             foreach (var coverage in contractMap.Values)
             {
                 logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
-                foreach (var method in coverage.GetMethodCoverages())
+                foreach (var group in coverage.GetMethodCoverages().GroupBy(m => m.Namespace))
                 {
-                    logger.LogWarning(dataCtx, $"    {method.Namespace} {method.Name}");
+                    logger.LogWarning(dataCtx, $"    {group.Key}");
+                    foreach (var method in group)
+                    {
+                        logger.LogWarning(dataCtx, $"      {method.Name}");
+                    }
                 }
             }
 
