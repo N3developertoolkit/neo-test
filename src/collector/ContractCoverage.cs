@@ -13,15 +13,30 @@ namespace Neo.Collector
     class MethodCoverage
     {
         readonly Method method;
+        public readonly IReadOnlyList<LineCoverage> Lines;
 
         public string Namespace => method.Namespace;
         public string Name => method.Name;
 
-        public MethodCoverage(Method method)
+        public MethodCoverage(Method method, IEnumerable<LineCoverage> lines)
         {
             this.method = method;
+            Lines = lines.ToArray();
         }
     }
+
+    class LineCoverage
+    {
+        public readonly SequencePoint SequencePoint;
+        public readonly IReadOnlyList<(int address, Instruction instruction)> Instructions;
+
+        public LineCoverage(SequencePoint sp, IEnumerable<(int address, Instruction instruction)> instructions)
+        {
+            SequencePoint = sp;
+            Instructions = instructions.ToArray();
+        }
+    }
+
     class ContractCoverage
     {
         readonly string contractName;
@@ -97,23 +112,28 @@ namespace Neo.Collector
         {
             foreach (var method in debugInfo.Methods)
             {
-                yield return new MethodCoverage(method);
+                var lines = GetLineCoverages(method);
+                yield return new MethodCoverage(method, lines);
+            }
+        }
+
+        IEnumerable<LineCoverage> GetLineCoverages(Method method)
+        {
+            for (var i = 0; i < method.SequencePoints.Count; i++)
+            {
+                var sp = method.SequencePoints[i];
+                var nextSPAddress = method.SequencePoints.GetNextOrDefault(i)?.Address ?? int.MaxValue;
+
+                var ins = instructions
+                    .Where(t => t.address >= sp.Address
+                        && t.address <= method.Range.End 
+                        && t.address < nextSPAddress);
+                yield return new LineCoverage(sp, ins);
             }
         }
 
         // IEnumerable<(SequencePoint, IEnumerable<(int, Instruction)>)> FooMethod(Method method)
         // {
-        //     for (var i = 0; i < method.SequencePoints.Count; i++)
-        //     {
-        //         var sp = method.SequencePoints[i];
-        //         var nextSPAddress = method.SequencePoints.GetNextOrDefault(i)?.Address ?? int.MaxValue;
-
-        //         var ins = instructions
-        //             .Where(t => t.address >= sp.Address
-        //                 && t.address <= method.Range.End 
-        //                 && t.address < nextSPAddress);
-        //         yield return (sp, ins);
-        //     }
         // }
 
         // IEnumerable<(int address, Instruction instruction)> GetMethod(Method method, int index)

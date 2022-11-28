@@ -128,6 +128,14 @@ namespace Neo.Collector
                     foreach (var method in group)
                     {
                         logger.LogWarning(dataCtx, $"      {method.Name}");
+                        foreach (var line in method.Lines)
+                        {
+                            logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start}");
+                            foreach (var (address, instruction) in line.Instructions)
+                            {
+                                logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
+                            }
+                        }
                     }
                 }
             }
