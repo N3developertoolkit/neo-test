@@ -12,9 +12,8 @@ namespace NeoTestHarness
         {
             readonly string coveragePath;
             readonly Stream stream;
+            readonly TextWriter writer;
             bool disposed = false;
-
-            public TextWriter Writer { get; }
 
             public CoverageWriter(string coveragePath)
             {
@@ -23,42 +22,48 @@ namespace NeoTestHarness
                 var filename = Path.Combine(coveragePath, $"{Guid.NewGuid()}.neo-coverage");
 
                 stream = File.Create(filename);
-                Writer = new StreamWriter(stream);
+                writer = new StreamWriter(stream);
             }
 
             public void WriteContext(ExecutionContext? context)
             {
-                var hash = context?.Script.CalculateScriptHash() ?? UInt160.Zero; 
-                Writer.WriteLine($"{hash}");
-
-                if (context is null) return;
-                var scriptPath = Path.Combine(coveragePath, $"{hash}.neo-script");
-                if (!File.Exists(scriptPath))
+                if (context is null)
                 {
-                    try
+                    writer.WriteLine($"{UInt160.Zero}");
+                }
+                else 
+                {
+                    var hash = context.Script.CalculateScriptHash(); 
+                    writer.WriteLine($"{hash}");
+
+                    var scriptPath = Path.Combine(coveragePath, $"{hash}.neo-script");
+                    if (!File.Exists(scriptPath))
                     {
-                        using var scriptStream = File.Open(scriptPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                        scriptStream.Write(context.Script.AsSpan());
-                        scriptStream.Flush();
-                    }
-                    catch (IOException)
-                    {
-                        // ignore IOException thrown because file already exists
+                        try
+                        {
+                            using var scriptStream = File.Open(scriptPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                            scriptStream.Write(context.Script.AsSpan());
+                            scriptStream.Flush();
+                        }
+                        catch (IOException)
+                        {
+                            // ignore IOException thrown because file already exists
+                        }
                     }
                 }
             }
 
-            public void WriteAddress(int ip) => Writer.WriteLine($"{ip}");
+            public void WriteAddress(int ip) => writer.WriteLine($"{ip}");
 
-            public void WriteBranch(int ip, int offset, int? result) => Writer.WriteLine($"{ip} {offset} {result ?? 0}");
+            public void WriteBranch(int ip, int offset, int result) => writer.WriteLine($"{ip} {offset} {result}");
 
             public void Dispose()
             {
                 if (!disposed)
                 {
-                    Writer.Flush();
+                    writer.Flush();
                     stream.Flush();
-                    Writer.Dispose();
+                    writer.Dispose();
                     stream.Dispose();
                     disposed = true;
                 }

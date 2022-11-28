@@ -174,7 +174,15 @@ namespace NeoTestHarness
         protected override void LoadContext(ExecutionContext context)
         {
             base.LoadContext(context);
+
             coverageWriter?.WriteContext(context);
+
+            var ecs = context.GetState<ExecutionContextState>();
+            if (ecs.ScriptHash is not null 
+                && !executedScripts.ContainsKey(ecs.ScriptHash))
+            {
+                executedScripts.Add(ecs.ScriptHash, ecs.Contract is null ? context.Script : ecs.Contract);
+            }
         }
 
         protected override void PreExecuteInstruction(Instruction instruction)
@@ -182,26 +190,28 @@ namespace NeoTestHarness
             base.PreExecuteInstruction(instruction);
 
             branchInstructionInfo = null;
-            if (CurrentContext == null) return;
+
+            // if there's no current context, there's no instruction pointer to record
+            if (CurrentContext is null) return;
+
             var ip = CurrentContext.InstructionPointer;
             coverageWriter?.WriteAddress(ip);
 
-            var hash = CurrentContext.GetScriptHash()
-                ?? throw new InvalidOperationException("CurrentContext.GetScriptHash returned null");
-
-            var offset = GetBranchOffset(instruction);
-            if (offset != 0)
-            {
-                branchInstructionInfo = new BranchInstructionInfo(hash, ip, ip + offset);
-            }
+            var hash = CurrentContext.GetScriptHash();
+            // if the current context has no script hash, there's no key for the hit or branch map
+            if (hash is null) return;
 
             if (!hitMaps.TryGetValue(hash, out var hitMap))
             {
                 hitMap = new Dictionary<int, int>();
                 hitMaps.Add(hash, hitMap);
             }
-            var hitCount = hitMap.TryGetValue(ip, out var value) ? value : 0;
-            hitMap[ip] = hitCount + 1;
+            hitMap[ip] = hitMap.TryGetValue(ip, out var _hitCount) ? _hitCount  + 1 : 1;
+
+            var offset = GetBranchOffset(instruction);
+            branchInstructionInfo = offset != 0
+                ? branchInstructionInfo = new BranchInstructionInfo(hash, ip, ip + offset)
+                : null;
 
             static int GetBranchOffset(Instruction instruction)
                 => instruction.OpCode switch
@@ -222,11 +232,15 @@ namespace NeoTestHarness
         {
             base.PostExecuteInstruction(instruction);
 
+            // if branchInstructionInfo is null, instruction is not a branch instruction
             if (branchInstructionInfo is null) return;
-            var (hash, ip, offset) = branchInstructionInfo;
-            coverageWriter?.WriteBranch(ip, offset, CurrentContext?.InstructionPointer);
-
+            // if there's no current context, there's no instruction pointer to record
             if (CurrentContext == null) return;
+
+            var (hash, branchIP, offsetIP) = branchInstructionInfo;
+            var currentIP = CurrentContext.InstructionPointer;
+
+            coverageWriter?.WriteBranch(branchIP, offsetIP, currentIP);
 
             if (!branchMaps.TryGetValue(hash, out var branchMap))
             {
@@ -236,12 +250,12 @@ namespace NeoTestHarness
 
             var (branchCount, continueCount) = branchMap.TryGetValue(branchInstructionInfo.InstructionPointer, out var value)
                 ? value : (0, 0);
-            (branchCount, continueCount) = CurrentContext.InstructionPointer == offset
+
+            branchMap[branchIP] = currentIP == offsetIP
                 ? (branchCount + 1, continueCount)
-                : CurrentContext.InstructionPointer == ip
+                : currentIP == branchIP
                     ? (branchCount, continueCount + 1)
-                    : throw new InvalidOperationException($"Unexpected InstructionPointer {CurrentContext.InstructionPointer}");
-            branchMap[ip] = (branchCount, continueCount);
+                    : (branchCount, continueCount);
         }
     }
 }

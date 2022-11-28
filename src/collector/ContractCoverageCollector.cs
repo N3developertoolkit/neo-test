@@ -103,15 +103,15 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            // TODO: Read .neo-script files
             logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
 
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
                 try
                 {
-                    if (Path.GetExtension(filename) != COVERAGE_FILE_EXT) continue;
-                    ParseRawCoverageFile(filename);
+                    var ext = Path.GetExtension(filename);
+                    if (ext == COVERAGE_FILE_EXT) ParseRawCoverageFile(filename);
+                    if (ext == SCRIPT_FILE_EXT) ParseScriptFile(filename);
                 }
                 catch (Exception ex)
                 {
@@ -119,56 +119,63 @@ namespace Neo.Collector
                 }
             }
 
-            var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
-            WriteAttachment(coverageReportPath, textWriter =>
+            foreach (var coverage in contractMap.Values)
             {
-                try
+                logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
+                foreach (var method in coverage.GetMethodCoverages())
                 {
-                    // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
-                    // and close the stream
-                    var writer = new XmlTextWriter(textWriter)
-                    {
-                        Formatting = Formatting.Indented,
-                    };
-                    using (var _ = writer.StartDocument())
-                    using (var __ = writer.StartElement("coverage"))
-                    {
-                        writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                        writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
-
-                        using (var ___ = writer.StartElement("packages"))
-                        {
-                            foreach (var coverage in contractMap.Values)
-                            {
-                                coverage.WriteCoberturaPackage(writer);
-                            }
-                        }
-                    }
-                    writer.Flush();
+                    logger.LogWarning(dataCtx, $"    {method.Namespace} {method.Name}");
                 }
-                catch (Exception ex)
-                {
-                    logger.LogError(dataCtx, ex.Message);
-                }
+            }
 
-            });
 
-            foreach (var coverage in contractMap)
+            // var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
+            // WriteAttachment(coverageReportPath, textWriter =>
+            // {
+            //     // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
+            //     // and close the stream
+            //     var writer = new XmlTextWriter(textWriter)
+            //     {
+            //         Formatting = Formatting.Indented,
+            //     };
+            //     WriteCoberturaCoverage(writer);
+            //     writer.Flush();
+            // });
+
+            // foreach (var coverage in contractMap)
+            // {
+            //     var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
+            //     WriteAttachment(rawReportPath, writer =>
+            //     {
+            //         writer.WriteLine("HITS");
+            //         foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
+            //         {
+            //             writer.WriteLine($"{hit.Key} {hit.Value}");
+            //         }
+            //         writer.WriteLine("BRANCHES");
+            //         foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
+            //         {
+            //             writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
+            //         }
+            //     });
+            // }
+        }
+
+        void WriteCoberturaCoverage(XmlWriter writer)
+        {
+            using (var _d = writer.StartDocument())
+            using (var _c = writer.StartElement("coverage"))
             {
-                var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
-                WriteAttachment(rawReportPath, writer =>
+                writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+
+                using (var _p = writer.StartElement("packages"))
                 {
-                    writer.WriteLine("HITS");
-                    foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
+                    foreach (var coverage in contractMap.Values)
                     {
-                        writer.WriteLine($"{hit.Key} {hit.Value}");
+                        // coverage.WriteCoberturaPackage(writer);
                     }
-                    writer.WriteLine("BRANCHES");
-                    foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
-                    {
-                        writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
-                    }
-                });
+                }
             }
         }
 
@@ -193,6 +200,15 @@ namespace Neo.Collector
             }
         }
 
+        private void ParseScriptFile(string filename)
+        {
+            if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash)
+                && contractMap.TryGetValue(hash, out var coverage))
+            {
+                coverage.RecordScript(File.ReadAllBytes(filename));
+            }
+        }
+
         void ParseRawCoverageFile(string filename)
         {
             using (var stream = File.OpenRead(filename))
@@ -204,30 +220,33 @@ namespace Neo.Collector
                     var line = reader.ReadLine();
                     if (line.StartsWith("0x"))
                     {
-                        hash = Hash160.TryParse(line, out var value)
+                        hash = Hash160.TryParse(line.Trim(), out var value)
                             ? value
-                            : throw new FormatException($"could not parse script hash {line}");
+                            : Hash160.Zero;
                     }
                     else
                     {
-                        if (contractMap.TryGetValue(hash, out var coverage))
+                        if (hash != Hash160.Zero 
+                            && contractMap.TryGetValue(hash, out var coverage))
                         {
                             var values = line.Trim().Split(' ');
-                            var ip = int.Parse(values[0].Trim());
-
-                            if (values.Length == 1)
+                            if (values.Length > 0
+                                && int.TryParse(values[0].Trim(), out var ip))
                             {
-                                coverage.RecordHit(ip);
-                            }
-                            else if (values.Length == 3)
-                            {
-                                var offset = int.Parse(values[1].Trim());
-                                var branchResult = int.Parse(values[2].Trim());
-                                coverage.RecordBranch(ip, offset, branchResult);
-                            }
-                            else
-                            {
-                                throw new FormatException($"Unexpected number of values ({values.Length})");
+                                if (values.Length == 1)
+                                {
+                                    coverage.RecordHit(ip);
+                                }
+                                else if (values.Length == 3
+                                    && int.TryParse(values[1].Trim(), out var offset)
+                                    && int.TryParse(values[2].Trim(), out var branchResult))
+                                {
+                                    coverage.RecordBranch(ip, offset, branchResult);
+                                }
+                                else
+                                {
+                                    logger.LogWarning(dataCtx, $"Invalid raw coverage data line '{line}'");
+                                }
                             }
                         }
                     }

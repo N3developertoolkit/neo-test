@@ -91,5 +91,15 @@ namespace Neo.Collector.Models
                 builder.AppendFormat("{0:x2}", buffer[buffer.Length - i - 1]);
             return builder.ToString();
         }
+
+        public static bool operator ==(in Hash160 left, in Hash160 right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(in Hash160 left, in Hash160 right)
+        {
+            return !left.Equals(right);
+        }
     }
 }

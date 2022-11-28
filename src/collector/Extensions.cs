@@ -76,10 +76,9 @@ namespace Neo.Collector
             return Encoding.UTF8.GetString(@this.ReadVarMemory(max));
         }
 
-        public static IEnumerable<(int address, Instruction instruction)> EnumerateInstructions(this NefFile @this)
+        public static IEnumerable<(int address, Instruction instruction)> EnumerateInstructions(this byte[] script)
         {
             int address = 0;
-            var script = @this.Script;
             while (address < script.Length)
             {
                 var instruction = new Instruction(script, address);
