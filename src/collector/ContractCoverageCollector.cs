@@ -121,26 +121,26 @@ namespace Neo.Collector
                 }
             }
 
-            foreach (var coverage in contractMap.Values)
-            {
-                logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
-                foreach (var group in coverage.GetMethodCoverages().GroupBy(m => m.Namespace))
-                {
-                    logger.LogWarning(dataCtx, $"    {group.Key}");
-                    foreach (var method in group)
-                    {
-                        logger.LogWarning(dataCtx, $"      {method.Name}");
-                        foreach (var line in method.Lines)
-                        {
-                            logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start} #{line.BranchInstructionCount}");
-                            // foreach (var (address, instruction) in line.Instructions)
-                            // {
-                            //     logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
-                            // }
-                        }
-                    }
-                }
-            }
+            // foreach (var coverage in contractMap.Values)
+            // {
+            //     logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
+            //     foreach (var group in coverage.GetMethodCoverages().GroupBy(m => m.Namespace))
+            //     {
+            //         logger.LogWarning(dataCtx, $"    {group.Key}");
+            //         foreach (var method in group)
+            //         {
+            //             logger.LogWarning(dataCtx, $"      {method.Name}");
+            //             foreach (var line in method.Lines)
+            //             {
+            //                 logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start} #{line.BranchInstructionCount}");
+            //                 // foreach (var (address, instruction) in line.Instructions)
+            //                 // {
+            //                 //     logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
+            //                 // }
+            //             }
+            //         }
+            //     }
+            // }
 
 
             // var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
