@@ -154,23 +154,23 @@ namespace Neo.Collector
             //     writer.Flush();
             // });
 
-            // foreach (var coverage in contractMap)
-            // {
-            //     var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
-            //     WriteAttachment(rawReportPath, writer =>
-            //     {
-            //         writer.WriteLine("HITS");
-            //         foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
-            //         {
-            //             writer.WriteLine($"{hit.Key} {hit.Value}");
-            //         }
-            //         writer.WriteLine("BRANCHES");
-            //         foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
-            //         {
-            //             writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
-            //         }
-            //     });
-            // }
+            foreach (var coverage in contractMap)
+            {
+                var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
+                WriteAttachment(rawReportPath, writer =>
+                {
+                    writer.WriteLine("HITS");
+                    foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
+                    {
+                        writer.WriteLine($"{hit.Key} {hit.Value}");
+                    }
+                    writer.WriteLine("BRANCHES");
+                    foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
+                    {
+                        writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
+                    }
+                });
+            }
         }
 
         void WriteCoberturaCoverage(XmlWriter writer)
