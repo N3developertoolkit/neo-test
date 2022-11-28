@@ -76,7 +76,7 @@ namespace Neo.Collector
             return false;
         }
 
-        static string GetBaseName(string path, string extension = "")
+        public static string GetBaseName(string path, string extension = "")
         {
             var filename = Path.GetFileName(path);
             if (string.IsNullOrEmpty(extension)) return filename;

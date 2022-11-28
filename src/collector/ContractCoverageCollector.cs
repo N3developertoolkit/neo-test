@@ -74,11 +74,17 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath)
-                        && ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
+                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath))
                     {
-                        logger.LogWarning(dataCtx, $"  {contractName} {coverage.ScriptHash}");
-                        contractMap.Add(coverage.ScriptHash, coverage);
+                        var basename = ContractCoverage.GetBaseName(manifestPath, ".manifest.json");
+
+                        logger.LogWarning(dataCtx, $"  {contractName} {manifestPath} {basename}");
+
+                        if (ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
+                        {
+                            logger.LogWarning(dataCtx, $"  {coverage.ScriptHash}");
+                            contractMap.Add(coverage.ScriptHash, coverage);
+                        }
                     }
                 }
             }
