@@ -28,11 +28,13 @@ namespace Neo.Collector
     class LineCoverage
     {
         public readonly SequencePoint SequencePoint;
+        public readonly int BranchInstructionCount;
         public readonly IReadOnlyList<(int address, Instruction instruction)> Instructions;
 
-        public LineCoverage(SequencePoint sp, IEnumerable<(int address, Instruction instruction)> instructions)
+        public LineCoverage(SequencePoint sp, int branchInstructionCount, IEnumerable<(int address, Instruction instruction)> instructions)
         {
             SequencePoint = sp;
+            BranchInstructionCount = branchInstructionCount;
             Instructions = instructions.ToArray();
         }
     }
@@ -128,7 +130,11 @@ namespace Neo.Collector
                     .Where(t => t.address >= sp.Address
                         && t.address <= method.Range.End 
                         && t.address < nextSPAddress);
-                yield return new LineCoverage(sp, ins);
+
+                
+                var foo = ins.Where(t => t.instruction.IsBranchInstruction()).Count();
+
+                yield return new LineCoverage(sp, foo, ins);
             }
         }
 
