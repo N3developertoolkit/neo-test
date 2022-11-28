@@ -9,6 +9,9 @@ namespace Neo.Collector.Models
 {
     public partial class NeoDebugInfo
     {
+        public const string NEF_DBG_NFO_EXTENSION = ".nefdbgnfo";
+        public const string DEBUG_JSON_EXTENSION = ".debug.json";
+
         public Hash160 Hash { get; set; } = Hash160.Zero;
         public IReadOnlyList<string> Documents { get; set; } = Array.Empty<string>();
         public IReadOnlyList<Method> Methods { get; set; } = Array.Empty<Method>();
@@ -20,9 +23,6 @@ namespace Neo.Collector.Models
                 debugInfo = null;
                 return false;
             }
-
-            const string NEF_DBG_NFO_EXTENSION = ".nefdbgnfo";
-            const string DEBUG_JSON_EXTENSION = ".debug.json";
 
             var nefdbgnfoPath = Path.ChangeExtension(nefPath, NEF_DBG_NFO_EXTENSION);
             if (TryLoadCompressed(nefdbgnfoPath, out debugInfo)) return true;

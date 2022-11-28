@@ -79,8 +79,9 @@ namespace Neo.Collector
                         var dirname = Path.GetDirectoryName(manifestPath);
                         var basename = ContractCoverage.GetBaseName(manifestPath, ".manifest.json");
                         var nefPath = Path.Combine(dirname, Path.ChangeExtension(basename, ".nef"));
+                        var nefdbgnfoPath = Path.ChangeExtension(nefPath, NeoDebugInfo.NEF_DBG_NFO_EXTENSION);
 
-                        logger.LogWarning(dataCtx, $"  {contractName} {manifestPath} {nefPath}");
+                        logger.LogWarning(dataCtx, $"  {contractName} {manifestPath} {nefdbgnfoPath}");
 
                         if (ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
                         {
