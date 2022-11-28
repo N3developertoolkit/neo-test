@@ -74,20 +74,11 @@ namespace Neo.Collector
                 var asm = Assembly.LoadFile(src);
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath))
+                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath) 
+                        && ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
                     {
-                        var dirname = Path.GetDirectoryName(manifestPath);
-                        var basename = ContractCoverage.GetBaseName(manifestPath, ".manifest.json");
-                        var nefPath = Path.Combine(dirname, Path.ChangeExtension(basename, ".nef"));
-                        var nefdbgnfoPath = Path.ChangeExtension(nefPath, NeoDebugInfo.NEF_DBG_NFO_EXTENSION);
-
-                        logger.LogWarning(dataCtx, $"  {contractName} {manifestPath} {nefdbgnfoPath}");
-
-                        if (ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
-                        {
-                            logger.LogWarning(dataCtx, $"  {coverage.ScriptHash}");
-                            contractMap.Add(coverage.ScriptHash, coverage);
-                        }
+                        logger.LogWarning(dataCtx, $"  {contractName} {coverage.ScriptHash}");
+                        contractMap.Add(coverage.ScriptHash, coverage);
                     }
                 }
             }
