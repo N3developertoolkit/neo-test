@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -87,37 +88,64 @@ namespace Neo.Collector
             }
         }
 
-        public static T GetNextOrDefault<T>(this IReadOnlyList<T> @this, int index) 
+        public static T GetNextOrDefault<T>(this IReadOnlyList<T> @this, int index)
             => index + 1 < @this.Count ? @this[index + 1] : default;
 
         public static bool IsBranchInstruction(this Instruction instruction)
             => instruction.OpCode >= OpCode.JMPIF
                 && instruction.OpCode <= OpCode.JMPLE_L;
 
-//         public static Hash160 CalculateScriptHash(this NefFile @this)
-//         {
-//             byte[] firstHash;
-//             using (var sha256 = SHA256.Create())
-//             {   
-//                 firstHash = sha256.ComputeHash(@this.Script);
-//             }
+        public static int GetBranchOffset(this Instruction instruction)
+        {
+            switch (instruction.OpCode)
+            {
+                case OpCode.JMPIF_L:
+                case OpCode.JMPIFNOT_L:
+                case OpCode.JMPEQ_L:
+                case OpCode.JMPNE_L:
+                case OpCode.JMPGT_L:
+                case OpCode.JMPGE_L:
+                case OpCode.JMPLT_L:
+                case OpCode.JMPLE_L:
+                    return BinaryPrimitives.ReadInt32LittleEndian(instruction.Operand.AsSpan());
+                case OpCode.JMPIF:
+                case OpCode.JMPIFNOT:
+                case OpCode.JMPEQ:
+                case OpCode.JMPNE:
+                case OpCode.JMPGT:
+                case OpCode.JMPGE:
+                case OpCode.JMPLT:
+                case OpCode.JMPLE:
+                    return (sbyte)instruction.Operand.AsSpan()[0];
+                default:
+                    return 0;
+            }
+        }
 
-//             byte[] secondHash;
-// #if NET47
-//             using (var ripemd160 = RIPEMD160.Create())
-// #else
-//             using (var ripemd160 = new Neo.Cryptography.RIPEMD160Managed())
-// #endif
-//             {
-//                 secondHash = ripemd160.ComputeHash(firstHash);
-//             }
+        //         public static Hash160 CalculateScriptHash(this NefFile @this)
+        //         {
+        //             byte[] firstHash;
+        //             using (var sha256 = SHA256.Create())
+        //             {   
+        //                 firstHash = sha256.ComputeHash(@this.Script);
+        //             }
 
-//             System.Diagnostics.Debug.Assert(secondHash.Length == Hash160.Size);
-//             using (var stream = new MemoryStream(secondHash))
-//             using (var reader = new BinaryReader(stream))
-//             {
-//                 return Hash160.Read(reader);
-//             }
-//         }
+        //             byte[] secondHash;
+        // #if NET47
+        //             using (var ripemd160 = RIPEMD160.Create())
+        // #else
+        //             using (var ripemd160 = new Neo.Cryptography.RIPEMD160Managed())
+        // #endif
+        //             {
+        //                 secondHash = ripemd160.ComputeHash(firstHash);
+        //             }
+
+        //             System.Diagnostics.Debug.Assert(secondHash.Length == Hash160.Size);
+        //             using (var stream = new MemoryStream(secondHash))
+        //             using (var reader = new BinaryReader(stream))
+        //             {
+        //                 return Hash160.Read(reader);
+        //             }
+        //         }
     }
 }

@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
@@ -11,30 +10,34 @@ namespace Neo.Collector
 {
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
-    public class ContractCoverageCollector : DataCollector, ITestExecutionEnvironmentSpecifier
+    public class CodeCoverageDataCollector : DataCollector, ITestExecutionEnvironmentSpecifier
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
-        const string COVERAGE_FILE_EXT = ".neo-coverage";
-        const string SCRIPT_FILE_EXT = ".neo-script";
+        internal const string COVERAGE_FILE_EXT = ".neo-coverage";
+        internal const string SCRIPT_FILE_EXT = ".neo-script";
         const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
         const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
+
         // const string MANIFEST_FILE_ATTRIBUTE_NAME = "ManifestFileAttribute";
         // const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
-        readonly IDictionary<Hash160, ContractCoverageManager> contractMap = new Dictionary<Hash160, ContractCoverageManager>();
+        readonly CodeCoverageCollector collector;
+
+        // readonly IDictionary<Hash160, ContractCoverageManager> contractMap = new Dictionary<Hash160, ContractCoverageManager>();
         DataCollectionEvents events;
         DataCollectionSink dataSink;
         DataCollectionLogger logger;
         DataCollectionContext dataCtx;
 
-        public ContractCoverageCollector()
+        public CodeCoverageDataCollector()
         {
             do
             {
                 coveragePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             }
             while (Directory.Exists(coveragePath));
+            collector = new CodeCoverageCollector();
         }
 
         public override void Initialize(
@@ -69,22 +72,60 @@ namespace Neo.Collector
             logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
             var testSources = e.GetPropertyValue<IList<string>>("TestSources");
 
-            foreach (var src in testSources)
+            for (int i = 0; i < testSources.Count; i++)
             {
-                var asm = Assembly.LoadFile(src);
+                LoadTestSource(testSources[i]);
+            }
+        }
+
+        internal void LoadTestSource(string testSource)
+        {
+            if (TryLoadAssembly(testSource, out var asm))
+            {
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath) 
-                        && ContractCoverageManager.TryCreate(contractName, manifestPath, out var coverage))
+                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath))
                     {
-                        logger.LogWarning(dataCtx, $"  {contractName} {coverage.ScriptHash}");
-                        contractMap.Add(coverage.ScriptHash, coverage);
+                        var dirname = Path.GetDirectoryName(manifestPath);
+                        var basename = GetBaseName(manifestPath, ".manifest.json");
+                        var nefPath = Path.Combine(dirname, Path.ChangeExtension(basename, ".nef"));
+                        if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
+                        {
+                            collector.LoadContract(contractName, debugInfo);
+                        }
                     }
                 }
             }
         }
 
-        bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
+        static bool TryLoadAssembly(string path, out Assembly assembly)
+        {
+            if (File.Exists(path))
+            {
+                try
+                {
+                    assembly = Assembly.LoadFile(path);
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+
+            assembly = default;
+            return false;
+        }
+
+        static string GetBaseName(string path, string extension = "")
+        {
+            var filename = Path.GetFileName(path);
+            if (string.IsNullOrEmpty(extension)) return filename;
+            return filename.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
+                ? filename.Substring(0, filename.Length - extension.Length)
+                : filename;
+        }
+
+        static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
         {
             foreach (var a in type.GetCustomAttributesData())
             {
@@ -101,46 +142,40 @@ namespace Neo.Collector
             return false;
         }
 
+
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
             logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
 
-            int rawCoverageFileCount = 0;
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
                 logger.LogWarning(dataCtx, $"  {filename}");
 
                 try
                 {
-                    var ext = Path.GetExtension(filename);
-                    if (ext == COVERAGE_FILE_EXT)
+                    using (var stream = File.OpenRead(filename))
                     {
-                        rawCoverageFileCount++;
-                        ParseRawCoverageFile(filename);
-                    }
-                    if (ext == SCRIPT_FILE_EXT)
-                    {
-                        ParseScriptFile(filename);
+                        collector.LoadSessionOutput(filename, stream);
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.LogException(dataCtx, ex, DataCollectorMessageLevel.Error);
+                    logger.LogError(dataCtx, ex);
                 }
             }
 
-            var reportPath = Path.Combine(coveragePath, $"neo.coverage.xml");
-            WriteAttachment(reportPath, textWriter =>
-            {
-                // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
-                // and close the stream
-                var writer = new XmlTextWriter(textWriter)
-                {
-                    Formatting = Formatting.Indented,
-                };
-                WriteCoverage(writer, rawCoverageFileCount);
-                writer.Flush();
-            });
+            // var reportPath = Path.Combine(coveragePath, $"neo.coverage.xml");
+            // WriteAttachment(reportPath, textWriter =>
+            // {
+            //     // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
+            //     // and close the stream
+            //     var writer = new XmlTextWriter(textWriter)
+            //     {
+            //         Formatting = Formatting.Indented,
+            //     };
+            //     // WriteCoverage(writer, rawCoverageFileCount);
+            //     writer.Flush();
+            // });
             // foreach (var coverage in contractMap.Values)
             // {
             //     logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
@@ -180,45 +215,45 @@ namespace Neo.Collector
             //     writer.Flush();
             // });
 
-            foreach (var coverage in contractMap)
-            {
-                var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
-                WriteAttachment(rawReportPath, writer =>
-                {
-                    writer.WriteLine("HITS");
-                    foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
-                    {
-                        writer.WriteLine($"{hit.Key} {hit.Value}");
-                    }
-                    writer.WriteLine("BRANCHES");
-                    foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
-                    {
-                        writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
-                    }
-                });
-            }
+            // foreach (var coverage in contractMap)
+            // {
+            //     var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
+            //     WriteAttachment(rawReportPath, writer =>
+            //     {
+            //         writer.WriteLine("HITS");
+            //         foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
+            //         {
+            //             writer.WriteLine($"{hit.Key} {hit.Value}");
+            //         }
+            //         writer.WriteLine("BRANCHES");
+            //         foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
+            //         {
+            //             writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
+            //         }
+            //     });
+            // }
         }
 
-        void WriteCoverage(XmlWriter writer, int rawCoverageFileCount)
-        {
-            using (var _ = writer.StartDocument())
-            using (var __ = writer.StartElement("coverage"))
-            {
-                writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
-                writer.WriteAttributeString("testrun-count", $"{rawCoverageFileCount}");
+        // void WriteCoverage(XmlWriter writer, int rawCoverageFileCount)
+        // {
+        //     using (var _ = writer.StartDocument())
+        //     using (var __ = writer.StartElement("coverage"))
+        //     {
+        //         writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+        //         writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+        //         writer.WriteAttributeString("testrun-count", $"{rawCoverageFileCount}");
 
-                using (var ___ = writer.StartElement("contracts"))
-                {
-                    foreach (var coverageMgr in contractMap.Values)
-                    {
-                        WriteCoverage(writer, coverageMgr.GetCoverage(rawCoverageFileCount));
-                    }
-                }
-            }
-        }
+        //         using (var ___ = writer.StartElement("contracts"))
+        //         {
+        //             foreach (var coverageMgr in contractMap.Values)
+        //             {
+        //                 WriteCoverage(writer, coverageMgr.GetCoverage(rawCoverageFileCount));
+        //             }
+        //         }
+        //     }
+        // }
 
-        void WriteCoverage(XmlWriter writer, ContractCoverage coverage)
+        void WriteCoverage(XmlWriter writer, OldContractCoverage coverage)
         {
             using (var _ = writer.StartElement("contract"))
             {
@@ -305,58 +340,58 @@ namespace Neo.Collector
             }
         }
 
-        private void ParseScriptFile(string filename)
-        {
-            if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash)
-                && contractMap.TryGetValue(hash, out var coverage))
-            {
-                coverage.RecordScript(File.ReadAllBytes(filename));
-            }
-        }
+        // private void ParseScriptFile(string filename)
+        // {
+        //     if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash)
+        //         && contractMap.TryGetValue(hash, out var coverage))
+        //     {
+        //         coverage.RecordScript(File.ReadAllBytes(filename));
+        //     }
+        // }
 
-        void ParseRawCoverageFile(string filename)
-        {
-            using (var stream = File.OpenRead(filename))
-            using (var reader = new StreamReader(stream))
-            {
-                var hash = Hash160.Zero;
-                while (!reader.EndOfStream)
-                {
-                    var line = reader.ReadLine();
-                    if (line.StartsWith("0x"))
-                    {
-                        hash = Hash160.TryParse(line.Trim(), out var value)
-                            ? value
-                            : Hash160.Zero;
-                    }
-                    else
-                    {
-                        if (hash != Hash160.Zero 
-                            && contractMap.TryGetValue(hash, out var coverage))
-                        {
-                            var values = line.Trim().Split(' ');
-                            if (values.Length > 0
-                                && int.TryParse(values[0].Trim(), out var ip))
-                            {
-                                if (values.Length == 1)
-                                {
-                                    coverage.RecordHit(ip);
-                                }
-                                else if (values.Length == 3
-                                    && int.TryParse(values[1].Trim(), out var offset)
-                                    && int.TryParse(values[2].Trim(), out var branchResult))
-                                {
-                                    coverage.RecordBranch(ip, offset, branchResult);
-                                }
-                                else
-                                {
-                                    logger.LogWarning(dataCtx, $"Invalid raw coverage data line '{line}'");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // void ParseRawCoverageFile(string filename)
+        // {
+        //     using (var stream = File.OpenRead(filename))
+        //     using (var reader = new StreamReader(stream))
+        //     {
+        //         var hash = Hash160.Zero;
+        //         while (!reader.EndOfStream)
+        //         {
+        //             var line = reader.ReadLine();
+        //             if (line.StartsWith("0x"))
+        //             {
+        //                 hash = Hash160.TryParse(line.Trim(), out var value)
+        //                     ? value
+        //                     : Hash160.Zero;
+        //             }
+        //             else
+        //             {
+        //                 if (hash != Hash160.Zero 
+        //                     && contractMap.TryGetValue(hash, out var coverage))
+        //                 {
+        //                     var values = line.Trim().Split(' ');
+        //                     if (values.Length > 0
+        //                         && int.TryParse(values[0].Trim(), out var ip))
+        //                     {
+        //                         if (values.Length == 1)
+        //                         {
+        //                             coverage.RecordHit(ip);
+        //                         }
+        //                         else if (values.Length == 3
+        //                             && int.TryParse(values[1].Trim(), out var offset)
+        //                             && int.TryParse(values[2].Trim(), out var branchResult))
+        //                         {
+        //                             coverage.RecordBranch(ip, offset, branchResult);
+        //                         }
+        //                         else
+        //                         {
+        //                             logger.LogWarning(dataCtx, $"Invalid raw coverage data line '{line}'");
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 }

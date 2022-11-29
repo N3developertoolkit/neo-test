@@ -8,20 +8,21 @@ namespace Neo.Collector
 {
     using Method = NeoDebugInfo.Method;
 
-    class ContractCoverageManager
+    class ContractCodeCoverageCollector
     {
         readonly string contractName;
         readonly NeoDebugInfo debugInfo;
         readonly Dictionary<int, uint> hitMap = new Dictionary<int, uint>();
         readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
         IReadOnlyList<(int address, Instruction instruction)> instructions = null;
+        IReadOnlyDictionary<int, Instruction> instructionMap = null;
 
         public string ContractName => contractName;
         public Hash160 ScriptHash => debugInfo.Hash;
         public IReadOnlyDictionary<int, uint> HitMap => hitMap;
         public IReadOnlyDictionary<int, (uint branchCount, uint continueCount)> BranchMap => branchMap;
 
-        public ContractCoverageManager(string contractName, NeoDebugInfo debugInfo)
+        public ContractCodeCoverageCollector(string contractName, NeoDebugInfo debugInfo)
         {
             if (string.IsNullOrEmpty(contractName)) throw new ArgumentException("Invalid contract name", nameof(contractName));
             if (debugInfo is null) throw new ArgumentNullException(nameof(debugInfo));
@@ -30,14 +31,14 @@ namespace Neo.Collector
             this.debugInfo = debugInfo;
         }
 
-        public static bool TryCreate(string contractName, string manifestPath, out ContractCoverageManager value)
+        public static bool TryCreate(string contractName, string manifestPath, out ContractCodeCoverageCollector value)
         {
             var dirname = Path.GetDirectoryName(manifestPath);
             var basename = GetBaseName(manifestPath, ".manifest.json");
             var nefPath = Path.Combine(dirname, Path.ChangeExtension(basename, ".nef"));
             if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
             {
-                value = new ContractCoverageManager(contractName, debugInfo);
+                value = new ContractCodeCoverageCollector(contractName, debugInfo);
                 return true;
             }
 
@@ -56,10 +57,13 @@ namespace Neo.Collector
 
         public void RecordScript(byte[] script)
         {
+            if (!(instructionMap is null)) throw new InvalidOperationException();
             if (!(instructions is null)) throw new InvalidOperationException();
             instructions = script.EnumerateInstructions()
                 .OrderBy(t => t.address)
                 .ToArray();
+            instructionMap = script.EnumerateInstructions().ToDictionary(t => t.address, t => t.instruction);
+
         }
 
         public void RecordHit(int address)
@@ -79,7 +83,7 @@ namespace Neo.Collector
                     : throw new FormatException($"Branch result {branchResult} did not equal {address} or {offsetAddress}");
         }
 
-        public ContractCoverage GetCoverage(int runCount)
+        public OldContractCoverage GetCoverage(int runCount)
         {
             var methods = new List<MethodCoverage>();
             foreach (var method in debugInfo.Methods)
@@ -89,7 +93,7 @@ namespace Neo.Collector
                     methods.Add(GetMethodCoverage(method));
                 }
             }
-            return new ContractCoverage(runCount, contractName, debugInfo.Hash, methods);
+            return new OldContractCoverage(runCount, contractName, debugInfo.Hash, methods);
         }
 
         MethodCoverage GetMethodCoverage(Method method)
@@ -120,6 +124,34 @@ namespace Neo.Collector
             }
 
             return new MethodCoverage(method, doc, lines);
+        }
+
+        void ComputePaths(Method method)
+        {
+            var branchPoints = new List<int>();
+
+            // instructions
+            //     .SkipWhile(t => t.address < method.Range.Start)
+            //     .TakeWhile(t => t.address <= method.Range.End)
+            //     .Where(t => t.instruction.IsBranchInstruction())
+
+
+            var current = method.Range.Start;
+            while (current <= method.Range.End)
+            {
+                var ins = instructionMap[current];
+                // if (ins.IsBranchInstruction()) branchPoints.Add(current)
+                var offset = ins.GetBranchOffset();
+                if (offset == 0)
+                {
+                    current += ins.Size;
+                }
+
+
+                
+
+            }
+
         }
     }
 }

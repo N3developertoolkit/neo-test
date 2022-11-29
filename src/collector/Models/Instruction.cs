@@ -6,7 +6,7 @@ namespace Neo.Collector.Models
     {
         public OpCode OpCode { get; }
         public ArraySegment<byte> Operand { get; }
-        public int Size { get;  }
+        public int Size { get; }
 
         public Instruction(byte[] script, int address)
         {

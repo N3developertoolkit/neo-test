@@ -1,21 +1,55 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Neo.Collector.Models;
 
 namespace Neo.Collector
 {
     class ContractCoverage
     {
-        public readonly int TestRunCount;
-        public readonly string ContractName;
-        public readonly Hash160 ScriptHash;
-        public readonly IReadOnlyList<MethodCoverage> Methods;
+        readonly string contractName;
+        readonly NeoDebugInfo debugInfo;
+        readonly Dictionary<int, uint> hitMap = new Dictionary<int, uint>();
+        readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
+        IReadOnlyDictionary<int, Instruction> instructions = null;
 
-        public ContractCoverage(int testRunCount, string contractName, Hash160 scriptHash, IReadOnlyList<MethodCoverage> methods)
+        public ContractCoverage(string contractName, NeoDebugInfo debugInfo)
         {
-            TestRunCount = testRunCount;
-            ContractName = contractName;
-            ScriptHash = scriptHash;
-            Methods = methods;
+            this.contractName = contractName;
+            this.debugInfo = debugInfo;
+        }
+
+        public void RecordHit(int address)
+        {
+            var hitCount = hitMap.TryGetValue(address, out var value) ? value : 0;
+            hitMap[address] = hitCount + 1;
+        }
+
+        public void RecordBranch(int address, int offsetAddress, int branchResult)
+        {
+            var (branchCount, continueCount) = branchMap.TryGetValue(address, out var value)
+                ? value : (0, 0);
+            branchMap[address] = branchResult == address
+                ? (branchCount, continueCount + 1)
+                : branchResult == offsetAddress
+                    ? (branchCount + 1, continueCount)
+                    : throw new FormatException($"Branch result {branchResult} did not equal {address} or {offsetAddress}");
+        }
+
+
+        public void RecordScript(byte[] script)
+        {
+            if (!(instructions is null))
+            {
+                throw new InvalidOperationException($"RecordScript already called for {contractName}");
+            }
+
+            var map = new SortedDictionary<int, Instruction>();
+            foreach (var (address, instruction) in script.EnumerateInstructions())
+            {
+                map.Add(address, instruction);
+            }
+            instructions = map;
         }
     }
 }
