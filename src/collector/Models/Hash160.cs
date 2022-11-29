@@ -46,7 +46,7 @@ namespace Neo.Collector.Models
             return false;
         }
 
-        public int CompareTo(Hash160 other)
+        public int CompareTo(in Hash160 other)
         {
             var result = data1.CompareTo(other.data1);
             if (result != 0)
@@ -59,10 +59,15 @@ namespace Neo.Collector.Models
             return data3.CompareTo(other.data3);
         }
 
-        public bool Equals(Hash160 other)
+        int IComparable<Hash160>.CompareTo(Hash160 other) => CompareTo(other);
+
+        public bool Equals(in Hash160 other)
             => data1 == other.data1
                 && data2 == other.data2
                 && data3 == other.data3;
+
+
+        bool IEquatable<Hash160>.Equals(Hash160 other) => Equals(other);
 
         public override bool Equals(object obj) => obj is Hash160 value && Equals(value);
 

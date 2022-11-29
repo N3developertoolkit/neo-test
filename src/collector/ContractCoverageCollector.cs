@@ -18,11 +18,11 @@ namespace Neo.Collector
         const string SCRIPT_FILE_EXT = ".neo-script";
         const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
         const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
-        const string MANIFEST_FILE_ATTRIBUTE_NAME = "ManifestFileAttribute";
-        const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
+        // const string MANIFEST_FILE_ATTRIBUTE_NAME = "ManifestFileAttribute";
+        // const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
 
         readonly string coveragePath;
-        readonly IDictionary<Hash160, ContractCoverage> contractMap = new Dictionary<Hash160, ContractCoverage>();
+        readonly IDictionary<Hash160, ContractCoverageManager> contractMap = new Dictionary<Hash160, ContractCoverageManager>();
         DataCollectionEvents events;
         DataCollectionSink dataSink;
         DataCollectionLogger logger;
@@ -75,7 +75,7 @@ namespace Neo.Collector
                 foreach (var type in asm.DefinedTypes)
                 {
                     if (TryGetContractAttribute(type, out var contractName, out var manifestPath) 
-                        && ContractCoverage.TryCreate(contractName, manifestPath, out var coverage))
+                        && ContractCoverageManager.TryCreate(contractName, manifestPath, out var coverage))
                     {
                         logger.LogWarning(dataCtx, $"  {contractName} {coverage.ScriptHash}");
                         contractMap.Add(coverage.ScriptHash, coverage);
@@ -105,6 +105,7 @@ namespace Neo.Collector
         {
             logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
 
+            int rawCoverageFileCount = 0;
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
                 logger.LogWarning(dataCtx, $"  {filename}");
@@ -112,8 +113,15 @@ namespace Neo.Collector
                 try
                 {
                     var ext = Path.GetExtension(filename);
-                    if (ext == COVERAGE_FILE_EXT) ParseRawCoverageFile(filename);
-                    if (ext == SCRIPT_FILE_EXT) ParseScriptFile(filename);
+                    if (ext == COVERAGE_FILE_EXT)
+                    {
+                        rawCoverageFileCount++;
+                        ParseRawCoverageFile(filename);
+                    }
+                    if (ext == SCRIPT_FILE_EXT)
+                    {
+                        ParseScriptFile(filename);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -121,30 +129,42 @@ namespace Neo.Collector
                 }
             }
 
-            foreach (var coverage in contractMap.Values)
+            var reportPath = Path.Combine(coveragePath, $"neo.coverage.xml");
+            WriteAttachment(reportPath, textWriter =>
             {
-                logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
-                foreach (var group in coverage.GetMethodCoverages().GroupBy(m => m.Namespace))
+                // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
+                // and close the stream
+                var writer = new XmlTextWriter(textWriter)
                 {
-                    logger.LogWarning(dataCtx, $"    {group.Key}");
-                    foreach (var method in group)
-                    {
-                        logger.LogWarning(dataCtx, $"      {method.Name}");
-                        foreach (var line in method.Lines)
-                        {
-                            logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start.Line}");
-                            foreach (var br in line.BranchInstructions)
-                            {
-                                logger.LogWarning(dataCtx, $"          {br.address} {br.instruction.OpCode}");
-                            }
-                            // foreach (var (address, instruction) in line.Instructions)
-                            // {
-                            //     logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
-                            // }
-                        }
-                    }
-                }
-            }
+                    Formatting = Formatting.Indented,
+                };
+                WriteCoverage(writer, rawCoverageFileCount);
+                writer.Flush();
+            });
+            // foreach (var coverage in contractMap.Values)
+            // {
+            //     logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
+            //     foreach (var group in coverage.GetMethodCoverages().GroupBy(m => m.Namespace))
+            //     {
+            //         logger.LogWarning(dataCtx, $"    {group.Key}");
+            //         foreach (var method in group)
+            //         {
+            //             logger.LogWarning(dataCtx, $"      {method.Name}");
+            //             foreach (var line in method.Lines)
+            //             {
+            //                 logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start.Line}");
+            //                 foreach (var br in line.BranchInstructions)
+            //                 {
+            //                     logger.LogWarning(dataCtx, $"          {br.address} {br.instruction.OpCode}");
+            //                 }
+            //                 // foreach (var (address, instruction) in line.Instructions)
+            //                 // {
+            //                 //     logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
+            //                 // }
+            //             }
+            //         }
+            //     }
+            // }
 
 
             // var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
@@ -179,19 +199,86 @@ namespace Neo.Collector
             }
         }
 
-        void WriteCoberturaCoverage(XmlWriter writer)
+        void WriteCoverage(XmlWriter writer, int rawCoverageFileCount)
         {
-            using (var _d = writer.StartDocument())
-            using (var _c = writer.StartElement("coverage"))
+            using (var _ = writer.StartDocument())
+            using (var __ = writer.StartElement("coverage"))
             {
                 writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-                writer.WriteAttributeString("timestamp", $"{DateTime.Now.Ticks}");
+                writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                writer.WriteAttributeString("testrun-count", $"{rawCoverageFileCount}");
 
-                using (var _p = writer.StartElement("packages"))
+                using (var ___ = writer.StartElement("contracts"))
                 {
-                    foreach (var coverage in contractMap.Values)
+                    foreach (var coverageMgr in contractMap.Values)
                     {
-                        // coverage.WriteCoberturaPackage(writer);
+                        WriteCoverage(writer, coverageMgr.GetCoverage(rawCoverageFileCount));
+                    }
+                }
+            }
+        }
+
+        void WriteCoverage(XmlWriter writer, ContractCoverage coverage)
+        {
+            using (var _ = writer.StartElement("contract"))
+            {
+                writer.WriteAttributeString("name", coverage.ContractName);
+                writer.WriteAttributeString("scripthash", $"{coverage.ScriptHash}");
+
+                using (var __ = writer.StartElement("methods"))
+                {
+                    foreach (var method in coverage.Methods)
+                    {
+                        WriteCoverage(writer, method);
+                    }
+                }
+            }
+        }
+
+        void WriteCoverage(XmlWriter writer, MethodCoverage coverage)
+        {
+            using (var _ = writer.StartElement("method"))
+            {
+                writer.WriteAttributeString("namespace", coverage.Namespace);
+                writer.WriteAttributeString("name", coverage.Name);
+                writer.WriteAttributeString("document", coverage.Document);
+
+                using (var __ = writer.StartElement("lines"))
+                {
+                    foreach (var line in coverage.Lines)
+                    {
+                        WriteCoverage(writer, line);
+                    }
+                }
+            }
+        }
+
+        void WriteCoverage(XmlWriter writer, LineCoverage coverage)
+        {
+            using (var _1 = writer.StartElement("line"))
+            {
+                writer.WriteAttributeString("number", $"{coverage.Start.Line}");
+                writer.WriteAttributeString("address", $"{coverage.Address}");
+                writer.WriteAttributeString("hits", $"{coverage.HitCount}");
+
+                if (coverage.Branches.Count == 0)
+                {
+                    writer.WriteAttributeString("branch", "False");
+                }
+                else
+                {
+                    writer.WriteAttributeString("branch", "True");
+                    using (var __ = writer.StartElement("branches"))
+                    {
+                        foreach (var branch in coverage.Branches)
+                        {
+                            using (var ___ = writer.StartElement("branch"))
+                            {
+                                writer.WriteAttributeString("address", $"{branch.Address}");
+                                writer.WriteAttributeString("branch-count", $"{branch.BranchCount}");
+                                writer.WriteAttributeString("continue-count", $"{branch.ContinueCount}");
+                            }
+                        }
                     }
                 }
             }
