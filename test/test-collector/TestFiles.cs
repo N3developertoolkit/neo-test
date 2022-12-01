@@ -20,6 +20,15 @@ static class TestFiles
         @this.LoadContract(contractName, debugInfo);
     }
 
+    public static void LoadTestOutput(this CodeCoverageCollector @this, string dirName)
+    {
+        foreach (var file in GetResourceNames(dirName))
+        {
+            using var stream = GetResourceStream(file);
+            @this.LoadSessionOutput(file, stream);
+        }
+    }
+
     public static T GetResource<T>(string name, Func<Stream, T> convertFunc)
     {
         using var stream = GetResourceStream(name);

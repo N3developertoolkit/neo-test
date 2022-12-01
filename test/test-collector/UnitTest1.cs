@@ -14,17 +14,8 @@ public class UnitTest1
     {
         var collector = new CodeCoverageCollector();
         collector.LoadTestContract("test contract", "registrar.debug.json");
+        collector.LoadTestOutput(".run1.");
 
-        foreach (var file in TestFiles.GetResourceNames(".run1."))
-        {
-            using var stream = TestFiles.GetResourceStream(file);
-            collector.LoadSessionOutput(file, stream);
-        }
     }
-
-}
-
-static class TestExtensions
-{
 
 }

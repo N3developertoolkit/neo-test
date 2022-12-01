@@ -36,20 +36,19 @@ namespace Neo.Collector
                     : throw new FormatException($"Branch result {branchResult} did not equal {address} or {offsetAddress}");
         }
 
-
         public void RecordScript(byte[] script)
         {
-            if (!(instructions is null))
+            if (!(this.instructions is null))
             {
                 throw new InvalidOperationException($"RecordScript already called for {contractName}");
             }
 
-            var map = new SortedDictionary<int, Instruction>();
+            var instructions = new SortedDictionary<int, Instruction>();
             foreach (var (address, instruction) in script.EnumerateInstructions())
             {
-                map.Add(address, instruction);
+                instructions.Add(address, instruction);
             }
-            instructions = map;
+            this.instructions = instructions;
         }
     }
 }

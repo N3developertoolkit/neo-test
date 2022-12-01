@@ -34,7 +34,7 @@ namespace Neo.Collector
             }
         }
 
-        void LoadRawCoverage(Stream stream)
+        internal void LoadRawCoverage(Stream stream)
         {
             rawCoverageFileCount++;
 
@@ -78,8 +78,9 @@ namespace Neo.Collector
             }
         }
 
-        void LoadScript(Hash160 hash, Stream stream)
+        internal void LoadScript(Hash160 hash, Stream stream)
         {
+            // TODO: read instrucitons directly from stream
             if (coverageMap.TryGetValue(hash, out var coverage))
             {
                 using (var memStream = new MemoryStream())
