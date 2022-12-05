@@ -1,13 +1,21 @@
 namespace Neo.Collector.Models
 {
-    public partial class NeoDebugInfo
+    public partial struct NeoDebugInfo
     {
-        public class SequencePoint
+        public struct SequencePoint
         {
-            public int Address { get; set; }
-            public int Document { get; set; }
-            public (int Line, int Column) Start { get; set; }
-            public (int Line, int Column) End { get; set; }
+            public readonly int Address;
+            public readonly int Document;
+            public readonly (int Line, int Column) Start;
+            public readonly (int Line, int Column) End;
+
+            public SequencePoint(int address, int document, (int, int) start, (int, int) end)
+            {
+                Address = address;
+                Document = document;
+                Start = start;
+                End = end;
+            }
         }
     }
 }

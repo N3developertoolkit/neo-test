@@ -3,16 +3,26 @@ using System.Collections.Generic;
 
 namespace Neo.Collector.Models
 {
-    public partial class NeoDebugInfo
+    public partial struct NeoDebugInfo
     {
-        public class Method
+        public struct Method
         {
-            public string Id { get; set; } = "";
-            public string Namespace { get; set; } = "";
-            public string Name { get; set; } = "";
-            public (int Start, int End) Range { get; set; }
-            public IReadOnlyList<Parameter> Parameters { get; set; } = Array.Empty<Parameter>();
-            public IReadOnlyList<SequencePoint> SequencePoints { get; set; } = Array.Empty<SequencePoint>();
+            public readonly string Id;
+            public readonly string Namespace;
+            public readonly string Name;
+            public readonly (int Start, int End) Range;
+            public readonly IReadOnlyList<Parameter> Parameters;
+            public readonly IReadOnlyList<SequencePoint> SequencePoints;
+
+            public Method(string id, string @namespace, string name, (int, int) range, IReadOnlyList<Parameter> parameters, IReadOnlyList<SequencePoint> sequencePoints)
+            {
+                Id = id;
+                Namespace = @namespace;
+                Name = name;
+                Range = range;
+                Parameters = parameters;
+                SequencePoints = sequencePoints;
+            }
         }
     }
 }

@@ -1,12 +1,19 @@
 namespace Neo.Collector.Models
 {
-    public partial class NeoDebugInfo
+    public partial struct NeoDebugInfo
     {
-        public class Parameter
+        public struct Parameter
         {
-            public string Name { get; set; } = "";
-            public string Type { get; set; } = "";
-            public int Index { get; set; }
+            public readonly string Name;
+            public readonly string Type;
+            public readonly int Index;
+
+            public Parameter(string name, string type, int index)
+            {
+                Name = name;
+                Type = type;
+                Index = index;
+            }
         }
     }
 }
