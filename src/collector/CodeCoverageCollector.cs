@@ -4,15 +4,13 @@ using Neo.Collector.Models;
 
 namespace Neo.Collector
 {
+    // Testable version of CodeCoverageDataCollector
     class CodeCoverageCollector
     {
-        internal const string COVERAGE_FILE_EXT = ".neo-coverage";
-        internal const string SCRIPT_FILE_EXT = ".neo-script";
-
         readonly IDictionary<Hash160, ContractCoverage> coverageMap = new Dictionary<Hash160, ContractCoverage>();
         int rawCoverageFileCount = 0;
 
-        public void LoadContract(string contractName, NeoDebugInfo debugInfo)
+        public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {
             if (!coverageMap.ContainsKey(debugInfo.Hash))
             {
@@ -20,21 +18,7 @@ namespace Neo.Collector
             }
         }
 
-        public void LoadSessionOutput(string path, Stream stream)
-        {
-            var ext = Path.GetExtension(path);
-            if (ext == COVERAGE_FILE_EXT)
-            {
-                LoadRawCoverage(stream);
-            }
-            if (ext == SCRIPT_FILE_EXT
-                && Hash160.TryParse(Path.GetFileNameWithoutExtension(path), out var hash))
-            {
-                LoadScript(hash, stream);
-            }
-        }
-
-        internal void LoadRawCoverage(Stream stream)
+        public void LoadRawCoverage(Stream stream)
         {
             rawCoverageFileCount++;
 
@@ -78,16 +62,11 @@ namespace Neo.Collector
             }
         }
 
-        internal void LoadScript(Hash160 hash, Stream stream)
+        public void LoadScript(Hash160 hash, Stream stream)
         {
-            // TODO: read instrucitons directly from stream
             if (coverageMap.TryGetValue(hash, out var coverage))
             {
-                using (var memStream = new MemoryStream())
-                {
-                    stream.CopyTo(memStream);
-                    coverage.RecordScript(memStream.ToArray());
-                }
+                coverage.RecordScript(stream.EnumerateInstructions());
             }
         }
     }

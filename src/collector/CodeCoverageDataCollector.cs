@@ -14,17 +14,15 @@ namespace Neo.Collector
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
         internal const string COVERAGE_FILE_EXT = ".neo-coverage";
+        private const string MANIFEST_FILE_EXT = ".manifest.json";
+        private const string NEF_FILE_EXT = ".nef";
         internal const string SCRIPT_FILE_EXT = ".neo-script";
         const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
         const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
 
-        // const string MANIFEST_FILE_ATTRIBUTE_NAME = "ManifestFileAttribute";
-        // const string SEQUENCE_POINT_ATTRIBUTE_NAME = "SequencePointAttribute";
-
         readonly string coveragePath;
         readonly CodeCoverageCollector collector;
 
-        // readonly IDictionary<Hash160, ContractCoverageManager> contractMap = new Dictionary<Hash160, ContractCoverageManager>();
         DataCollectionEvents events;
         DataCollectionSink dataSink;
         DataCollectionLogger logger;
@@ -61,6 +59,7 @@ namespace Neo.Collector
             events.SessionEnd -= OnSessionEnd;
             base.Dispose(disposing);
         }
+
         public IEnumerable<KeyValuePair<string, string>> GetTestExecutionEnvironmentVariables()
         {
             logger.LogWarning(dataCtx, $"GetTestExecutionEnvironmentVariables {coveragePath}");
@@ -86,12 +85,17 @@ namespace Neo.Collector
                 {
                     if (TryGetContractAttribute(type, out var contractName, out var manifestPath))
                     {
-                        var dirname = Path.GetDirectoryName(manifestPath);
-                        var basename = GetBaseName(manifestPath, ".manifest.json");
-                        var nefPath = Path.Combine(dirname, Path.ChangeExtension(basename, ".nef"));
+                        // Note, some file systems are case sensitive. 
+                        // Using StringComparison.OrdinalIgnoreCase could lead to incorrect base names on such systems. 
+                        var baseName = manifestPath.EndsWith(MANIFEST_FILE_EXT, StringComparison.OrdinalIgnoreCase)
+                            ? manifestPath.Substring(0, manifestPath.Length - MANIFEST_FILE_EXT.Length)
+                            : manifestPath;
+                        var nefPath = Path.Combine(
+                            Path.GetDirectoryName(manifestPath),
+                            Path.ChangeExtension(baseName, NEF_FILE_EXT));
                         if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
                         {
-                            collector.LoadContract(contractName, debugInfo);
+                            collector.TrackContract(contractName, debugInfo);
                         }
                     }
                 }
@@ -107,22 +111,11 @@ namespace Neo.Collector
                     assembly = Assembly.LoadFile(path);
                     return true;
                 }
-                catch
-                {
-                }
+                catch { }
             }
 
             assembly = default;
             return false;
-        }
-
-        static string GetBaseName(string path, string extension = "")
-        {
-            var filename = Path.GetFileName(path);
-            if (string.IsNullOrEmpty(extension)) return filename;
-            return filename.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
-                ? filename.Substring(0, filename.Length - extension.Length)
-                : filename;
         }
 
         static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
@@ -142,7 +135,6 @@ namespace Neo.Collector
             return false;
         }
 
-
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
             logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
@@ -153,9 +145,21 @@ namespace Neo.Collector
 
                 try
                 {
-                    using (var stream = File.OpenRead(filename))
+                    var ext = Path.GetExtension(filename);
+                    if (ext == COVERAGE_FILE_EXT)
                     {
-                        collector.LoadSessionOutput(filename, stream);
+                        using (var stream = File.OpenRead(filename))
+                        {
+                            collector.LoadRawCoverage(stream);
+                        }
+                    }
+                    if (ext == SCRIPT_FILE_EXT
+                        && Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash))
+                    {
+                        using (var stream = File.OpenRead(filename))
+                        {
+                            collector.LoadScript(hash, stream);
+                        }
                     }
                 }
                 catch (Exception ex)

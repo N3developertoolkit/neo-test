@@ -82,9 +82,35 @@ namespace Neo.Collector
             int address = 0;
             while (address < script.Length)
             {
-                var instruction = new Instruction(script, address);
+                var instruction = Instruction.Parse(script, address);
                 yield return (address, instruction);
                 address += instruction.Size;
+            }
+        }
+
+        public static IEnumerable<(int address, Instruction instruction)> EnumerateInstructions(this Stream stream)
+        {
+            int address = 0;
+            var reader = new BinaryReader(stream);
+            while (reader.TryReadOpCode(out var opCode))
+            {
+                var instruction = Instruction.Parse(opCode, reader);
+                yield return (address, instruction);
+                address += instruction.Size;
+            }
+        }
+
+        static bool TryReadOpCode(this BinaryReader @this, out OpCode value)
+        {
+            try
+            {
+                value = (OpCode)@this.ReadByte();
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                value = default;
+                return false;
             }
         }
 

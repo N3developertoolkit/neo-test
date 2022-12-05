@@ -1,52 +1,110 @@
 using System;
+using System.IO;
 
 namespace Neo.Collector.Models
 {
-    class Instruction
+    struct Instruction
     {
-        public OpCode OpCode { get; }
-        public ArraySegment<byte> Operand { get; }
-        public int Size { get; }
+        public readonly OpCode OpCode;
+        public readonly ArraySegment<byte> Operand;
+        public int Size
+        {
+            get
+            {
+                int operandSize;
+                switch (OpCode)
+                {
+                    case OpCode.PUSHDATA1:
+                        operandSize = 1 + Operand.Count;
+                        break;
+                    case OpCode.PUSHDATA2:
+                        operandSize = 2 + Operand.Count;
+                        break;
+                    case OpCode.PUSHDATA4:
+                        operandSize = 4 + Operand.Count;
+                        break;
+                    default:
+                        operandSize = GetOperandSize(OpCode);
+                        break;
+                }
+                return 1 + operandSize;
+            }
+        }
 
-        public Instruction(byte[] script, int address)
+        public Instruction(OpCode opCode, byte[] operand)
+            : this(opCode, new ArraySegment<byte>(operand))
+        {
+        }
+
+        public Instruction(OpCode opCode, ArraySegment<byte> operand)
+        {
+            OpCode = opCode;
+            Operand = operand;
+        }
+
+        public static Instruction Parse(byte[] script, int address)
         {
             if (address >= script.Length) throw new ArgumentOutOfRangeException(nameof(address));
 
-            OpCode = (OpCode)script[address];
-            switch (OpCode)
+            var opCode = (OpCode)script[address];
+            ArraySegment<byte> operand;
+            switch (opCode)
             {
                 case OpCode.PUSHDATA1:
                     {
                         int opSize = script[address + 1];
-                        Size = 1 + 1 + opSize;
-                        Operand = new ArraySegment<byte>(script, address + 2, opSize);
+                        operand = new ArraySegment<byte>(script, address + 2, opSize);
                     }
                     break;
                 case OpCode.PUSHDATA2:
                     {
                         int opSize = BitConverter.ToUInt16(script, address + 1);
-                        Size = 1 + 2 + opSize;
-                        Operand = new ArraySegment<byte>(script, address + 3, opSize);
+                        operand = new ArraySegment<byte>(script, address + 3, opSize);
                     }
                     break;
                 case OpCode.PUSHDATA4:
                     {
                         int opSize = BitConverter.ToInt32(script, address + 1);
-                        Size = 1 + 4 + opSize;
-                        Operand = new ArraySegment<byte>(script, address + 1 + 4, opSize);
+                        operand = new ArraySegment<byte>(script, address + 1 + 4, opSize);
                     }
                     break;
                 default:
                     {
-                        var opSize = GetOperandSize(OpCode);
-                        Size = 1 + opSize;
-                        Operand = new ArraySegment<byte>(script, address + 1, opSize);
+                        var opSize = GetOperandSize(opCode);
+                        operand = new ArraySegment<byte>(script, address + 1, opSize);
                     }
                     break;
             }
+            return new Instruction(opCode, operand);
         }
 
-        static int GetOperandSize(OpCode opCode)
+        public static Instruction Parse(OpCode opCode, BinaryReader reader)
+        {
+            int opSize;
+            switch (opCode)
+            {
+                case OpCode.PUSHDATA1:
+                    opSize = reader.ReadByte();
+                    break;
+                case OpCode.PUSHDATA2:
+                    opSize = reader.ReadUInt16();
+                    break;
+                case OpCode.PUSHDATA4:
+                    opSize = reader.ReadInt32();
+                    break;
+                default:
+                    opSize = GetOperandSize(opCode);
+                    break;
+            }
+
+            var operand = opSize > 0
+                ? reader.ReadBytes(opSize)
+                : Array.Empty<byte>();
+            return new Instruction(opCode, operand);
+        }
+
+
+        public static int GetOperandSize(OpCode opCode)
         {
             switch (opCode)
             {

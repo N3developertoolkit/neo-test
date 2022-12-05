@@ -17,15 +17,15 @@ static class TestFiles
             var json = SimpleJSON.JSON.Parse(reader.ReadToEnd());
             return NeoDebugInfo.FromDebugInfoJson(json);
         });
-        @this.LoadContract(contractName, debugInfo);
+        @this.TrackContract(contractName, debugInfo);
     }
 
     public static void LoadTestOutput(this CodeCoverageCollector @this, string dirName)
     {
         foreach (var file in GetResourceNames(dirName))
         {
-            using var stream = GetResourceStream(file);
-            @this.LoadSessionOutput(file, stream);
+            // using var stream = GetResourceStream(file);
+            // @this.(file, stream);
         }
     }
 

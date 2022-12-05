@@ -36,19 +36,19 @@ namespace Neo.Collector
                     : throw new FormatException($"Branch result {branchResult} did not equal {address} or {offsetAddress}");
         }
 
-        public void RecordScript(byte[] script)
+        public void RecordScript(IEnumerable<(int address, Instruction instruction)> instructions)
         {
             if (!(this.instructions is null))
             {
                 throw new InvalidOperationException($"RecordScript already called for {contractName}");
             }
 
-            var instructions = new SortedDictionary<int, Instruction>();
-            foreach (var (address, instruction) in script.EnumerateInstructions())
+            var _instructions = new SortedDictionary<int, Instruction>();
+            foreach (var (address, instruction) in instructions)
             {
-                instructions.Add(address, instruction);
+                _instructions.Add(address, instruction);
             }
-            this.instructions = instructions;
+            this.instructions = _instructions;
         }
     }
 }
