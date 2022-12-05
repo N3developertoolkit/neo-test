@@ -240,71 +240,71 @@ namespace Neo.Collector
         //     }
         // }
 
-        void WriteCoverage(XmlWriter writer, OldContractCoverage coverage)
-        {
-            using (var _ = writer.StartElement("contract"))
-            {
-                writer.WriteAttributeString("name", coverage.ContractName);
-                writer.WriteAttributeString("scripthash", $"{coverage.ScriptHash}");
+        // void WriteCoverage(XmlWriter writer, OldContractCoverage coverage)
+        // {
+        //     using (var _ = writer.StartElement("contract"))
+        //     {
+        //         writer.WriteAttributeString("name", coverage.ContractName);
+        //         writer.WriteAttributeString("scripthash", $"{coverage.ScriptHash}");
 
-                using (var __ = writer.StartElement("methods"))
-                {
-                    foreach (var method in coverage.Methods)
-                    {
-                        WriteCoverage(writer, method);
-                    }
-                }
-            }
-        }
+        //         using (var __ = writer.StartElement("methods"))
+        //         {
+        //             foreach (var method in coverage.Methods)
+        //             {
+        //                 WriteCoverage(writer, method);
+        //             }
+        //         }
+        //     }
+        // }
 
-        void WriteCoverage(XmlWriter writer, MethodCoverage coverage)
-        {
-            using (var _ = writer.StartElement("method"))
-            {
-                writer.WriteAttributeString("namespace", coverage.Namespace);
-                writer.WriteAttributeString("name", coverage.Name);
-                writer.WriteAttributeString("document", coverage.Document);
+        // void WriteCoverage(XmlWriter writer, MethodCoverage coverage)
+        // {
+        //     using (var _ = writer.StartElement("method"))
+        //     {
+        //         writer.WriteAttributeString("namespace", coverage.Namespace);
+        //         writer.WriteAttributeString("name", coverage.Name);
+        //         writer.WriteAttributeString("document", coverage.Document);
 
-                using (var __ = writer.StartElement("lines"))
-                {
-                    foreach (var line in coverage.Lines)
-                    {
-                        WriteCoverage(writer, line);
-                    }
-                }
-            }
-        }
+        //         using (var __ = writer.StartElement("lines"))
+        //         {
+        //             foreach (var line in coverage.Lines)
+        //             {
+        //                 WriteCoverage(writer, line);
+        //             }
+        //         }
+        //     }
+        // }
 
-        void WriteCoverage(XmlWriter writer, LineCoverage coverage)
-        {
-            using (var _1 = writer.StartElement("line"))
-            {
-                writer.WriteAttributeString("number", $"{coverage.Start.Line}");
-                writer.WriteAttributeString("address", $"{coverage.Address}");
-                writer.WriteAttributeString("hits", $"{coverage.HitCount}");
+        // void WriteCoverage(XmlWriter writer, LineCoverage coverage)
+        // {
+        //     using (var _1 = writer.StartElement("line"))
+        //     {
+        //         writer.WriteAttributeString("number", $"{coverage.Start.Line}");
+        //         writer.WriteAttributeString("address", $"{coverage.Address}");
+        //         writer.WriteAttributeString("hits", $"{coverage.HitCount}");
 
-                if (coverage.Branches.Count == 0)
-                {
-                    writer.WriteAttributeString("branch", "False");
-                }
-                else
-                {
-                    writer.WriteAttributeString("branch", "True");
-                    using (var __ = writer.StartElement("branches"))
-                    {
-                        foreach (var branch in coverage.Branches)
-                        {
-                            using (var ___ = writer.StartElement("branch"))
-                            {
-                                writer.WriteAttributeString("address", $"{branch.Address}");
-                                writer.WriteAttributeString("branch-count", $"{branch.BranchCount}");
-                                writer.WriteAttributeString("continue-count", $"{branch.ContinueCount}");
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        //         if (coverage.Branches.Count == 0)
+        //         {
+        //             writer.WriteAttributeString("branch", "False");
+        //         }
+        //         else
+        //         {
+        //             writer.WriteAttributeString("branch", "True");
+        //             using (var __ = writer.StartElement("branches"))
+        //             {
+        //                 foreach (var branch in coverage.Branches)
+        //                 {
+        //                     using (var ___ = writer.StartElement("branch"))
+        //                     {
+        //                         writer.WriteAttributeString("address", $"{branch.Address}");
+        //                         writer.WriteAttributeString("branch-count", $"{branch.BranchCount}");
+        //                         writer.WriteAttributeString("continue-count", $"{branch.ContinueCount}");
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
         void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
         {
