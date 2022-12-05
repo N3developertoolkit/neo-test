@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Neo.Collector.Models;
 
@@ -7,8 +8,17 @@ namespace Neo.Collector
     // Testable version of CodeCoverageDataCollector
     class CodeCoverageCollector
     {
+        internal const string COVERAGE_FILE_EXT = ".neo-coverage";
+        internal const string SCRIPT_FILE_EXT = ".neo-script";
+
+        readonly ILogger logger;
         readonly IDictionary<Hash160, ContractCoverage> coverageMap = new Dictionary<Hash160, ContractCoverage>();
         int rawCoverageFileCount = 0;
+
+        public CodeCoverageCollector(ILogger logger)
+        {
+            this.logger = logger;
+        }
 
         public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {
@@ -18,7 +28,33 @@ namespace Neo.Collector
             }
         }
 
-        public void LoadRawCoverage(Stream stream)
+        public void LoadSessionOutput(string filename)
+        {
+            var ext = Path.GetExtension(filename);
+            switch (ext)
+            {
+                case COVERAGE_FILE_EXT:
+                    using (var stream = File.OpenRead(filename))
+                    {
+                        LoadRawCoverage(stream);
+                    }
+                    break;
+                case SCRIPT_FILE_EXT:
+                    if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash))
+                    {
+                        using (var stream = File.OpenRead(filename))
+                        {
+                            LoadScript(hash, stream);
+                        }
+                    }
+                    break;
+                default: 
+                    logger.LogWarning($"Invalid Session Output extension {ext}");
+                    break;
+            }
+        }
+
+        internal void LoadRawCoverage(Stream stream)
         {
             rawCoverageFileCount++;
 
@@ -62,7 +98,7 @@ namespace Neo.Collector
             }
         }
 
-        public void LoadScript(Hash160 hash, Stream stream)
+        internal void LoadScript(Hash160 hash, Stream stream)
         {
             if (coverageMap.TryGetValue(hash, out var coverage))
             {

@@ -11,7 +11,7 @@ static class TestFiles
 {
     public static void LoadTestContract(this CodeCoverageCollector @this, string contractName, string debugInfoFileName)
     {
-        var debugInfo = GetResource(debugInfoFileName, stream => 
+        var debugInfo = GetResource(debugInfoFileName, stream =>
         {
             using var reader = new StreamReader(stream);
             var json = SimpleJSON.JSON.Parse(reader.ReadToEnd());
@@ -24,8 +24,22 @@ static class TestFiles
     {
         foreach (var file in GetResourceNames(dirName))
         {
-            // using var stream = GetResourceStream(file);
-            // @this.(file, stream);
+            using var stream = GetResourceStream(file);
+            var ext = Path.GetExtension(file);
+            switch (ext)
+            {
+                case CodeCoverageCollector.COVERAGE_FILE_EXT:
+                    @this.LoadRawCoverage(stream);
+                    break;
+                case CodeCoverageCollector.SCRIPT_FILE_EXT:
+                    {
+                        var array = file.Split('.');
+                        @this.LoadScript(Hash160.Parse(array[^2]), stream);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

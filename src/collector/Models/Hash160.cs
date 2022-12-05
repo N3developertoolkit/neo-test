@@ -46,6 +46,12 @@ namespace Neo.Collector.Models
             return false;
         }
 
+        public static Hash160 Parse(string @string)
+        {
+            if (TryParse(@string, out var value)) return value;
+            throw new InvalidOperationException($"Failed to parse {@string}");
+        }
+
         public int CompareTo(in Hash160 other)
         {
             var result = data1.CompareTo(other.data1);

@@ -10,23 +10,21 @@ namespace Neo.Collector
 {
     [DataCollectorFriendlyName("Neo code coverage")]
     [DataCollectorTypeUri("my://new/datacollector")]
-    public class CodeCoverageDataCollector : DataCollector, ITestExecutionEnvironmentSpecifier
+    public partial class CodeCoverageDataCollector : DataCollector, ITestExecutionEnvironmentSpecifier
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
-        internal const string COVERAGE_FILE_EXT = ".neo-coverage";
         private const string MANIFEST_FILE_EXT = ".manifest.json";
         private const string NEF_FILE_EXT = ".nef";
-        internal const string SCRIPT_FILE_EXT = ".neo-script";
         const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
         const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
 
         readonly string coveragePath;
-        readonly CodeCoverageCollector collector;
+        CodeCoverageCollector collector;
 
         DataCollectionEvents events;
         DataCollectionSink dataSink;
-        DataCollectionLogger logger;
-        DataCollectionContext dataCtx;
+        DataCollectionEnvironmentContext environmentContext;
+        ILogger logger;
 
         public CodeCoverageDataCollector()
         {
@@ -35,7 +33,6 @@ namespace Neo.Collector
                 coveragePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             }
             while (Directory.Exists(coveragePath));
-            collector = new CodeCoverageCollector();
         }
 
         public override void Initialize(
@@ -47,10 +44,11 @@ namespace Neo.Collector
         {
             this.events = events;
             this.dataSink = dataSink;
-            this.logger = logger;
-            dataCtx = environmentContext.SessionDataCollectionContext;
+            this.environmentContext = environmentContext;
+            this.logger = new Logger(logger, environmentContext);
             events.SessionStart += OnSessionStart;
-            events.SessionEnd += OnSessionEnd;
+            events.SessionEnd += OnSessionEnd;  
+            collector = new CodeCoverageCollector(this.logger);
         }
 
         protected override void Dispose(bool disposing)
@@ -62,13 +60,13 @@ namespace Neo.Collector
 
         public IEnumerable<KeyValuePair<string, string>> GetTestExecutionEnvironmentVariables()
         {
-            logger.LogWarning(dataCtx, $"GetTestExecutionEnvironmentVariables {coveragePath}");
+            logger.LogWarning($"GetTestExecutionEnvironmentVariables {coveragePath}");
             yield return new KeyValuePair<string, string>(COVERAGE_PATH_ENV_NAME, coveragePath);
         }
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"OnSessionStart {e.Context.SessionId}");
+            logger.LogWarning($"OnSessionStart {e.Context.SessionId}");
             var testSources = e.GetPropertyValue<IList<string>>("TestSources");
 
             for (int i = 0; i < testSources.Count; i++)
@@ -137,34 +135,19 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            logger.LogWarning(dataCtx, $"OnSessionEnd {e.Context.SessionId}");
+            logger.LogWarning($"OnSessionEnd {e.Context.SessionId}");
 
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
-                logger.LogWarning(dataCtx, $"  {filename}");
+                logger.LogWarning($"  {filename}");
 
                 try
                 {
-                    var ext = Path.GetExtension(filename);
-                    if (ext == COVERAGE_FILE_EXT)
-                    {
-                        using (var stream = File.OpenRead(filename))
-                        {
-                            collector.LoadRawCoverage(stream);
-                        }
-                    }
-                    if (ext == SCRIPT_FILE_EXT
-                        && Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash))
-                    {
-                        using (var stream = File.OpenRead(filename))
-                        {
-                            collector.LoadScript(hash, stream);
-                        }
-                    }
+                    collector.LoadSessionOutput(filename);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(dataCtx, ex);
+                    logger.LogError(string.Empty, ex);
                 }
             }
 
@@ -327,7 +310,7 @@ namespace Neo.Collector
         {
             try
             {
-                logger.LogWarning(dataCtx, $"  WriteAttachment {filename}");
+                logger.LogWarning($"  WriteAttachment {filename}");
 
                 using (var stream = File.OpenWrite(filename))
                 using (var writer = new StreamWriter(stream))
@@ -336,11 +319,11 @@ namespace Neo.Collector
                     writer.Flush();
                     stream.Flush();
                 }
-                dataSink.SendFileAsync(dataCtx, filename, false);
+                dataSink.SendFileAsync(environmentContext.SessionDataCollectionContext, filename, false);
             }
             catch (Exception ex)
             {
-                logger.LogError(dataCtx, ex.Message);
+                logger.LogError(ex.Message);
             }
         }
 

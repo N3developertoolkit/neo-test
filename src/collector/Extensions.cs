@@ -102,16 +102,14 @@ namespace Neo.Collector
 
         static bool TryReadOpCode(this BinaryReader @this, out OpCode value)
         {
-            try
+            if (@this.PeekChar() > 0)
             {
                 value = (OpCode)@this.ReadByte();
                 return true;
             }
-            catch (EndOfStreamException)
-            {
-                value = default;
-                return false;
-            }
+
+            value = default;
+            return false;
         }
 
         public static T GetNextOrDefault<T>(this IReadOnlyList<T> @this, int index)

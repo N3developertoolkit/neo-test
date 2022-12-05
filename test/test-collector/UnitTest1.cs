@@ -12,7 +12,8 @@ public class UnitTest1
     [Fact]
     public void Test1()
     {
-        var collector = new CodeCoverageCollector();
+        var logger = new Moq.Mock<ILogger>();
+        var collector = new CodeCoverageCollector(logger.Object);
         collector.LoadTestContract("test contract", "registrar.debug.json");
         collector.LoadTestOutput(".run1.");
 
