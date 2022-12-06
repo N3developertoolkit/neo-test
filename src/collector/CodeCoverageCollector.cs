@@ -13,7 +13,7 @@ namespace Neo.Collector
         internal const string NEF_FILE_EXT = ".nef";
 
         readonly ILogger logger;
-        readonly IDictionary<Hash160, ContractCoverage> coverageMap = new Dictionary<Hash160, ContractCoverage>();
+        readonly IDictionary<Hash160, ContractCoverageCollector> coverageMap = new Dictionary<Hash160, ContractCoverageCollector>();
         int rawCoverageFileCount = 0;
 
         public CodeCoverageCollector(ILogger logger)
@@ -25,7 +25,7 @@ namespace Neo.Collector
         {
             if (!coverageMap.ContainsKey(debugInfo.Hash))
             {
-                coverageMap.Add(debugInfo.Hash, new ContractCoverage(contractName, debugInfo));
+                coverageMap.Add(debugInfo.Hash, new ContractCoverageCollector(contractName, debugInfo));
             }
         }
 

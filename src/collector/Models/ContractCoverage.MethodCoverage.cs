@@ -4,7 +4,7 @@ namespace Neo.Collector.Models
 {
     partial class ContractCoverage
     {
-        public class MethodCoverage
+        public struct MethodCoverage
         {
             readonly NeoDebugInfo.Method method;
             public readonly string Document;
