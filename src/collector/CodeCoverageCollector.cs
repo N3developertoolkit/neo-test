@@ -10,6 +10,7 @@ namespace Neo.Collector
     {
         internal const string COVERAGE_FILE_EXT = ".neo-coverage";
         internal const string SCRIPT_FILE_EXT = ".neo-script";
+        internal const string NEF_FILE_EXT = ".nef";
 
         readonly ILogger logger;
         readonly IDictionary<Hash160, ContractCoverage> coverageMap = new Dictionary<Hash160, ContractCoverage>();
@@ -30,6 +31,7 @@ namespace Neo.Collector
 
         public void LoadSessionOutput(string filename)
         {
+            Hash160 hash;
             var ext = Path.GetExtension(filename);
             switch (ext)
             {
@@ -40,7 +42,7 @@ namespace Neo.Collector
                     }
                     break;
                 case SCRIPT_FILE_EXT:
-                    if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash))
+                    if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out hash))
                     {
                         using (var stream = File.OpenRead(filename))
                         {
@@ -48,6 +50,16 @@ namespace Neo.Collector
                         }
                     }
                     break;
+                case NEF_FILE_EXT:
+                    if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out hash))
+                    {
+                        using (var stream = File.OpenRead(filename))
+                        {
+                            LoadNef(hash, stream);
+                        }
+                    }
+                    break;
+
                 default: 
                     logger.LogWarning($"Invalid Session Output extension {ext}");
                     break;
@@ -103,6 +115,15 @@ namespace Neo.Collector
             if (coverageMap.TryGetValue(hash, out var coverage))
             {
                 coverage.RecordScript(stream.EnumerateInstructions());
+            }
+        }
+
+        internal void LoadNef(Hash160 hash, Stream stream)
+        {
+            if (coverageMap.TryGetValue(hash, out var coverage))
+            {
+                var nefFile = NefFile.Load(stream);
+                coverage.RecordScript(nefFile.Script.EnumerateInstructions());
             }
         }
     }

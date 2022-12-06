@@ -67,7 +67,5 @@ namespace Neo.Collector
         //         TracePaths(address)
         //     }
         // }
-
-
     }
 }

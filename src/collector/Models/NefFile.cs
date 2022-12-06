@@ -40,33 +40,38 @@ namespace Neo.Collector.Models
 
         public static NefFile Load(string filename)
         {
+            using (var stream = File.OpenRead(filename))
+            {
+                return Load(stream);
+            }
+        }
+
+        public static NefFile Load(Stream stream)
+        {
             const int MaxScriptLength = 512 * 1024;
             const uint Magic = 0x3346454E;
 
-            using (var stream = File.OpenRead(filename))
-            using (var reader = new BinaryReader(stream))
+            var reader = new BinaryReader(stream);
+            var magic = reader.ReadUInt32();
+            if (magic != Magic) throw new FormatException($"Invalid magic {magic}");
+            var compiler = Encoding.UTF8.GetString(reader.ReadBytes(64));
+            var source = reader.ReadVarString(256);
+            var reserve1 = reader.ReadByte();
+            if (reserve1 != 0) throw new FormatException($"Reserve bytes must be 0");
+            var tokenCount = (int)reader.ReadVarInt(128);
+            var tokens = new List<MethodToken>(tokenCount);
+            for (int i = 0; i < tokenCount; i++)
             {
-                var magic = reader.ReadUInt32();
-                if (magic != Magic) throw new FormatException($"Invalid magic {magic}");
-                var compiler = Encoding.UTF8.GetString(reader.ReadBytes(64));
-                var source = reader.ReadVarString(256);
-                var reserve1 = reader.ReadByte();
-                if (reserve1 != 0) throw new FormatException($"Reserve bytes must be 0");
-                var tokenCount = (int)reader.ReadVarInt(128);
-                var tokens = new List<MethodToken>(tokenCount);
-                for (int i = 0; i < tokenCount; i++)
-                {
-                    tokens.Add(ReadMethodToken(reader));
-                }
-                var reserve2 = reader.ReadUInt16();
-                if (reserve2 != 0) throw new FormatException($"Reserve bytes must be 0");
-                var script = reader.ReadVarMemory(MaxScriptLength);
-                if (script.Length == 0) throw new FormatException($"Script can't be empty");
-                var checksum = reader.ReadUInt32();
-                // TODO: CHeck Checksum
-
-                return new NefFile(compiler, source, tokens, script, checksum);
+                tokens.Add(ReadMethodToken(reader));
             }
+            var reserve2 = reader.ReadUInt16();
+            if (reserve2 != 0) throw new FormatException($"Reserve bytes must be 0");
+            var script = reader.ReadVarMemory(MaxScriptLength);
+            if (script.Length == 0) throw new FormatException($"Script can't be empty");
+            var checksum = reader.ReadUInt32();
+            // TODO: Check Checksum
+
+            return new NefFile(compiler, source, tokens, script, checksum);
         }
 
         static MethodToken ReadMethodToken(BinaryReader reader)
