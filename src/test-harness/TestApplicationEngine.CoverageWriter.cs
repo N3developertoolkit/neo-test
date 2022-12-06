@@ -35,7 +35,7 @@ namespace NeoTestHarness
                 else 
                 {
                     var state = context.GetState<ExecutionContextState>();
-                    var hash = state.ScriptHash ?? context.Script.CalculateScriptHash(); 
+                    var hash = context.Script.CalculateScriptHash(); 
                     writer.WriteLine($"{hash}");
 
                     if (state.Contract?.Nef is null)
