@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Neo.Collector.Models;
 
-namespace Neo.Collector
+namespace Neo.Collector.Models
 {
-    class ContractCoverage
+    partial class ContractCoverage
     {
         readonly string contractName;
         readonly NeoDebugInfo debugInfo;
@@ -51,21 +50,40 @@ namespace Neo.Collector
             this.instructions = _instructions;
         }
 
-        // public void TracePaths(in NeoDebugInfo.Method method)
-        // {
-        //     if (instructions is null) throw new InvalidOperationException();
-        //     // TracePaths()
+        public IEnumerable<MethodCoverage> CollectMethodCoverage()
+            => debugInfo.Methods.Select(CollectMethodCoverage);
 
-        // }
+        MethodCoverage CollectMethodCoverage(NeoDebugInfo.Method method)
+        {
+            var doc = method.SequencePoints.Select(sp => debugInfo.Documents[sp.Document]).FirstOrDefault();
+            var lines = new List<LineCoverage>(method.SequencePoints.Count);
+            for (int i = 0; i < method.SequencePoints.Count; i++)
+            {
+                var sp = method.SequencePoints[i];
+                var hitCount = hitMap.TryGetValue(sp.Address, out var _hitCount)
+                    ? _hitCount
+                    : 0;
 
-        // void TracePaths(int address)
-        // {
-        //     var ins = instructions[address];
-        //     var offset = ins.GetBranchOffset();
-        //     if (offset == 0)
-        //     {
-        //         TracePaths(address)
-        //     }
-        // }
+                var branches = new List<BranchCoverage>();
+                var address = sp.Address;
+                var nextSPAddress = i + 1 < method.SequencePoints.Count
+                    ? method.SequencePoints[i + 1].Address
+                    : int.MaxValue;
+
+                while (address <= method.Range.End && address < nextSPAddress)
+                {
+                    var ins = instructions[address];
+                    if (ins.IsBranchInstruction())
+                    {
+                        var counts = branchMap.TryGetValue(address, out var _counts) ? _counts : (0, 0);
+                        branches.Add(new BranchCoverage(address, counts));
+                    }
+                    address += ins.Size;
+                }
+
+                lines.Add(new LineCoverage(sp, hitCount, branches));
+            }
+            return new MethodCoverage(method, doc, lines);
+        }
     }
 }

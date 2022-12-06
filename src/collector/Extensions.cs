@@ -102,22 +102,34 @@ namespace Neo.Collector
 
         static bool TryReadOpCode(this BinaryReader @this, out OpCode value)
         {
-            if (@this.PeekChar() > 0)
+            try
             {
                 value = (OpCode)@this.ReadByte();
                 return true;
             }
-
-            value = default;
-            return false;
+            catch (EndOfStreamException)
+            {
+                value = default;
+                return false;
+            }
         }
-
-        public static T GetNextOrDefault<T>(this IReadOnlyList<T> @this, int index)
-            => index + 1 < @this.Count ? @this[index + 1] : default;
 
         public static bool IsBranchInstruction(this Instruction instruction)
             => instruction.OpCode >= OpCode.JMPIF
                 && instruction.OpCode <= OpCode.JMPLE_L;
+
+        public static int GetCallOffset(this Instruction instruction)
+        {
+            switch (instruction.OpCode)
+            {
+                case OpCode.CALL_L:
+                    return BinaryPrimitives.ReadInt32LittleEndian(instruction.Operand.AsSpan());
+                case OpCode.CALL:
+                    return (sbyte)instruction.Operand.AsSpan()[0];
+                default:
+                    return 0;
+            }
+        }
 
         public static int GetBranchOffset(this Instruction instruction)
         {
@@ -145,31 +157,5 @@ namespace Neo.Collector
                     return 0;
             }
         }
-
-        //         public static Hash160 CalculateScriptHash(this NefFile @this)
-        //         {
-        //             byte[] firstHash;
-        //             using (var sha256 = SHA256.Create())
-        //             {   
-        //                 firstHash = sha256.ComputeHash(@this.Script);
-        //             }
-
-        //             byte[] secondHash;
-        // #if NET47
-        //             using (var ripemd160 = RIPEMD160.Create())
-        // #else
-        //             using (var ripemd160 = new Neo.Cryptography.RIPEMD160Managed())
-        // #endif
-        //             {
-        //                 secondHash = ripemd160.ComputeHash(firstHash);
-        //             }
-
-        //             System.Diagnostics.Debug.Assert(secondHash.Length == Hash160.Size);
-        //             using (var stream = new MemoryStream(secondHash))
-        //             using (var reader = new BinaryReader(stream))
-        //             {
-        //                 return Hash160.Read(reader);
-        //             }
-        //         }
     }
 }
