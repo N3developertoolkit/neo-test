@@ -9,9 +9,7 @@
             "type": "shell",
             "args": [
                 "build",
-                // Ask dotnet build to generate full paths for file names.
                 "/property:GenerateFullPaths=true",
-                // Do not generate summary otherwise it leads to duplicate errors in Problems panel
                 "/consoleloggerparameters:NoSummary"
             ],
             "group": "build",
@@ -19,6 +17,42 @@
                 "reveal": "silent"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "copy nbgv version",
+            "command": "nbgv",
+            "type": "shell",
+            "args": [
+                "get-version",
+                "-v",
+                "NuGetPackageVersion",
+                "|",
+                "clip"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "package",
+            "command": "dotnet",
+            "type": "shell",
+            "args": [
+                "pack",
+                "-o",
+                "artifacts"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test-package",
+            "dependsOn": [
+                "copy nbgv version",
+                "package"
+            ],
+            "problemMatcher": []
         }
     ]
 }
