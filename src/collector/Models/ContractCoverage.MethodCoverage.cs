@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using static Neo.Collector.Models.NeoDebugInfo;
 
 namespace Neo.Collector.Models
 {
@@ -6,14 +7,15 @@ namespace Neo.Collector.Models
     {
         public struct MethodCoverage
         {
-            readonly NeoDebugInfo.Method method;
+            readonly Method method;
             public readonly string Document;
             public readonly IReadOnlyList<LineCoverage> Lines;
 
             public string Namespace => method.Namespace;
             public string Name => method.Name;
+            public IReadOnlyList<Parameter> Parameters => Parameters;
 
-            public MethodCoverage(in NeoDebugInfo.Method method, string document, IReadOnlyList<LineCoverage> lines)
+            public MethodCoverage(in Method method, string document, IReadOnlyList<LineCoverage> lines)
             {
                 this.method = method;
                 Document = document;

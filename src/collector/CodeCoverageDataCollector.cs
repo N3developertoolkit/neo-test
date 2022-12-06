@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
+using Neo.Collector.Formats;
 using Neo.Collector.Models;
 
 namespace Neo.Collector
@@ -47,7 +48,7 @@ namespace Neo.Collector
             this.environmentContext = environmentContext;
             this.logger = new Logger(logger, environmentContext);
             events.SessionStart += OnSessionStart;
-            events.SessionEnd += OnSessionEnd;  
+            events.SessionEnd += OnSessionEnd;
             collector = new CodeCoverageCollector(this.logger);
         }
 
@@ -151,160 +152,13 @@ namespace Neo.Collector
                 }
             }
 
-            // var reportPath = Path.Combine(coveragePath, $"neo.coverage.xml");
-            // WriteAttachment(reportPath, textWriter =>
-            // {
-            //     // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
-            //     // and close the stream
-            //     var writer = new XmlTextWriter(textWriter)
-            //     {
-            //         Formatting = Formatting.Indented,
-            //     };
-            //     // WriteCoverage(writer, rawCoverageFileCount);
-            //     writer.Flush();
-            // });
-            // foreach (var coverage in contractMap.Values)
-            // {
-            //     logger.LogWarning(dataCtx, $"  {coverage.ContractName} {coverage.ScriptHash}");
-            //     foreach (var group in coverage.GetMethodCoverages().GroupBy(m => m.Namespace))
-            //     {
-            //         logger.LogWarning(dataCtx, $"    {group.Key}");
-            //         foreach (var method in group)
-            //         {
-            //             logger.LogWarning(dataCtx, $"      {method.Name}");
-            //             foreach (var line in method.Lines)
-            //             {
-            //                 logger.LogWarning(dataCtx, $"        {line.SequencePoint.Start.Line}");
-            //                 foreach (var br in line.BranchInstructions)
-            //                 {
-            //                     logger.LogWarning(dataCtx, $"          {br.address} {br.instruction.OpCode}");
-            //                 }
-            //                 // foreach (var (address, instruction) in line.Instructions)
-            //                 // {
-            //                 //     logger.LogWarning(dataCtx, $"          {address} {instruction.OpCode}");
-            //                 // }
-            //             }
-            //         }
-            //     }
-            // }
-
-
-            // var coverageReportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
-            // WriteAttachment(coverageReportPath, textWriter =>
-            // {
-            //     // XmlTextWriter *NOT* in a using block because WriteAttachment will flush 
-            //     // and close the stream
-            //     var writer = new XmlTextWriter(textWriter)
-            //     {
-            //         Formatting = Formatting.Indented,
-            //     };
-            //     WriteCoberturaCoverage(writer);
-            //     writer.Flush();
-            // });
-
-            // foreach (var coverage in contractMap)
-            // {
-            //     var rawReportPath = Path.Combine(coveragePath, $"{coverage.Key}.raw.txt");
-            //     WriteAttachment(rawReportPath, writer =>
-            //     {
-            //         writer.WriteLine("HITS");
-            //         foreach (var hit in coverage.Value.HitMap.OrderBy(t => t.Key))
-            //         {
-            //             writer.WriteLine($"{hit.Key} {hit.Value}");
-            //         }
-            //         writer.WriteLine("BRANCHES");
-            //         foreach (var br in coverage.Value.BranchMap.OrderBy(t => t.Key))
-            //         {
-            //             writer.WriteLine($"{br.Key} {br.Value.branchCount} {br.Value.continueCount}");
-            //         }
-            //     });
-            // }
+            var reportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
+            WriteAttachment(reportPath, stream =>
+            {
+                var format = new CoberturaFormat();
+                format.WriteReport(stream, collector.CollectCoverage());
+            });
         }
-
-        // void WriteCoverage(XmlWriter writer, int rawCoverageFileCount)
-        // {
-        //     using (var _ = writer.StartDocument())
-        //     using (var __ = writer.StartElement("coverage"))
-        //     {
-        //         writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
-        //         writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
-        //         writer.WriteAttributeString("testrun-count", $"{rawCoverageFileCount}");
-
-        //         using (var ___ = writer.StartElement("contracts"))
-        //         {
-        //             foreach (var coverageMgr in contractMap.Values)
-        //             {
-        //                 WriteCoverage(writer, coverageMgr.GetCoverage(rawCoverageFileCount));
-        //             }
-        //         }
-        //     }
-        // }
-
-        // void WriteCoverage(XmlWriter writer, OldContractCoverage coverage)
-        // {
-        //     using (var _ = writer.StartElement("contract"))
-        //     {
-        //         writer.WriteAttributeString("name", coverage.ContractName);
-        //         writer.WriteAttributeString("scripthash", $"{coverage.ScriptHash}");
-
-        //         using (var __ = writer.StartElement("methods"))
-        //         {
-        //             foreach (var method in coverage.Methods)
-        //             {
-        //                 WriteCoverage(writer, method);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // void WriteCoverage(XmlWriter writer, MethodCoverage coverage)
-        // {
-        //     using (var _ = writer.StartElement("method"))
-        //     {
-        //         writer.WriteAttributeString("namespace", coverage.Namespace);
-        //         writer.WriteAttributeString("name", coverage.Name);
-        //         writer.WriteAttributeString("document", coverage.Document);
-
-        //         using (var __ = writer.StartElement("lines"))
-        //         {
-        //             foreach (var line in coverage.Lines)
-        //             {
-        //                 WriteCoverage(writer, line);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // void WriteCoverage(XmlWriter writer, LineCoverage coverage)
-        // {
-        //     using (var _1 = writer.StartElement("line"))
-        //     {
-        //         writer.WriteAttributeString("number", $"{coverage.Start.Line}");
-        //         writer.WriteAttributeString("address", $"{coverage.Address}");
-        //         writer.WriteAttributeString("hits", $"{coverage.HitCount}");
-
-        //         if (coverage.Branches.Count == 0)
-        //         {
-        //             writer.WriteAttributeString("branch", "False");
-        //         }
-        //         else
-        //         {
-        //             writer.WriteAttributeString("branch", "True");
-        //             using (var __ = writer.StartElement("branches"))
-        //             {
-        //                 foreach (var branch in coverage.Branches)
-        //                 {
-        //                     using (var ___ = writer.StartElement("branch"))
-        //                     {
-        //                         writer.WriteAttributeString("address", $"{branch.Address}");
-        //                         writer.WriteAttributeString("branch-count", $"{branch.BranchCount}");
-        //                         writer.WriteAttributeString("continue-count", $"{branch.ContinueCount}");
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
 
         void WriteAttachment(string filename, Action<Stream> writeAttachment)
         {
@@ -324,68 +178,5 @@ namespace Neo.Collector
                 logger.LogError(ex.Message);
             }
         }
-
-        // void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
-        // {
-        //     WriteAttachment(filename, (Stream stream) => {
-        //         var writer = new StreamWriter(stream);
-        //         writeAttachment(writer);
-        //         writer.Flush();
-        //     });
-        // }
-
-        // private void ParseScriptFile(string filename)
-        // {
-        //     if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out var hash)
-        //         && contractMap.TryGetValue(hash, out var coverage))
-        //     {
-        //         coverage.RecordScript(File.ReadAllBytes(filename));
-        //     }
-        // }
-
-        // void ParseRawCoverageFile(string filename)
-        // {
-        //     using (var stream = File.OpenRead(filename))
-        //     using (var reader = new StreamReader(stream))
-        //     {
-        //         var hash = Hash160.Zero;
-        //         while (!reader.EndOfStream)
-        //         {
-        //             var line = reader.ReadLine();
-        //             if (line.StartsWith("0x"))
-        //             {
-        //                 hash = Hash160.TryParse(line.Trim(), out var value)
-        //                     ? value
-        //                     : Hash160.Zero;
-        //             }
-        //             else
-        //             {
-        //                 if (hash != Hash160.Zero 
-        //                     && contractMap.TryGetValue(hash, out var coverage))
-        //                 {
-        //                     var values = line.Trim().Split(' ');
-        //                     if (values.Length > 0
-        //                         && int.TryParse(values[0].Trim(), out var ip))
-        //                     {
-        //                         if (values.Length == 1)
-        //                         {
-        //                             coverage.RecordHit(ip);
-        //                         }
-        //                         else if (values.Length == 3
-        //                             && int.TryParse(values[1].Trim(), out var offset)
-        //                             && int.TryParse(values[2].Trim(), out var branchResult))
-        //                         {
-        //                             coverage.RecordBranch(ip, offset, branchResult);
-        //                         }
-        //                         else
-        //                         {
-        //                             logger.LogWarning(dataCtx, $"Invalid raw coverage data line '{line}'");
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
     }
 }

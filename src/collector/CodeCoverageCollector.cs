@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Neo.Collector.Models;
 
 namespace Neo.Collector
@@ -14,12 +15,14 @@ namespace Neo.Collector
 
         readonly ILogger logger;
         readonly IDictionary<Hash160, ContractCoverageCollector> coverageMap = new Dictionary<Hash160, ContractCoverageCollector>();
-        int rawCoverageFileCount = 0;
 
         public CodeCoverageCollector(ILogger logger)
         {
             this.logger = logger;
         }
+
+        public IEnumerable<ContractCoverage> CollectCoverage() 
+            => coverageMap.Values.Select(c => c.CollectCoverage());
 
         public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {
@@ -68,8 +71,6 @@ namespace Neo.Collector
 
         internal void LoadRawCoverage(Stream stream)
         {
-            rawCoverageFileCount++;
-
             var reader = new StreamReader(stream);
             var hash = Hash160.Zero;
             while (!reader.EndOfStream)
