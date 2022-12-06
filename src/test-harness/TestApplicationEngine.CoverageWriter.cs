@@ -26,8 +26,22 @@ namespace NeoTestHarness
                 writer = new StreamWriter(stream);
             }
 
+            public void Dispose()
+            {
+                if (!disposed)
+                {
+                    writer.Flush();
+                    stream.Flush();
+                    writer.Dispose();
+                    stream.Dispose();
+                    disposed = true;
+                }
+            }
+
             public void WriteContext(ExecutionContext? context)
             {
+                if (disposed) throw new ObjectDisposedException(nameof(CoverageWriter));
+
                 if (context is null)
                 {
                     writer.WriteLine($"{UInt160.Zero}");
@@ -70,21 +84,10 @@ namespace NeoTestHarness
                 }
             }
 
+            // WriteAddress and WriteBranch do not need disposed check since writer will be disposed
             public void WriteAddress(int ip) => writer.WriteLine($"{ip}");
 
             public void WriteBranch(int ip, int offset, int result) => writer.WriteLine($"{ip} {offset} {result}");
-
-            public void Dispose()
-            {
-                if (!disposed)
-                {
-                    writer.Flush();
-                    stream.Flush();
-                    writer.Dispose();
-                    stream.Dispose();
-                    disposed = true;
-                }
-            }
         }
     }
 }
