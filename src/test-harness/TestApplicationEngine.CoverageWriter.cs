@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Neo;
 using Neo.BlockchainToolkit;
+using Neo.SmartContract;
 using Neo.VM;
 
 namespace NeoTestHarness
@@ -33,23 +34,39 @@ namespace NeoTestHarness
                 }
                 else 
                 {
-                    var hash = context.Script.CalculateScriptHash(); 
+                    var state = context.GetState<ExecutionContextState>();
+                    var hash = state.ScriptHash ?? context.Script.CalculateScriptHash(); 
                     writer.WriteLine($"{hash}");
 
-                    var scriptPath = Path.Combine(coveragePath, $"{hash}.neo-script");
-                    if (!File.Exists(scriptPath))
+                    if (state.Contract?.Nef is null)
                     {
-                        try
-                        {
-                            using var scriptStream = File.Open(scriptPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                            scriptStream.Write(context.Script.AsSpan());
-                            scriptStream.Flush();
-                        }
-                        catch (IOException)
-                        {
-                            // ignore IOException thrown because file already exists
-                        }
+                        var scriptPath = Path.Combine(coveragePath, $"{hash}.neo-script");
+                        WriteScriptFile(scriptPath, stream => stream.Write(context.Script.AsSpan()));
                     }
+                    else
+                    {
+                        var scriptPath = Path.Combine(coveragePath, $"{hash}.nef");
+                        WriteScriptFile(scriptPath, stream => {
+                            var writer = new BinaryWriter(stream);
+                            state.Contract.Nef.Serialize(writer);
+                            writer.Flush();
+                        });
+                    }
+                }
+            }
+
+            static void WriteScriptFile(string filename, Action<Stream> writeFileAction)
+            {
+                if (!File.Exists(filename))
+                {
+                    try
+                    {
+                        using var stream = File.Open(filename, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                        writeFileAction(stream);
+                        stream.Flush();
+                    }
+                    // ignore IOException thrown because file already exists
+                    catch (IOException) { }
                 }
             }
 

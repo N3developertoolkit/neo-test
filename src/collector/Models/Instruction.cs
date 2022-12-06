@@ -7,6 +7,7 @@ namespace Neo.Collector.Models
     {
         public readonly OpCode OpCode;
         public readonly ArraySegment<byte> Operand;
+
         public int Size
         {
             get

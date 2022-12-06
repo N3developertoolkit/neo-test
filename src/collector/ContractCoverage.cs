@@ -50,5 +50,24 @@ namespace Neo.Collector
             }
             this.instructions = _instructions;
         }
+
+        // public void TracePaths(in NeoDebugInfo.Method method)
+        // {
+        //     if (instructions is null) throw new InvalidOperationException();
+        //     // TracePaths()
+
+        // }
+
+        // void TracePaths(int address)
+        // {
+        //     var ins = instructions[address];
+        //     var offset = ins.GetBranchOffset();
+        //     if (offset == 0)
+        //     {
+        //         TracePaths(address)
+        //     }
+        // }
+
+
     }
 }

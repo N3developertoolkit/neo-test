@@ -177,11 +177,11 @@ namespace NeoTestHarness
 
             coverageWriter?.WriteContext(context);
 
-            var ecs = context.GetState<ExecutionContextState>();
-            if (ecs.ScriptHash is not null 
-                && !executedScripts.ContainsKey(ecs.ScriptHash))
+            var state = context.GetState<ExecutionContextState>();
+            if (state.ScriptHash is not null 
+                && !executedScripts.ContainsKey(state.ScriptHash))
             {
-                executedScripts.Add(ecs.ScriptHash, ecs.Contract is null ? context.Script : ecs.Contract);
+                executedScripts.Add(state.ScriptHash, state.Contract is null ? context.Script : state.Contract);
             }
         }
 

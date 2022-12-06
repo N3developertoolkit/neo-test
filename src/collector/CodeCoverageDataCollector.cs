@@ -306,17 +306,15 @@ namespace Neo.Collector
         //     }
         // }
 
-        void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
+        void WriteAttachment(string filename, Action<Stream> writeAttachment)
         {
             try
             {
                 logger.LogWarning($"  WriteAttachment {filename}");
 
                 using (var stream = File.OpenWrite(filename))
-                using (var writer = new StreamWriter(stream))
                 {
-                    writeAttachment(writer);
-                    writer.Flush();
+                    writeAttachment(stream);
                     stream.Flush();
                 }
                 dataSink.SendFileAsync(environmentContext.SessionDataCollectionContext, filename, false);
@@ -326,6 +324,15 @@ namespace Neo.Collector
                 logger.LogError(ex.Message);
             }
         }
+
+        // void WriteAttachment(string filename, Action<TextWriter> writeAttachment)
+        // {
+        //     WriteAttachment(filename, (Stream stream) => {
+        //         var writer = new StreamWriter(stream);
+        //         writeAttachment(writer);
+        //         writer.Flush();
+        //     });
+        // }
 
         // private void ParseScriptFile(string filename)
         // {
