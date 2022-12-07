@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Neo;
 using Neo.BlockchainToolkit;
+using Neo.BlockchainToolkit.Persistence;
 using Neo.BlockchainToolkit.Utilities;
 using Neo.Persistence;
 using Neo.SmartContract;
@@ -227,6 +228,12 @@ namespace NeoTestHarness
         public static SnapshotCache GetSnapshot(this CheckpointFixture fixture)
         {
             return new SnapshotCache(fixture.CheckpointStore);
+        }
+
+        public static SnapshotCache GetSnapshot(this WorkNetFixture fixture)
+        {
+            var store = new MemoryTrackingStore(fixture.WorkNetStore);
+            return new SnapshotCache(store);
         }
     }
 }
