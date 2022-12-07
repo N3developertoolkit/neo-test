@@ -22,7 +22,7 @@ public class UnitTest1
         {
             foreach (var method in contract.Methods)
             {
-                var foo = string.Join(", ", method.Parameters.Select(p => p.Type));
+                var foo = method.CalcLineCoverage();
 ;
             }
         }

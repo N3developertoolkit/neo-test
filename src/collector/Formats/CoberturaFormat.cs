@@ -75,9 +75,11 @@ namespace Neo.Collector.Formats
         {
             using (var _ = writer.StartElement("method"))
             {
+               
                 var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
                 writer.WriteAttributeString("name", method.Name);
                 writer.WriteAttributeString("signature", $"({signature})");
+                writer.WriteAttributeString("line-rate", $"{method.CalcLineCoverage()}");
                 using (var __ = writer.StartElement("lines"))
                 {
                     foreach (var line in method.Lines)

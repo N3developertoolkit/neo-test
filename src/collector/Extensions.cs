@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using Neo.Collector.Models;
@@ -155,6 +156,13 @@ namespace Neo.Collector
                 default:
                     return 0;
             }
+        }
+
+        public static decimal CalcLineCoverage(this ContractCoverage.MethodCoverage method)
+        {
+            decimal covered = method.Lines.Where(l => l.HitCount > 0).Count();
+            var total = method.Lines.Count;
+            return total == 0 ? 100 : Math.Floor((covered / total) * 10000) / 100;
         }
     }
 }
