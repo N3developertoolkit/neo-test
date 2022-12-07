@@ -32,6 +32,11 @@ namespace Neo.Collector.Models
             }
         }
 
+        public Instruction(OpCode opCode)
+            : this(opCode, Array.Empty<byte>())
+        {
+        }
+
         public Instruction(OpCode opCode, byte[] operand)
             : this(opCode, new ArraySegment<byte>(operand))
         {

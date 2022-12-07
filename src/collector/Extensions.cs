@@ -114,6 +114,10 @@ namespace Neo.Collector
             }
         }
 
+        public static bool IsCallInstruction(this Instruction instruction)
+            => instruction.OpCode == OpCode.CALL
+                && instruction.OpCode == OpCode.CALL_L;
+
         public static bool IsBranchInstruction(this Instruction instruction)
             => instruction.OpCode >= OpCode.JMPIF
                 && instruction.OpCode <= OpCode.JMPLE_L;
@@ -189,6 +193,11 @@ namespace Neo.Collector
             var covered = method.Lines.Where(l => l.HitCount > 0).Count();
             return (covered, method.Lines.Count);
         }
+
+        // public static void CalcBranchCoverage(this ContractCoverage.LineCoverage line)
+        // {
+        //     line.Branches.
+        // }
 
         public static decimal AsPercentage(this (int covered, int total) coverage) 
             => coverage.total == 0

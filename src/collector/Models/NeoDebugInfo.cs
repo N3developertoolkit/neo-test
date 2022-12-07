@@ -46,15 +46,10 @@ namespace Neo.Collector.Models
             {
                 if (File.Exists(debugInfoPath))
                 {
-                    using (var zip = ZipStorer.Open(debugInfoPath, FileAccess.Read))
+                    using (var fileStream = File.OpenRead(debugInfoPath))
                     {
-                        var dir = zip.ReadCentralDir();
-                        zip.ExtractFile(dir[0], out byte[] buffer);
-                        using (var stream = new MemoryStream(buffer))
-                        {
-                            debugInfo = Load(stream);
-                            return true;
-                        }
+                        debugInfo = LoadCompressed(fileStream);
+                        return true;
                     }
                 }
             }
@@ -83,7 +78,18 @@ namespace Neo.Collector.Models
             return false;
         }
 
-        static NeoDebugInfo Load(Stream stream)
+        internal static NeoDebugInfo LoadCompressed(Stream stream)
+        {
+            var zip = ZipStorer.Open(stream, FileAccess.Read);
+            var dir = zip.ReadCentralDir();
+            zip.ExtractFile(dir[0], out byte[] buffer);
+            using (var memoryStream = new MemoryStream(buffer))
+            {
+                return Load(memoryStream);
+            }
+        }
+
+        internal static NeoDebugInfo Load(Stream stream)
         {
             using (var reader = new StreamReader(stream))
             {

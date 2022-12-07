@@ -158,6 +158,26 @@ namespace Neo.Collector
                 var format = new CoberturaFormat();
                 format.WriteReport(stream, collector.CollectCoverage());
             });
+
+            foreach (var contract in collector.ContractCollectors)
+            {
+                reportPath = Path.Combine(coveragePath, $"{contract.ScriptHash}.coverage.txt");
+                WriteAttachment(reportPath, stream =>
+                {
+                    var writer = new StreamWriter(stream);
+                    writer.WriteLine("HITS");
+                    foreach (var hit in contract.HitMap)
+                    {
+                        writer.WriteLine($"{hit.Key} {hit.Value}");
+                    }
+                    writer.WriteLine("BRANCHES");
+                    foreach (var hit in contract.BranchMap)
+                    {
+                        writer.WriteLine($"{hit.Key} {hit.Value.branchCount} {hit.Value.continueCount}");
+                    }
+                    writer.Flush();
+                });
+            }
         }
 
         void WriteAttachment(string filename, Action<Stream> writeAttachment)

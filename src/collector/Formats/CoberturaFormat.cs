@@ -8,6 +8,7 @@ using static Neo.Collector.Models.ContractCoverage;
 
 namespace Neo.Collector.Formats
 {
+
     class CoberturaFormat
     {
         public void WriteReport(Stream stream, IEnumerable<ContractCoverage> coverage)

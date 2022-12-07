@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Neo.Collector.Models;
 using static Neo.Collector.Models.ContractCoverage;
@@ -13,6 +14,10 @@ namespace Neo.Collector
         readonly Dictionary<int, uint> hitMap = new Dictionary<int, uint>();
         readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
         IReadOnlyDictionary<int, Instruction> instructions = null;
+
+        public Hash160 ScriptHash => debugInfo.Hash;
+        public IReadOnlyDictionary<int, uint> HitMap => hitMap;
+        public IReadOnlyDictionary<int, (uint branchCount, uint continueCount)> BranchMap => branchMap;
 
         public ContractCoverageCollector(string contractName, NeoDebugInfo debugInfo)
         {
@@ -89,6 +94,90 @@ namespace Neo.Collector
                 lines.Add(new LineCoverage(sp, hitCount, branches));
             }
             return new MethodCoverage(method, doc, lines);
+        }
+
+        internal IEnumerable<ImmutableStack<int>> CollectBranchPaths(int address) => CollectBranchPaths(ImmutableStack.Create(address));
+
+        IEnumerable<ImmutableStack<int>> CollectBranchPaths(ImmutableStack<int> path)
+        {
+            if (path.IsEmpty) throw new ArgumentException();
+            var address = path.Peek();
+            var max = instructions.Keys.Max();
+
+            while (true)
+            {
+                var ins = address > max ? new Instruction(OpCode.RET) : instructions[address];
+                if (ins.IsBranchInstruction())
+                {
+                    var branchOffset = ins.GetBranchOffset();
+                    foreach (var foo in CollectBranchPaths(path.Push(address + branchOffset)))
+                    {
+                        yield return foo;
+                    }
+
+                    path = path.Push(address + ins.Size);
+
+                }
+                else if (ins.IsCallInstruction())
+                {
+                    var callOffset = ins.GetCallOffset();
+                
+
+                }
+                else if (ins.OpCode == OpCode.RET)
+                {
+                    yield return path;
+                }
+                else
+                {
+                    path = path.Push(address + ins.Size);
+                }
+                
+            }
+        }
+
+
+        // void CollectPath(ImmutableStack<ExecutionContext> stack)
+        // {
+        //     if (stack.IsEmpty) throw new InvalidOperationException();
+        //     var ins = instructions[stack.Peek().Address];
+        //     var callOffset = ins.GetCallOffset();
+        //     if (callOffset > 0)
+        //     {
+
+        //     }
+        //     var branchOffset = ins.GetBranchOffset();
+        //     if (branchOffset > 0)
+        //     {
+
+        //     }
+        //     if (ins.OpCode == OpCode.RET)
+        //     {
+        //         yield return 
+
+        //     }
+
+        //     stack.Peek().Step(ins.Size);
+
+        // }
+
+    }
+
+    class ExecutionPath
+    {
+        ImmutableStack<int> path;
+
+        public int Address => path.Peek();
+        public IEnumerable<int> Path => path;
+
+        public ExecutionPath(int start)
+        {
+            path = ImmutableStack.Create(start);
+        }
+
+        public void Step(Instruction ins)
+        {
+            path = path.Push(Address + ins.Size);
         }
     }
 }

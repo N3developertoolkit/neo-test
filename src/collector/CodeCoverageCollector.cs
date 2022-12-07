@@ -16,6 +16,8 @@ namespace Neo.Collector
         readonly ILogger logger;
         readonly IDictionary<Hash160, ContractCoverageCollector> coverageMap = new Dictionary<Hash160, ContractCoverageCollector>();
 
+        public IEnumerable<ContractCoverageCollector> ContractCollectors => coverageMap.Values;
+
         public CodeCoverageCollector(ILogger logger)
         {
             this.logger = logger;
