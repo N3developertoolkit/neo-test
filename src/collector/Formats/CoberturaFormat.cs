@@ -46,6 +46,7 @@ namespace Neo.Collector.Formats
             {
                 writer.WriteAttributeString("name", contract.Name);
                 writer.WriteAttributeString("scripthash", $"{contract.ScriptHash}");
+                writer.WriteAttributeString("line-rate", $"{contract.CalcLineCoverage().AsPercentage()}");
                 using (var __ = writer.StartElement("classes"))
                 {
                     foreach (var group in contract.Methods.GroupBy(m => m.Namespace))
@@ -61,6 +62,7 @@ namespace Neo.Collector.Formats
             using (var _ = writer.StartElement("class"))
             {
                 writer.WriteAttributeString("name", name);
+                writer.WriteAttributeString("line-rate", $"{methods.CalcLineCoverage().AsPercentage()}");
                 using (var __ = writer.StartElement("methods"))
                 {
                     foreach (var method in methods)
@@ -79,7 +81,7 @@ namespace Neo.Collector.Formats
                 var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
                 writer.WriteAttributeString("name", method.Name);
                 writer.WriteAttributeString("signature", $"({signature})");
-                writer.WriteAttributeString("line-rate", $"{method.CalcLineCoverage()}");
+                writer.WriteAttributeString("line-rate", $"{method.CalcLineCoverage().AsPercentage()}");
                 using (var __ = writer.StartElement("lines"))
                 {
                     foreach (var line in method.Lines)

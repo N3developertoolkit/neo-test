@@ -158,11 +158,41 @@ namespace Neo.Collector
             }
         }
 
-        public static decimal CalcLineCoverage(this ContractCoverage.MethodCoverage method)
+        public static (int covered, int total) CalcLineCoverage(this ContractCoverage contract)
         {
-            decimal covered = method.Lines.Where(l => l.HitCount > 0).Count();
-            var total = method.Lines.Count;
-            return total == 0 ? 100 : Math.Floor((covered / total) * 10000) / 100;
+            var covered = 0;
+            var total = 0;
+            foreach (var method in contract.Methods)
+            {
+                var mc = CalcLineCoverage(method);
+                covered += mc.covered;
+                total += mc.total;
+            }
+            return (covered, total);
         }
+
+        public static (int covered, int total) CalcLineCoverage(this IEnumerable<ContractCoverage.MethodCoverage> methods)
+        {
+            var covered = 0;
+            var total = 0;
+            foreach (var method in methods)
+            {
+                var mc = CalcLineCoverage(method);
+                covered += mc.covered;
+                total += mc.total;
+            }
+            return (covered, total);
+        }
+
+        public static (int covered, int total) CalcLineCoverage(this ContractCoverage.MethodCoverage method)
+        {
+            var covered = method.Lines.Where(l => l.HitCount > 0).Count();
+            return (covered, method.Lines.Count);
+        }
+
+        public static decimal AsPercentage(this (int covered, int total) coverage) 
+            => coverage.total == 0
+                ? 1
+                : Math.Floor((decimal)coverage.covered / coverage.total * 10000) * 10000;
     }
 }

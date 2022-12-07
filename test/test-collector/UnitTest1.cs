@@ -22,6 +22,7 @@ public class UnitTest1
         {
             foreach (var method in contract.Methods)
             {
+                var name = method.Name;
                 var foo = method.CalcLineCoverage();
 ;
             }
