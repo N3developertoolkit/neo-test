@@ -37,6 +37,12 @@ static class TestFiles
                         @this.LoadScript(Hash160.Parse(array[^2]), stream);
                     }
                     break;
+                case CodeCoverageCollector.NEF_FILE_EXT:
+                    {
+                        var array = file.Split('.');
+                        @this.LoadNef(Hash160.Parse(array[^2]), stream);
+                    }
+                    break;
                 default:
                     break;
             }

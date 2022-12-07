@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,15 @@ public class UnitTest1
         var collector = new CodeCoverageCollector(logger.Object);
         collector.LoadTestContract("test contract", "registrar.debug.json");
         collector.LoadTestOutput(".run1.");
+        var coverage = collector.CollectCoverage();
+        foreach (var contract in coverage)
+        {
+            foreach (var method in contract.Methods)
+            {
+                var foo = string.Join(", ", method.Parameters.Select(p => p.Type));
+;
+            }
+        }
 
     }
 

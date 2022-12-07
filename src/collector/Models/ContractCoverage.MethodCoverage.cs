@@ -13,7 +13,7 @@ namespace Neo.Collector.Models
 
             public string Namespace => method.Namespace;
             public string Name => method.Name;
-            public IReadOnlyList<Parameter> Parameters => Parameters;
+            public IReadOnlyList<Parameter> Parameters => method.Parameters;
 
             public MethodCoverage(in Method method, string document, IReadOnlyList<LineCoverage> lines)
             {
