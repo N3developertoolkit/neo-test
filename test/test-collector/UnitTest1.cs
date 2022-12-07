@@ -20,13 +20,14 @@ public class UnitTest1
         var coverage = collector.CollectCoverage();
         foreach (var contract in coverage)
         {
-            foreach (var method in contract.Methods)
-            {
-                var name = method.Name;
-                var foo = method.CalcLineCoverage();
-;
-            }
+            var bar = contract.CalcLineCoverage().AsPercentage();
+            //             foreach (var method in contract.Methods)
+            //             {
+            //                 var name = method.Name;
+            //                 var foo = method.CalcLineCoverage().AsPercentage();
+            // ;
         }
+
 
     }
 

@@ -193,6 +193,6 @@ namespace Neo.Collector
         public static decimal AsPercentage(this (int covered, int total) coverage) 
             => coverage.total == 0
                 ? 1
-                : Math.Floor((decimal)coverage.covered / coverage.total * 10000) * 10000;
+                : Math.Floor((decimal)coverage.covered / coverage.total * 10000) / 100;
     }
 }
