@@ -68,7 +68,7 @@ namespace Neo.Test.Runner
             {
                 DebugInfo? debugInfo = string.IsNullOrEmpty(NefFile)
                     ? null
-                    : (await DebugInfo.LoadAsync(NefFile, fileSystem: fileSystem))
+                    : (await DebugInfo.LoadContractDebugInfoAsync(NefFile, fileSystem: fileSystem))
                         .Match<DebugInfo?>(di => di, _ => null);
 
                 ExpressChain? chain = string.IsNullOrEmpty(NeoExpressFile)
