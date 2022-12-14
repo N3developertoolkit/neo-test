@@ -3,7 +3,7 @@ name: On Push
 on:
   push:
     branches:
-      - master
+      - main
       - release/*
     paths-ignore:
       - 'readme.md'
