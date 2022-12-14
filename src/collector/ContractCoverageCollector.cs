@@ -74,110 +74,97 @@ namespace Neo.Collector
                     ? _hitCount
                     : 0;
 
-                var branches = new List<BranchCoverage>();
-                var address = sp.Address;
                 var nextSPAddress = i + 1 < method.SequencePoints.Count
                     ? method.SequencePoints[i + 1].Address
                     : int.MaxValue;
-
-                while (address <= method.Range.End && address < nextSPAddress)
+                var paths = FindPaths(sp.Address, methodEnd: method.Range.End, nextSPAddress: nextSPAddress).ToList();
+                if (paths.Count == 0) throw new InvalidOperationException();
+                if (paths.Count == 1)
                 {
-                    var ins = instructions[address];
-                    if (ins.IsBranchInstruction())
-                    {
-                        var counts = branchMap.TryGetValue(address, out var _counts) ? _counts : (0, 0);
-                        branches.Add(new BranchCoverage(address, counts));
-                    }
-                    address += ins.Size;
+                    lines.Add(new LineCoverage(sp, hitCount, Array.Empty<BranchCoverage>()));
+                }
+                else
+                {
+
                 }
 
-                lines.Add(new LineCoverage(sp, hitCount, branches));
+
+
+
+                // while (address <= method.Range.End && address < nextSPAddress)
+                // {
+                //     var ins = instructions[address];
+                //     if (ins.IsBranchInstruction())
+                //     {
+                //         var counts = branchMap.TryGetValue(address, out var _counts) ? _counts : (0, 0);
+                //         branches.Add(new BranchCoverage(address, counts));
+                //     }
+                //     address += ins.Size;
+                // }
+
+                
             }
             return new MethodCoverage(method, doc, lines);
         }
 
-        internal IEnumerable<ImmutableStack<int>> CollectBranchPaths(int address) => CollectBranchPaths(ImmutableStack.Create(address));
-
-        IEnumerable<ImmutableStack<int>> CollectBranchPaths(ImmutableStack<int> path)
+        static int CalculateHash(IEnumerable<int> path)
         {
-            if (path.IsEmpty) throw new ArgumentException();
-            var address = path.Peek();
-            var max = instructions.Keys.Max();
-
-            while (true)
+            unchecked // Overflow is fine, just wrap
             {
-                var ins = address > max ? new Instruction(OpCode.RET) : instructions[address];
-                if (ins.IsBranchInstruction())
+                int hash = 17;
+                foreach (var value in path)
                 {
-                    var branchOffset = ins.GetBranchOffset();
-                    foreach (var foo in CollectBranchPaths(path.Push(address + branchOffset)))
-                    {
-                        yield return foo;
-                    }
-
-                    path = path.Push(address + ins.Size);
-
+                    hash = hash * 23 + value.GetHashCode();
                 }
-                else if (ins.IsCallInstruction())
-                {
-                    var callOffset = ins.GetCallOffset();
-                
-
-                }
-                else if (ins.OpCode == OpCode.RET)
-                {
-                    yield return path;
-                }
-                else
-                {
-                    path = path.Push(address + ins.Size);
-                }
-                
+                return hash;
             }
         }
 
-
-        // void CollectPath(ImmutableStack<ExecutionContext> stack)
-        // {
-        //     if (stack.IsEmpty) throw new InvalidOperationException();
-        //     var ins = instructions[stack.Peek().Address];
-        //     var callOffset = ins.GetCallOffset();
-        //     if (callOffset > 0)
-        //     {
-
-        //     }
-        //     var branchOffset = ins.GetBranchOffset();
-        //     if (branchOffset > 0)
-        //     {
-
-        //     }
-        //     if (ins.OpCode == OpCode.RET)
-        //     {
-        //         yield return 
-
-        //     }
-
-        //     stack.Peek().Step(ins.Size);
-
-        // }
-
-    }
-
-    class ExecutionPath
-    {
-        ImmutableStack<int> path;
-
-        public int Address => path.Peek();
-        public IEnumerable<int> Path => path;
-
-        public ExecutionPath(int start)
+        internal IEnumerable<ImmutableQueue<int>> FindPaths(int address, ImmutableQueue<int> path = null, int methodEnd = int.MaxValue, int nextSPAddress = int.MaxValue)
         {
-            path = ImmutableStack.Create(start);
-        }
+            var maxAddress = instructions.Keys.Max();
+            path = path is null ? ImmutableQueue<int>.Empty : path;
 
-        public void Step(Instruction ins)
-        {
-            path = path.Push(Address + ins.Size);
+            while (true)
+            {
+                var ins = address <= maxAddress 
+                    ? instructions[address] 
+                    : new Instruction(OpCode.RET);
+
+                if (ins.IsBranchInstruction())
+                {
+                    var offset = ins.GetBranchOffset();
+                    var branchAddress = address+offset;
+                    var branchPaths = FindPaths(branchAddress, path.Enqueue(branchAddress), methodEnd, nextSPAddress);
+                    var continueAddress = address + ins.Size;
+                    var continuePaths = FindPaths(continueAddress, path.Enqueue(continueAddress), methodEnd, nextSPAddress);
+                    return branchPaths.Concat(continuePaths);
+                }
+                
+                if (ins.IsCallInstruction())
+                {
+                    var offset = ins.GetCallOffset();
+                    var paths = Enumerable.Empty<ImmutableQueue<int>>();
+                    foreach (var callPath in FindPaths(address + offset))
+                    {
+                        var tempPath = path;
+                        foreach (var item in callPath)
+                        {
+                            tempPath = tempPath.Enqueue(item);
+                        }
+                        paths = paths.Concat(FindPaths(address + ins.Size, tempPath, methodEnd, nextSPAddress));
+                    }
+                    return paths;
+                }
+
+                address += ins.Size;
+                if (ins.OpCode == OpCode.RET 
+                    || address > methodEnd 
+                    || address >= nextSPAddress)
+                {
+                    return Enumerable.Repeat(path, 1);
+                }
+            }
         }
     }
 }

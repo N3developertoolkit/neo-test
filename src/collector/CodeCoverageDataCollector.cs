@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
@@ -166,12 +167,12 @@ namespace Neo.Collector
                 {
                     var writer = new StreamWriter(stream);
                     writer.WriteLine("HITS");
-                    foreach (var hit in contract.HitMap)
+                    foreach (var hit in contract.HitMap.OrderBy(h => h.Key))
                     {
                         writer.WriteLine($"{hit.Key} {hit.Value}");
                     }
                     writer.WriteLine("BRANCHES");
-                    foreach (var hit in contract.BranchMap)
+                    foreach (var hit in contract.BranchMap.OrderBy(h => h.Key))
                     {
                         writer.WriteLine($"{hit.Key} {hit.Value.branchCount} {hit.Value.continueCount}");
                     }

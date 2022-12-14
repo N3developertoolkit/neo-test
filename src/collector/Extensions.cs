@@ -116,7 +116,7 @@ namespace Neo.Collector
 
         public static bool IsCallInstruction(this Instruction instruction)
             => instruction.OpCode == OpCode.CALL
-                && instruction.OpCode == OpCode.CALL_L;
+                || instruction.OpCode == OpCode.CALL_L;
 
         public static bool IsBranchInstruction(this Instruction instruction)
             => instruction.OpCode >= OpCode.JMPIF
