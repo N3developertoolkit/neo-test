@@ -13,7 +13,7 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <PackageReference Include="Neo.BlockchainToolkit.Library" Version="$(BlockchainToolkitLibraryVersion)" />
+        <PackageReference Include="Neo.BlockchainToolkit.Library" Version="3.5.29" />
       </ItemGroup>
     </Otherwise>
   </Choose>
