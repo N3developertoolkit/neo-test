@@ -79,7 +79,6 @@ namespace build_tasks
             Assert.Equal(DotNetToolType.Local, type);
             Assert.Equal(expectedVersion, version);
         }
- 
 
         [Fact]
         public void find_valid_prerel_version()

@@ -18,7 +18,7 @@ namespace Neo.BuildTasks
             Error = error;
         }
     }
-    
+
     public interface IProcessRunner
     {
         ProcessResults Run(string command, string arguments, string workingDirectory = null);
