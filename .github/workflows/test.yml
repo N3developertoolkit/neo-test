@@ -1,0 +1,86 @@
+name: Run Test
+
+on:
+  workflow_call:
+
+env:
+  CONFIGURATION: 'Release'
+  DOTNET_VERSION: '6.0.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.4.0
+      id: nbgv
+    - name: Pack
+      run: |
+        dotnet restore
+        dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
+        dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Upload Build Log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: buildlog
+        path: ./msbuild.binlog
+    - name: Upload Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: ./test/test.bctklib/TestResults/*/coverage.cobertura.xml
+
+  test-sample:
+    runs-on: ${{ matrix.os }}
+    strategy: 
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.4.0
+      id: nbgv
+    - name: Update NeoTest Version
+      uses: rvolo/xml-replace-action@v0.2
+      with:
+        filepath: "test/build-tasks-sample/Directory.Build.props"
+        xpath: "//configuration/server/port/text()"
+        replace: "5000"
+    - name: Test Sample
+      run: |
+        cd ./test/build-tasks-sample/
+        dotnet tool restore
+        dotnet pack ../.. -o ./artifacts
+        dotnet restore --disable-build-servers --packages ./package --no-cache /p:NeoTestVersion=${{ steps.nbgv.outputs.NuGetPackageVersion }}
+        dotnet build --no-restore
+        dotnet test --no-build
+
+  report:
+    needs: [build, test-sample]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Coverage Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+          path: ./coverage
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ./coverage/**/coverage.cobertura.xml

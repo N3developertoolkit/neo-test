@@ -20,7 +20,7 @@ namespace Neo.BuildTasks
         protected override string PackageId => PACKAGE_ID;
 
         public ITaskItem[] Sources { get; set; } = Array.Empty<ITaskItem>();
-        public ITaskItem? Output { get; set; }
+        public ITaskItem Output { get; set; }
         public string BaseFileName { get; set; } = "";
         public bool Debug { get; set; }
         public bool Assembly { get; set; }
@@ -49,7 +49,7 @@ namespace Neo.BuildTasks
                 builder.AppendFormat(" {0}", file.ItemSpec);
             }
 
-            if (Output is not null)
+            if (!(Output is null))
             {
                 builder.AppendFormat(" --output {0}", Output.ItemSpec);
             }

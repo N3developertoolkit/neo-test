@@ -13,7 +13,10 @@ env:
   DOTNET_VERSION: '6.0.x'
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
   pack:
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       PrereleaseVersion: ${{ steps.nbgv.outputs.PrereleaseVersion }}
@@ -34,7 +37,6 @@ jobs:
       run: |
         dotnet restore
         dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
-        dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
         dotnet pack --configuration ${{ env.CONFIGURATION }} --output ./out --no-build --verbosity normal
     - name: Upload Build Log
       if: always()
@@ -42,10 +44,6 @@ jobs:
       with:
         name: buildlog
         path: ./msbuild.binlog
-    - name: Code Coverage Report
-      uses: irongut/CodeCoverageSummary@v1.3.0
-      with:
-        filename: ./test/test-build-tasks/TestResults/*/coverage.cobertura.xml
     - name: Upload Neo.Assertions
       uses: actions/upload-artifact@v3
       with:

@@ -14,13 +14,13 @@ namespace Neo.BuildTasks
         protected override string PackageId => PACKAGE_ID;
 
         [Required]
-        public ITaskItem? BatchFile { get; set; }
+        public ITaskItem BatchFile { get; set; }
 
-        public ITaskItem? InputFile { get; set; }
+        public ITaskItem InputFile { get; set; }
 
         public bool Reset { get; set; }
 
-        public ITaskItem? Checkpoint { get; set; }
+        public ITaskItem Checkpoint { get; set; }
 
         public bool Trace { get; set; }
 
@@ -33,7 +33,7 @@ namespace Neo.BuildTasks
             var builder = new StringBuilder("batch ");
             builder.AppendFormat("\"{0}\"", BatchFile.ItemSpec);
 
-            if (InputFile is not null)
+            if (!(InputFile is null))
             {
                 builder.AppendFormat(" --input \"{0}\"", InputFile.ItemSpec);
             }
@@ -41,7 +41,7 @@ namespace Neo.BuildTasks
             if (Reset)
             {
                 builder.Append(" --reset");
-                if (Checkpoint is not null)
+                if (!(Checkpoint is null))
                 {
                     builder.AppendFormat(":\"{0}\"", Checkpoint.ItemSpec);
                 }

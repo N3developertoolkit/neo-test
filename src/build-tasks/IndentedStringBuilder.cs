@@ -24,7 +24,7 @@ namespace Neo.BuildTasks
         private byte _indent;
         private bool _indentPending = true;
 
-        private readonly StringBuilder _stringBuilder = new();
+        private readonly StringBuilder _stringBuilder = new StringBuilder();
 
         /// <summary>
         ///     The current length of the built string.
@@ -93,7 +93,7 @@ namespace Neo.BuildTasks
             using (var reader = new StringReader(value))
             {
                 var first = true;
-                string? line;
+                string line;
                 while ((line = reader.ReadLine()) != null)
                 {
                     if (first)
