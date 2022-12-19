@@ -3,8 +3,9 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
+    <NoWarn>IDE1006</NoWarn>
     <RootNamespace>build_tasks</RootNamespace>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

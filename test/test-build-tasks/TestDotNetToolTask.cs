@@ -102,10 +102,10 @@ namespace build_tasks
             var processRunner = new Mock<IProcessRunner>();
             processRunner
                 .Setup(r => r.Run("dotnet", "tool list --local", It.IsAny<string>()))
-                .Returns(new IProcessRunner.Results(0, local.Split(Environment.NewLine), Array.Empty<string>()));
+                .Returns(new ProcessResults(0, local.Split(Environment.NewLine), Array.Empty<string>()));
             processRunner
                 .Setup(r => r.Run("dotnet", "tool list --global", It.IsAny<string>()))
-                .Returns(new IProcessRunner.Results(0, global.Split(Environment.NewLine), Array.Empty<string>()));
+                .Returns(new ProcessResults(0, global.Split(Environment.NewLine), Array.Empty<string>()));
             return processRunner;
         }
 

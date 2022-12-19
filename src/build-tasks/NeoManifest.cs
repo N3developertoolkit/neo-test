@@ -46,37 +46,37 @@ namespace Neo.BuildTasks
                 Methods = methods.ToArray(),
                 Events = events.ToArray()
             };
+        }
 
-            static (string Name, string Type) ParamFromJson(JSONNode json)
-            {
-                var name = json["name"].Value;
-                var type = json["type"].Value;
-                return (name, type);
-            }
+        static (string Name, string Type) ParamFromJson(JSONNode json)
+        {
+            var name = json["name"].Value;
+            var type = json["type"].Value;
+            return (name, type);
+        }
 
-            static Method MethodFromJson(JSONNode json)
+        static Method MethodFromJson(JSONNode json)
+        {
+            var name = json["name"].Value;
+            var returnType = json["returntype"].Value;
+            var @params = json["parameters"].Linq.Select(kvp => ParamFromJson(kvp.Value));
+            return new Method
             {
-                var name = json["name"].Value;
-                var returnType = json["returntype"].Value;
-                var @params = json["parameters"].Linq.Select(kvp => ParamFromJson(kvp.Value));
-                return new Method
-                {
-                    Name = name,
-                    ReturnType = returnType,
-                    Parameters = @params.ToArray()
-                };
-            }
+                Name = name,
+                ReturnType = returnType,
+                Parameters = @params.ToArray()
+            };
+        }
 
-            static Event EventFromJson(JSONNode json)
+        static Event EventFromJson(JSONNode json)
+        {
+            var name = json["name"].Value;
+            var @params = json["parameters"].Linq.Select(kvp => ParamFromJson(kvp.Value));
+            return new Event
             {
-                var name = json["name"].Value;
-                var @params = json["parameters"].Linq.Select(kvp => ParamFromJson(kvp.Value));
-                return new Event
-                {
-                    Name = name,
-                    Parameters = @params.ToArray()
-                };
-            }
+                Name = name,
+                Parameters = @params.ToArray()
+            };
         }
     }
 }

@@ -4,10 +4,12 @@
     <AssemblyName>neo-assertions</AssemblyName>
     <PackageId>Neo.Assertions</PackageId>
     <RootNamespace>Neo.Assertions</RootNamespace>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="6.8.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>
 
   <Choose>

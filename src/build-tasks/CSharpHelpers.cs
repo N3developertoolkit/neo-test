@@ -33,22 +33,22 @@ namespace Neo.BuildTasks
                 return "@" + name;
             }
             return name;
+        }
 
-            static bool IsKeyword(string value)
+        static bool IsKeyword(string value)
+        {
+            return CSHARP_KEYWORDS.Contains(value);
+        }
+
+        static bool IsPrefixTwoUnderscore(string value)
+        {
+            if (value.Length < 3)
             {
-                return CSHARP_KEYWORDS.Contains(value);
+                return false;
             }
-
-            static bool IsPrefixTwoUnderscore(string value)
+            else
             {
-                if (value.Length < 3)
-                {
-                    return false;
-                }
-                else
-                {
-                    return ((value[0] == '_') && (value[1] == '_') && (value[2] != '_'));
-                }
+                return ((value[0] == '_') && (value[1] == '_') && (value[2] != '_'));
             }
         }
 

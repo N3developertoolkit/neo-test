@@ -5,10 +5,10 @@
     <Authors>The Neo Project</Authors>
     <Company>The Neo Project</Company>
     <Copyright>2015-2021 The Neo Project</Copyright>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <LangVersion>10</LangVersion>
-    <Nullable>enable</Nullable>
+    <Nullable>enable</Nullable> -->
     <PackageIcon>ngdsea.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/ngdenterprise/neo-test</PackageProjectUrl>
@@ -16,7 +16,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/ngdenterprise/neo-test</RepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <TargetFramework>net6.0</TargetFramework>
+    <!-- <TargetFramework>net6.0</TargetFramework> -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CI)' == 'true'">
@@ -37,9 +37,5 @@
   </ItemGroup>
 
   <Import Project="../Directory.Build.props" />
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
-  </ItemGroup>
 
 </Project>

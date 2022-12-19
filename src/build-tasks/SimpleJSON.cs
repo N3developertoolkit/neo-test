@@ -40,7 +40,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-#nullable disable
 namespace SimpleJSON
 {
     public enum JSONNodeType
@@ -1433,4 +1432,3 @@ namespace SimpleJSON
         }
     }
 }
-#nullable restore
