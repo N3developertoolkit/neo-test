@@ -39,7 +39,7 @@ namespace build_tasks
         {
             Func<NugetPackageVersion, bool> validate = ver => false;
 
-            var processRunner = GetProcRunner();
+            var processRunner = MockProcRunner();
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -53,7 +53,7 @@ namespace build_tasks
             var expectedVersion = new NugetPackageVersion(3, 1, 0);
             Func<NugetPackageVersion, bool> validate = ver => ver == expectedVersion;
 
-            var processRunner = GetProcRunner();
+            var processRunner = MockProcRunner();
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -70,7 +70,7 @@ namespace build_tasks
             var expectedVersion = new NugetPackageVersion(3, 3, 0);
             Func<NugetPackageVersion, bool> validate = ver => true;
 
-            var processRunner = GetProcRunner();
+            var processRunner = MockProcRunner();
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -79,7 +79,7 @@ namespace build_tasks
             Assert.Equal(DotNetToolType.Local, type);
             Assert.Equal(expectedVersion, version);
         }
-
+ 
 
         [Fact]
         public void find_valid_prerel_version()
@@ -87,7 +87,7 @@ namespace build_tasks
             var expectedVersion = new NugetPackageVersion(3, 3, 1037, "storage-schema-preview");
             Func<NugetPackageVersion, bool> validate = ver => ver >= new NugetPackageVersion(3, 3, 0);
 
-            var processRunner = GetProcRunner(sspOutput);
+            var processRunner = MockProcRunner(sspOutput);
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -97,7 +97,7 @@ namespace build_tasks
             Assert.Equal(expectedVersion, version);
         }
 
-        static Mock<IProcessRunner> GetProcRunner(string local = localOutput, string global = globalOutput)
+        static Mock<IProcessRunner> MockProcRunner(string local = localOutput, string global = globalOutput)
         {
             var processRunner = new Mock<IProcessRunner>();
             processRunner

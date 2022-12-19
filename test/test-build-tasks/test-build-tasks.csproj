@@ -9,11 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="integrationTests/*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\build-tasks\build-tasks.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-     <EmbeddedResource Include="testFiles/*" />
+    <EmbeddedResource Include="testFiles/*" />
+    <EmbeddedResource Include="integrationTests/*" />
   </ItemGroup>
 
   <ItemGroup>
