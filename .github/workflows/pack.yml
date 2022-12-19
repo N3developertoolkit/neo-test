@@ -13,10 +13,7 @@ env:
   DOTNET_VERSION: '6.0.x'
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
   pack:
-    needs: test
     runs-on: ubuntu-latest
     outputs:
       PrereleaseVersion: ${{ steps.nbgv.outputs.PrereleaseVersion }}
