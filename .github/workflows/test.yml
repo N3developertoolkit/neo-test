@@ -22,10 +22,14 @@ jobs:
     - name: Nerdbank.GitVersioning
       uses: dotnet/nbgv@v0.4.0
       id: nbgv
-    - name: Pack
+    - name: Restore
       run: |
-        dotnet restore
+        dotnet restore --configfile ./NuGet.Config
+    - name: Build
+      run: |
         dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
+    - name: Test
+      run: |
         dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
     - name: Upload Build Log
       if: always()
@@ -40,6 +44,7 @@ jobs:
         path: ./test/test.bctklib/TestResults/*/coverage.cobertura.xml
 
   test-sample:
+    needs: build
     runs-on: ${{ matrix.os }}
     strategy: 
       matrix:
@@ -66,7 +71,7 @@ jobs:
         dotnet test --no-build
 
   report:
-    needs: [build, test-sample]
+    needs: test-sample
     runs-on: ubuntu-latest
     steps:
       - name: Download Coverage Artifact
