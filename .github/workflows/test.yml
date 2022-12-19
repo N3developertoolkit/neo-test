@@ -61,12 +61,12 @@ jobs:
     - name: Nerdbank.GitVersioning
       uses: dotnet/nbgv@v0.4.0
       id: nbgv
-    - name: restore tools
-      run: |
-        dotnet tool restore --tool-manifest test/build-tasks-sample/.config/dotnet-tools.json
     - name: build test packages
       run: |
         dotnet pack -o ./artifacts
+    - name: restore tools
+      run: |
+        dotnet tool restore --tool-manifest test/build-tasks-sample/.config/dotnet-tools.json
     - name: restore build-tasks-sample
       run: |
         dotnet restore test/build-tasks-sample/ --disable-build-servers --packages ./package --no-cache /p:NeoTestVersion=${{ steps.nbgv.outputs.NuGetPackageVersion }}
