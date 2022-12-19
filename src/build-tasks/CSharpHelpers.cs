@@ -3,7 +3,7 @@
 
 // Adapted from https://github.com/dotnet/runtime/blob/main/src/libraries/Common/src/System/CSharpHelpers.cs
 
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Neo.BuildTasks
@@ -11,7 +11,7 @@ namespace Neo.BuildTasks
     static class CSharpHelpers
     {
         // generated from Roslyn C# 4.2 SyntaxFacts.GetKeywordKinds().Select(k => SyntaxFacts.GetText(k)).OrderBy(k => k)
-        static readonly ImmutableHashSet<string> CSHARP_KEYWORDS = ImmutableHashSet.Create("__arglist", "__makeref",
+        static readonly HashSet<string> CSHARP_KEYWORDS = new HashSet<string>(new string[] {"__arglist", "__makeref",
             "__reftype", "__refvalue", "abstract", "add", "alias", "and", "as", "ascending", "assembly", "async",
             "await", "base", "bool", "break", "by", "byte", "case", "catch", "char", "checked", "class", "const",
             "continue", "decimal", "default", "delegate", "descending", "do", "double", "else", "enum", "equals",
@@ -22,7 +22,7 @@ namespace Neo.BuildTasks
             "private", "property", "protected", "public", "readonly", "record", "ref", "remove", "return", "sbyte",
             "sealed", "select", "set", "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this",
             "throw", "true", "try", "type", "typeof", "typevar", "uint", "ulong", "unchecked", "unmanaged", "unsafe",
-            "ushort", "using", "virtual", "void", "volatile", "when", "where", "while", "with", "yield");
+            "ushort", "using", "virtual", "void", "volatile", "when", "where", "while", "with", "yield"});
 
         public static string CreateEscapedIdentifier(string name)
         {

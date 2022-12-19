@@ -1,21 +1,21 @@
 using System;
-using Microsoft.Build.Utilities.ProjectCreation;
+using System.Collections.Generic;
 using Moq;
 using Neo.BuildTasks;
 using Xunit;
 
 namespace build_tasks
 {
-    public class TestDotNetToolTask : MSBuildTestBase
+    public class TestDotNetToolTask
     {
         class TestTask : DotNetToolTask
         {
             protected override string Command => "nccs";
             protected override string PackageId => "Neo.Compiler.CSharp";
 
-            readonly Func<NugetPackageVersion, bool>? validator;
+            readonly Func<NugetPackageVersion, bool> validator;
 
-            public TestTask(IProcessRunner processRunner, Func<NugetPackageVersion, bool>? validator = null) : base(processRunner)
+            public TestTask(IProcessRunner processRunner, Func<NugetPackageVersion, bool> validator = null) : base(processRunner)
             {
                 this.validator = validator;
             }
@@ -23,7 +23,7 @@ namespace build_tasks
             protected override string GetArguments() => string.Empty;
 
             protected override bool ValidateVersion(NugetPackageVersion version)
-                => validator is null ? true : validator(version);
+                => validator is null || validator(version);
         }
 
         [Fact]

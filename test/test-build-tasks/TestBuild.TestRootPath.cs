@@ -27,6 +27,5 @@ namespace build_tasks
 
             public static implicit operator string(TestRootPath p) => p.Value;
         }
-
     }
 }

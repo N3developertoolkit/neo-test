@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>neo-assertions</AssemblyName>
+    <Nullable>enable</Nullable>
     <PackageId>Neo.Assertions</PackageId>
     <RootNamespace>Neo.Assertions</RootNamespace>
     <TargetFramework>net6.0</TargetFramework>

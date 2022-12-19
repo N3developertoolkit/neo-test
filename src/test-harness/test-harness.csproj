@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>neo-test-harness</AssemblyName>
+    <Nullable>enable</Nullable>
     <PackageId>Neo.Test.Harness</PackageId>
     <RootNamespace>NeoTestHarness</RootNamespace>
     <TargetFramework>net6.0</TargetFramework>
