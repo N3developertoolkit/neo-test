@@ -63,13 +63,13 @@ jobs:
       id: nbgv
     - name: build test packages
       run: |
-        dotnet pack -o ./artifacts
+        dotnet pack -o test/build-tasks-sample/artifacts
     - name: restore tools
       run: |
         dotnet tool restore --tool-manifest test/build-tasks-sample/.config/dotnet-tools.json
     - name: restore build-tasks-sample
       run: |
-        dotnet restore test/build-tasks-sample/ --disable-build-servers --packages ./package --no-cache /p:NeoTestVersion=${{ steps.nbgv.outputs.NuGetPackageVersion }}
+        dotnet restore test/build-tasks-sample/ --disable-build-servers --packages test/build-tasks-sample/package --no-cache /p:NeoTestVersion=${{ steps.nbgv.outputs.NuGetPackageVersion }}
     - name: build build-tasks-sample
       run: |
         dotnet build test/build-tasks-sample/ --no-restore
