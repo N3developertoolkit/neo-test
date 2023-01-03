@@ -5,10 +5,6 @@
     <Authors>The Neo Project</Authors>
     <Company>The Neo Project</Company>
     <Copyright>2015-2021 The Neo Project</Copyright>
-    <!-- <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <LangVersion>10</LangVersion>
-    <Nullable>enable</Nullable> -->
     <PackageIcon>ngdsea.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/ngdenterprise/neo-test</PackageProjectUrl>
@@ -16,7 +12,6 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/ngdenterprise/neo-test</RepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <!-- <TargetFramework>net6.0</TargetFramework> -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CI)' == 'true'">
@@ -24,7 +19,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <BlockchainToolkitLibraryVersion>3.5.29</BlockchainToolkitLibraryVersion>
+    <BlockchainToolkitLibraryVersion>3.5.30</BlockchainToolkitLibraryVersion>
     <!-- <BlockchainToolkitLibraryVersion>local</BlockchainToolkitLibraryVersion> -->
     <BlockchainToolkitLibraryLocalPath>..\..\..\lib-bctk</BlockchainToolkitLibraryLocalPath>
     <NeoVersion>3.5.0</NeoVersion>
