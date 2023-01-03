@@ -8,47 +8,50 @@ env:
   DOTNET_VERSION: '6.0.x'
 
 jobs:
-  build:
+  test:
+    uses: ./.github/workflows/test.yml
+  pack:
+    needs: test
+    uses: ./.github/workflows/pack.yml
+  release:
+    needs: pack
     if: startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Download Neo.Assertions
+      uses: actions/download-artifact@v3
       with:
-        fetch-depth: 0
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+        name: assertions
+        path: ./out
+    - name: Download Neo.BuildTasks
+      uses: actions/download-artifact@v3
       with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Nerdbank.GitVersioning
-      uses: dotnet/nbgv@v0.4.0
-      id: nbgv
-    - name: Restore and Build
-      run: |
-        dotnet restore
-        dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal
-    - name: test 
-      run: dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal
-    - name: Pack 
-      run: dotnet pack --output ./out --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+        name: build-tasks
+        path: ./out
+    - name: Download Neo.Test.Harness
+      uses: actions/download-artifact@v3
       with:
-        name: packages
+        name: test-harness
+        path: ./out
+    - name: Download Neo.Test.Runner
+      uses: actions/download-artifact@v3
+      with:
+        name: test-runner
         path: ./out
     - name: Create Release
       uses: marvinpinto/action-automatic-releases@v1.1.1
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: ${{ steps.nbgv.outputs.PrereleaseVersion != '' }}
-        title: Release ${{ steps.nbgv.outputs.NuGetPackageVersion }}
-        automatic_release_tag: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
+        prerelease: ${{ needs.pack.outputs.PrereleaseVersion != '' }}
+        title: Release ${{ needs.pack.outputs.NuGetPackageVersion }}
+        automatic_release_tag: ${{ needs.pack.outputs.NuGetPackageVersion }}
         files: |
           ./out/*
     - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.Assertions.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ${{ format('./out/Neo.Assertions.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
     - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.BuildTasks.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ${{ format('./out/Neo.BuildTasks.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
     - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.Test.Harness.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ${{ format('./out/Neo.Test.Harness.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
     - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.Test.Runner.{0}.nupkg', steps.nbgv.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push ${{ format('./out/Neo.Test.Runner.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
