@@ -7,6 +7,7 @@
  * 
  * Written by Bunny83 
  * 2012-06-09
+ * https://github.com/Bunny83/SimpleJSON
  * 
  * Changelog now external. See Changelog.txt
  * 
