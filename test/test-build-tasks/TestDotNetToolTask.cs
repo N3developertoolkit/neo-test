@@ -1,21 +1,21 @@
 using System;
-using Microsoft.Build.Utilities.ProjectCreation;
+using System.Collections.Generic;
 using Moq;
 using Neo.BuildTasks;
 using Xunit;
 
 namespace build_tasks
 {
-    public class TestDotNetToolTask : MSBuildTestBase
+    public class TestDotNetToolTask
     {
         class TestTask : DotNetToolTask
         {
             protected override string Command => "nccs";
             protected override string PackageId => "Neo.Compiler.CSharp";
 
-            readonly Func<NugetPackageVersion, bool>? validator;
+            readonly Func<NugetPackageVersion, bool> validator;
 
-            public TestTask(IProcessRunner processRunner, Func<NugetPackageVersion, bool>? validator = null) : base(processRunner)
+            public TestTask(IProcessRunner processRunner, Func<NugetPackageVersion, bool> validator = null) : base(processRunner)
             {
                 this.validator = validator;
             }
@@ -23,7 +23,7 @@ namespace build_tasks
             protected override string GetArguments() => string.Empty;
 
             protected override bool ValidateVersion(NugetPackageVersion version)
-                => validator is null ? true : validator(version);
+                => validator is null || validator(version);
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace build_tasks
         {
             Func<NugetPackageVersion, bool> validate = ver => false;
 
-            var processRunner = GetProcRunner();
+            var processRunner = MockProcRunner();
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -53,7 +53,7 @@ namespace build_tasks
             var expectedVersion = new NugetPackageVersion(3, 1, 0);
             Func<NugetPackageVersion, bool> validate = ver => ver == expectedVersion;
 
-            var processRunner = GetProcRunner();
+            var processRunner = MockProcRunner();
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -70,7 +70,7 @@ namespace build_tasks
             var expectedVersion = new NugetPackageVersion(3, 3, 0);
             Func<NugetPackageVersion, bool> validate = ver => true;
 
-            var processRunner = GetProcRunner();
+            var processRunner = MockProcRunner();
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -79,7 +79,6 @@ namespace build_tasks
             Assert.Equal(DotNetToolType.Local, type);
             Assert.Equal(expectedVersion, version);
         }
-
 
         [Fact]
         public void find_valid_prerel_version()
@@ -87,7 +86,7 @@ namespace build_tasks
             var expectedVersion = new NugetPackageVersion(3, 3, 1037, "storage-schema-preview");
             Func<NugetPackageVersion, bool> validate = ver => ver >= new NugetPackageVersion(3, 3, 0);
 
-            var processRunner = GetProcRunner(sspOutput);
+            var processRunner = MockProcRunner(sspOutput);
             var taskItem = new Mock<Microsoft.Build.Framework.ITaskItem>();
             taskItem.Setup(item => item.ItemSpec).Returns("fakePath");
 
@@ -97,15 +96,15 @@ namespace build_tasks
             Assert.Equal(expectedVersion, version);
         }
 
-        static Mock<IProcessRunner> GetProcRunner(string local = localOutput, string global = globalOutput)
+        static Mock<IProcessRunner> MockProcRunner(string local = localOutput, string global = globalOutput)
         {
             var processRunner = new Mock<IProcessRunner>();
             processRunner
                 .Setup(r => r.Run("dotnet", "tool list --local", It.IsAny<string>()))
-                .Returns(new IProcessRunner.Results(0, local.Split(Environment.NewLine), Array.Empty<string>()));
+                .Returns(new ProcessResults(0, local.Split(Environment.NewLine), Array.Empty<string>()));
             processRunner
                 .Setup(r => r.Run("dotnet", "tool list --global", It.IsAny<string>()))
-                .Returns(new IProcessRunner.Results(0, global.Split(Environment.NewLine), Array.Empty<string>()));
+                .Returns(new ProcessResults(0, global.Split(Environment.NewLine), Array.Empty<string>()));
             return processRunner;
         }
 

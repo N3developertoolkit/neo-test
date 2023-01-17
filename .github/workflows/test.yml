@@ -1,0 +1,78 @@
+name: Run Test
+
+on:
+  workflow_call:
+
+env:
+  CONFIGURATION: 'Release'
+  DOTNET_VERSION: '6.0.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          ${{ env.DOTNET_VERSION }}
+          3.1.x
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.4.0
+      id: nbgv
+    - name: Restore
+      run: |
+        dotnet restore --configfile ./NuGet.Config
+    - name: Build
+      run: |
+        dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
+    - name: Test
+      run: |
+        dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Upload Build Log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: buildlog
+        path: ./msbuild.binlog
+    - name: Code Coverage Report
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: ./test/test-build-tasks/TestResults/*/coverage.cobertura.xml
+
+  test-sample:
+    runs-on: ${{ matrix.os }}
+    strategy: 
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.4.0
+      id: nbgv
+    - name: build test packages
+      run: |
+        dotnet pack -o test/build-tasks-sample/artifacts
+    - name: restore tools
+      run: |
+        dotnet tool restore --tool-manifest test/build-tasks-sample/.config/dotnet-tools.json
+    - name: restore build-tasks-sample
+      run: |
+        dotnet restore test/build-tasks-sample/ --disable-build-servers --packages test/build-tasks-sample/package --no-cache /p:NeoTestVersion=${{ steps.nbgv.outputs.NuGetPackageVersion }}
+    - name: build build-tasks-sample
+      run: |
+        dotnet build test/build-tasks-sample/ --no-restore
+    - name: test build-tasks-sample
+      run: |
+        dotnet test test/build-tasks-sample/ --no-build

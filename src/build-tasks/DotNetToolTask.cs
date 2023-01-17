@@ -28,9 +28,9 @@ namespace Neo.BuildTasks
         [Output]
         public string ToolVersion { get; set; } = string.Empty;
 
-        public ITaskItem? WorkingDirectory { get; set; }
+        public ITaskItem WorkingDirectory { get; set; }
 
-        protected DotNetToolTask(IProcessRunner? processRunner = null)
+        protected DotNetToolTask(IProcessRunner processRunner = null)
         {
             this.processRunner = processRunner ?? new ProcessRunner();
         }
@@ -81,9 +81,9 @@ namespace Neo.BuildTasks
             return false;
         }
 
-        internal bool FindTool(string package, ITaskItem? directory, out DotNetToolType toolType, out NugetPackageVersion version)
+        internal bool FindTool(string package, ITaskItem directory, out DotNetToolType toolType, out NugetPackageVersion version)
         {
-            if (directory is not null)
+            if (!(directory is null))
             {
                 if (TryExecute("dotnet", "tool list --local", directory, out var output)
                     && ContainsPackage(output, package, out version)
@@ -109,7 +109,7 @@ namespace Neo.BuildTasks
             return false;
         }
 
-        internal bool TryExecute(string command, string arguments, ITaskItem? directory, out IReadOnlyCollection<string> output)
+        internal bool TryExecute(string command, string arguments, ITaskItem directory, out IReadOnlyCollection<string> output)
         {
             var results = processRunner.Run(command, arguments, directory?.ItemSpec);
 
@@ -158,7 +158,7 @@ namespace Neo.BuildTasks
         {
             const string ColumnDelimiter = "      ";
 
-            List<string> columns = new();
+            var columns = new List<string>();
             while (true)
             {
                 row = row.TrimStart();

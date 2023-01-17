@@ -82,24 +82,28 @@ namespace Neo.BuildTasks
             }
 
             return builder.ToString();
+        }
 
-            static string ConvertParameterType(string parameterType) => parameterType switch
+        static string ConvertParameterType(string parameterType)
+        {
+            switch (parameterType)
             {
-                "Any" => "object",
-                "Array" => "Neo.VM.Types.Array",
-                "Boolean" => "bool",
-                "ByteArray" => "byte[]",
-                "Hash160" => "Neo.UInt160",
-                "Hash256" => "Neo.UInt256",
-                "Integer" => "System.Numerics.BigInteger",
-                "InteropInterface" => "Neo.VM.Types.InteropInterface",
-                "PublicKey" => "Neo.Cryptography.ECC.ECPoint",
-                "Map" => "Neo.VM.Types.Map",
-                "Signature" => "Neo.VM.Types.ByteString",
-                "String" => "string",
-                "Void" => "void",
-                _ => throw new FormatException($"Invalid parameter type {parameterType}")
+                case "Any": return "object";
+                case "Array": return "Neo.VM.Types.Array";
+                case "Boolean": return "bool";
+                case "ByteArray": return "byte[]";
+                case "Hash160": return "Neo.UInt160";
+                case "Hash256": return "Neo.UInt256";
+                case "Integer": return "System.Numerics.BigInteger";
+                case "InteropInterface": return "Neo.VM.Types.InteropInterface";
+                case "PublicKey": return "Neo.Cryptography.ECC.ECPoint";
+                case "Map": return "Neo.VM.Types.Map";
+                case "Signature": return "Neo.VM.Types.ByteString";
+                case "String": return "string";
+                case "Void": return "void";
+                default: throw new FormatException($"Invalid parameter type {parameterType}");
             };
         }
     }
 }
+

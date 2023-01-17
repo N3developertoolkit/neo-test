@@ -1,0 +1,63 @@
+name: Run Pack
+
+on:
+  workflow_call:
+    outputs:
+      PrereleaseVersion:
+        value: ${{ jobs.pack.outputs.PrereleaseVersion}}
+      NuGetPackageVersion:
+        value: ${{ jobs.pack.outputs.NuGetPackageVersion}}
+
+env:
+  CONFIGURATION: 'Release'
+  DOTNET_VERSION: '6.0.x'
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    outputs:
+      PrereleaseVersion: ${{ steps.nbgv.outputs.PrereleaseVersion }}
+      NuGetPackageVersion: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.4.0
+      id: nbgv
+    - name: Pack
+      run: |
+        dotnet restore
+        dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
+        dotnet pack --configuration ${{ env.CONFIGURATION }} --output ./out --no-build --verbosity normal
+    - name: Upload Build Log
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: buildlog
+        path: ./msbuild.binlog
+    - name: Upload Neo.Assertions
+      uses: actions/upload-artifact@v3
+      with:
+        name: assertions
+        path: ./out/Neo.Assertions.*.nupkg
+    - name: Upload Neo.BuildTasks
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-tasks
+        path: ./out/Neo.BuildTasks.*.nupkg
+    - name: Upload Neo.Test.Harness
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-harness
+        path: ./out/Neo.Test.Harness.*.nupkg
+    - name: Upload Neo.Test.Runner
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-runner
+        path: ./out/Neo.Test.Runner.*.nupkg

@@ -5,16 +5,29 @@ using System.Threading;
 
 namespace Neo.BuildTasks
 {
+    public readonly struct ProcessResults
+    {
+        public readonly int ExitCode;
+        public readonly IReadOnlyCollection<string> Output;
+        public readonly IReadOnlyCollection<string> Error;
+
+        public ProcessResults(int exitCode, IReadOnlyCollection<string> output, IReadOnlyCollection<string> error)
+        {
+            ExitCode = exitCode;
+            Output = output;
+            Error = error;
+        }
+    }
+
     public interface IProcessRunner
     {
-        record struct Results(int ExitCode, IReadOnlyCollection<string> Output, IReadOnlyCollection<string> Error);
-        Results Run(string command, string arguments, string? workingDirectory = null);
+        ProcessResults Run(string command, string arguments, string workingDirectory = null);
     }
 
     // https://github.com/jamesmanning/RunProcessAsTask
     class ProcessRunner : IProcessRunner
     {
-        public IProcessRunner.Results Run(string command, string arguments, string? workingDirectory = null)
+        public ProcessResults Run(string command, string arguments, string workingDirectory = null)
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo(command, arguments)
             {
@@ -31,15 +44,15 @@ namespace Neo.BuildTasks
                 EnableRaisingEvents = true,
             };
 
-            ConcurrentQueue<string> output = new();
+            var output = new ConcurrentQueue<string>();
             process.OutputDataReceived += (sender, args) => { if (args.Data != null) { output.Enqueue(args.Data); } };
 
-            ConcurrentQueue<string> error = new();
+            var error = new ConcurrentQueue<string>();
             process.ErrorDataReceived += (sender, args) => { if (args.Data != null) { error.Enqueue(args.Data); } };
 
-            ManualResetEvent completeEvent = new(false);
+            var completeEvent = new ManualResetEvent(false);
 
-            process.Exited += (_, _) => completeEvent.Set();
+            process.Exited += (sender, args) => completeEvent.Set();
 
             if (!process.Start()) throw new Exception("Process failed to start");
             process.BeginOutputReadLine();
@@ -47,7 +60,7 @@ namespace Neo.BuildTasks
 
             completeEvent.WaitOne();
 
-            return new IProcessRunner.Results(process.ExitCode, output, error);
+            return new ProcessResults(process.ExitCode, output, error);
         }
     }
 }

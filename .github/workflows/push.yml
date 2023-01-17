@@ -1,0 +1,55 @@
+name: On Push
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+    paths-ignore:
+      - 'readme.md'
+      - 'CHANGELOG.md'
+      - 'docs/**'
+
+env:
+  AZURE_ARTIFACTS_FEED_URL: https://pkgs.dev.azure.com/ngdenterprise/Build/_packaging/public/nuget/v3/index.json
+  DOTNET_VERSION: '6.0.x'
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+  pack:
+    needs: test
+    uses: ./.github/workflows/pack.yml
+  publish:
+    needs: pack
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        source-url: ${{ env.AZURE_ARTIFACTS_FEED_URL }}
+      env:
+        NUGET_AUTH_TOKEN: ${{ secrets.AZURE_ARTIFACTS_PAT }} 
+    - name: Download Neo.Assertions
+      uses: actions/download-artifact@v3
+      with:
+        name: assertions
+        path: ./out
+    - name: Download Neo.BuildTasks
+      uses: actions/download-artifact@v3
+      with:
+        name: build-tasks
+        path: ./out
+    - name: Download Neo.Test.Harness
+      uses: actions/download-artifact@v3
+      with:
+        name: test-harness
+        path: ./out
+    - name: Download Neo.Test.Runner
+      uses: actions/download-artifact@v3
+      with:
+        name: test-runner
+        path: ./out
+    - name: Publish to Azure Artifacts
+      run: dotnet nuget push --api-key AzureArtifacts out/*.nupkg
