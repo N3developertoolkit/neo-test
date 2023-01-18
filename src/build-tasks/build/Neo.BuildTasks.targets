@@ -5,6 +5,7 @@
     <NeoBuildTasksFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netstandard2.0</NeoBuildTasksFolder>
     <NeoBuildTasksFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net472</NeoBuildTasksFolder>
     <_NeoBuildTasksAssemblyPath>$([MSBuild]::ValueOrDefault('$(NeoBuildTasksAssembly)', '$(MSBuildThisFileDirectory)..\tasks\$(NeoBuildTasksFolder)\neo-build-tasks.dll'))</_NeoBuildTasksAssemblyPath>
+    <CleanDependsOn>$(CleanDependsOn);CleanNeoCsc;CleanNeoExpressBatch</CleanDependsOn>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(_NeoBuildTasksAssemblyPath)" TaskName="Neo.BuildTasks.NeoContractInterface"/>
@@ -165,6 +166,23 @@
     <ItemGroup>
       <Compile Include="%(NeoContractGeneration.OutputPath)" />
     </ItemGroup>
+
+  </Target>
+
+
+  <Target Name="CleanNeoCsc" 
+    DependsOnTargets="ConfigureNeoCsc"
+    Condition="'$(NeoContractName)'!=''">
+
+     <Delete Files="@(NeoCscOutput)" TreatErrorsAsWarnings="true"/>
+
+  </Target>
+
+  <Target Name="CleanNeoExpressBatch"
+    DependsOnTargets="ConfigureNeoExpressBatch"
+    Condition="'$(NeoExpressBatchFile)'!=''">
+
+     <Delete Files="$(NeoExpressTouchFile)" TreatErrorsAsWarnings="true"/>
 
   </Target>
 
