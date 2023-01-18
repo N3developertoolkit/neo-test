@@ -11,7 +11,7 @@ using Neo.Collector.Models;
 namespace Neo.Collector
 {
     [DataCollectorFriendlyName("Neo code coverage")]
-    [DataCollectorTypeUri("my://new/datacollector")]
+    [DataCollectorTypeUri("datacollector://Neo/ContractCodeCoverage/1.0")]
     public partial class CodeCoverageDataCollector : DataCollector, ITestExecutionEnvironmentSpecifier
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
@@ -62,13 +62,11 @@ namespace Neo.Collector
 
         public IEnumerable<KeyValuePair<string, string>> GetTestExecutionEnvironmentVariables()
         {
-            logger.LogWarning($"GetTestExecutionEnvironmentVariables {coveragePath}");
             yield return new KeyValuePair<string, string>(COVERAGE_PATH_ENV_NAME, coveragePath);
         }
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            logger.LogWarning($"OnSessionStart {e.Context.SessionId}");
             var testSources = e.GetPropertyValue<IList<string>>("TestSources");
 
             for (int i = 0; i < testSources.Count; i++)
@@ -93,6 +91,9 @@ namespace Neo.Collector
                         var nefPath = Path.Combine(
                             Path.GetDirectoryName(manifestPath),
                             Path.ChangeExtension(baseName, NEF_FILE_EXT));
+
+                        logger.LogWarning($"LoadTestSource {baseName} {nefPath}");
+
                         if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
                         {
                             collector.TrackContract(contractName, debugInfo);
@@ -120,13 +121,16 @@ namespace Neo.Collector
 
         static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
         {
-            foreach (var a in type.GetCustomAttributesData())
+            if (type.IsInterface)
             {
-                if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
+                foreach (var a in type.GetCustomAttributesData())
                 {
-                    name = (string)a.ConstructorArguments[0].Value;
-                    manifestPath = (string)a.ConstructorArguments[1].Value;
-                    return true;
+                    if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
+                    {
+                        name = (string)a.ConstructorArguments[0].Value;
+                        manifestPath = (string)a.ConstructorArguments[1].Value;
+                        return true;
+                    }
                 }
             }
 
@@ -137,8 +141,6 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            logger.LogWarning($"OnSessionEnd {e.Context.SessionId}");
-
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
                 logger.LogWarning($"  {filename}");

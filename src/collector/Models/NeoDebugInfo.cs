@@ -35,9 +35,7 @@ namespace Neo.Collector.Models
             if (TryLoadCompressed(nefdbgnfoPath, out debugInfo)) return true;
 
             var debugJsonPath = Path.ChangeExtension(nefPath, DEBUG_JSON_EXTENSION);
-            if (TryLoadUncompressed(debugJsonPath, out debugInfo)) return true;
-
-            return false;
+            return TryLoadUncompressed(debugJsonPath, out debugInfo);
         }
 
         static bool TryLoadCompressed(string debugInfoPath, out NeoDebugInfo debugInfo)
@@ -47,9 +45,22 @@ namespace Neo.Collector.Models
                 if (File.Exists(debugInfoPath))
                 {
                     using (var fileStream = File.OpenRead(debugInfoPath))
+                    using (var zip = ZipStorer.Open(fileStream, FileAccess.Read))
                     {
-                        debugInfo = LoadCompressed(fileStream);
-                        return true;
+                        var entries = zip.ReadCentralDir();
+                        for (int i = 0; i < entries.Count; i++)
+                        {
+                            var entry = entries[i];
+                            if (entry.FilenameInZip.EndsWith(DEBUG_JSON_EXTENSION, StringComparison.OrdinalIgnoreCase)
+                                && zip.ExtractFile(entry, out var buffer))
+                            {
+                                using (var memoryStream = new MemoryStream(buffer))
+                                {
+                                    debugInfo = Load(memoryStream);
+                                    return true;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -76,17 +87,6 @@ namespace Neo.Collector.Models
 
             debugInfo = default;
             return false;
-        }
-
-        internal static NeoDebugInfo LoadCompressed(Stream stream)
-        {
-            var zip = ZipStorer.Open(stream, FileAccess.Read);
-            var dir = zip.ReadCentralDir();
-            zip.ExtractFile(dir[0], out byte[] buffer);
-            using (var memoryStream = new MemoryStream(buffer))
-            {
-                return Load(memoryStream);
-            }
         }
 
         internal static NeoDebugInfo Load(Stream stream)

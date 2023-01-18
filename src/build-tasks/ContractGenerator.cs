@@ -42,7 +42,7 @@ namespace Neo.BuildTasks
 #endif
 ");
             builder.AppendLine($"[System.ComponentModel.Description(@\"{manifestName}\")]");
-            builder.AppendLine("#if TEST_HARNESS_ATTRIBUTES");
+            builder.AppendLine("#if !OMIT_TEST_HARNESS_ATTRIBUTES");
             builder.AppendLine($"[NeoTestHarness.Contract(@\"{manifestName}\", @\"{manifestFile}\")]");
             builder.AppendLine("#endif");
             builder.AppendLine($"interface {contractName} {{");
