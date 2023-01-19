@@ -35,44 +35,16 @@ namespace Neo.Collector
             }
         }
 
-        public void LoadSessionOutput(string filename)
+        public void LoadCoverage(string filename)
         {
-            Hash160 hash;
-            var ext = Path.GetExtension(filename);
-            switch (ext)
+            using (var stream = File.OpenRead(filename))
             {
-                case COVERAGE_FILE_EXT:
-                    using (var stream = File.OpenRead(filename))
-                    {
-                        LoadRawCoverage(stream);
-                    }
-                    break;
-                case SCRIPT_FILE_EXT:
-                    if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out hash))
-                    {
-                        using (var stream = File.OpenRead(filename))
-                        {
-                            LoadScript(hash, stream);
-                        }
-                    }
-                    break;
-                case NEF_FILE_EXT:
-                    if (Hash160.TryParse(Path.GetFileNameWithoutExtension(filename), out hash))
-                    {
-                        using (var stream = File.OpenRead(filename))
-                        {
-                            LoadNef(hash, stream);
-                        }
-                    }
-                    break;
-
-                default: 
-                    logger.LogWarning($"Invalid Session Output extension {ext}");
-                    break;
+                LoadCoverage(stream);
             }
         }
 
-        internal void LoadRawCoverage(Stream stream)
+        // Stream based methods broken out for test purposes
+        internal void LoadCoverage(Stream stream)
         {
             var reader = new StreamReader(stream);
             var hash = Hash160.Zero;
@@ -114,11 +86,47 @@ namespace Neo.Collector
             }
         }
 
+        public void LoadScript(string filename)
+        {
+            var baseFileName = Path.GetFileNameWithoutExtension(filename);
+            if (Hash160.TryParse(baseFileName, out var hash))
+            {
+                using (var stream = File.OpenRead(filename))
+                {
+                    LoadScript(hash, stream);
+                }
+            }
+            else
+            {
+                logger.LogWarning($"Failed to parse {baseFileName} filename");
+            }
+        }
+
         internal void LoadScript(Hash160 hash, Stream stream)
         {
             if (coverageMap.TryGetValue(hash, out var coverage))
             {
                 coverage.RecordScript(stream.EnumerateInstructions());
+            }
+            else
+            {
+                logger.LogWarning($"{hash} script not tracked");
+            }
+        }
+
+        public void LoadNef(string filename)
+        {
+            var baseFileName = Path.GetFileNameWithoutExtension(filename);
+            if (Hash160.TryParse(baseFileName, out var hash))
+            {
+                using (var stream = File.OpenRead(filename))
+                {
+                    LoadNef(hash, stream);
+                }
+            }
+            else
+            {
+                logger.LogWarning($"Failed to parse {baseFileName} filename");
             }
         }
 
@@ -128,6 +136,10 @@ namespace Neo.Collector
             {
                 var nefFile = NefFile.Load(stream);
                 coverage.RecordScript(nefFile.Script.EnumerateInstructions());
+            }
+            else
+            {
+                logger.LogWarning($"{hash} nef not tracked");
             }
         }
     }

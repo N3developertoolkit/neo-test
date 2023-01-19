@@ -70,14 +70,14 @@ namespace Neo.Collector
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
-            {
-                LoadDebugInfoSetting(node);
-            }
-
             foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources"))
             {
                 LoadTestSource(testSource);
+            }
+
+            foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
+            {
+                LoadDebugInfoSetting(node);
             }
         }
 
@@ -129,22 +129,10 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            foreach (var filename in Directory.EnumerateFiles(coveragePath))
-            {
-                logger.LogWarning($"  {filename}");
-
-                try
-                {
-                    collector.LoadSessionOutput(filename);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(string.Empty, ex);
-                }
-            }
+            LoadCoverageFiles();
 
             var reportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
-            WriteAttachment(reportPath, stream =>
+            WriteAttachmentStream(reportPath, stream =>
             {
                 var format = new CoberturaFormat();
                 format.WriteReport(stream, collector.CollectCoverage());
@@ -153,9 +141,8 @@ namespace Neo.Collector
             foreach (var contract in collector.ContractCollectors)
             {
                 reportPath = Path.Combine(coveragePath, $"{contract.ScriptHash}.coverage.txt");
-                WriteAttachment(reportPath, stream =>
+                WriteAttachmentText(reportPath, writer =>
                 {
-                    var writer = new StreamWriter(stream);
                     writer.WriteLine("HITS");
                     foreach (var hit in contract.HitMap.OrderBy(h => h.Key))
                     {
@@ -166,12 +153,51 @@ namespace Neo.Collector
                     {
                         writer.WriteLine($"{hit.Key} {hit.Value.branchCount} {hit.Value.continueCount}");
                     }
-                    writer.Flush();
                 });
             }
         }
 
-        void WriteAttachment(string filename, Action<Stream> writeAttachment)
+        private void LoadCoverageFiles()
+        {
+            foreach (var filename in Directory.EnumerateFiles(coveragePath))
+            {
+                try
+                {
+                    var ext = Path.GetExtension(filename);
+                    switch (ext)
+                    {
+                        case CodeCoverageCollector.COVERAGE_FILE_EXT:
+                            collector.LoadCoverage(filename);
+                            break;
+                        case CodeCoverageCollector.NEF_FILE_EXT:
+                            collector.LoadNef(filename);
+                            break;
+                        case CodeCoverageCollector.SCRIPT_FILE_EXT:
+                            collector.LoadScript(filename);
+                            break;
+                        default:
+                            logger.LogWarning($"Unrecognized coverage output extension {filename}");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(filename, ex);
+                }
+            }
+        }
+
+        void WriteAttachmentText(string filename, Action<TextWriter> writeAttachment)
+        {
+            WriteAttachmentStream(filename, (Stream stream) => 
+            {
+                var writer = new StreamWriter(stream);
+                writeAttachment(writer);
+                writer.Flush();
+            });
+        }
+
+        void WriteAttachmentStream(string filename, Action<Stream> writeAttachment)
         {
             try
             {

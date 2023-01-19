@@ -29,7 +29,7 @@ static class TestFiles
             switch (ext)
             {
                 case CodeCoverageCollector.COVERAGE_FILE_EXT:
-                    @this.LoadRawCoverage(stream);
+                    @this.LoadCoverage(stream);
                     break;
                 case CodeCoverageCollector.SCRIPT_FILE_EXT:
                     {
