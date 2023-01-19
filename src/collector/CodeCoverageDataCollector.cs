@@ -54,6 +54,8 @@ namespace Neo.Collector
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
             collector = new CodeCoverageCollector(this.logger);
+
+            this.logger.LogWarning($"Initialize {this.coveragePath}");
         }
 
         protected override void Dispose(bool disposing)
@@ -201,7 +203,7 @@ namespace Neo.Collector
         {
             try
             {
-                logger.LogWarning($"  WriteAttachment {filename}");
+                // logger.LogWarning($"  WriteAttachment {filename}");
 
                 using (var stream = File.OpenWrite(filename))
                 {
