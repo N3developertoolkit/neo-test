@@ -9,6 +9,7 @@ namespace Neo.Collector.Models
 {
     public partial struct NeoDebugInfo
     {
+        public const string MANIFEST_FILE_EXTENSION = ".manifest.json";
         public const string NEF_DBG_NFO_EXTENSION = ".nefdbgnfo";
         public const string DEBUG_JSON_EXTENSION = ".debug.json";
 
@@ -21,21 +22,6 @@ namespace Neo.Collector.Models
             Hash = hash;
             Documents = documents;
             Methods = methods;
-        }
-
-        public static bool TryLoadContractDebugInfo(string nefPath, out NeoDebugInfo debugInfo)
-        {
-            if (string.IsNullOrEmpty(nefPath))
-            {
-                debugInfo = default;
-                return false;
-            }
-
-            var nefdbgnfoPath = Path.ChangeExtension(nefPath, NEF_DBG_NFO_EXTENSION);
-            if (TryLoadCompressed(nefdbgnfoPath, out debugInfo)) return true;
-
-            var debugJsonPath = Path.ChangeExtension(nefPath, DEBUG_JSON_EXTENSION);
-            return TryLoadUncompressed(debugJsonPath, out debugInfo);
         }
 
         public static bool TryLoad(string path, out NeoDebugInfo debugInfo)
@@ -53,6 +39,25 @@ namespace Neo.Collector.Models
                 debugInfo = default;
                 return false;
             }
+        }
+
+        public static bool TryLoadManifestDebugInfo(string manifestPath, out NeoDebugInfo debugInfo)
+        {
+            if (string.IsNullOrEmpty(manifestPath))
+            {
+                debugInfo = default;
+                return false;
+            }
+
+            var basePath = Path.Combine(
+                Path.GetDirectoryName(manifestPath), 
+                Utility.GetBaseName(manifestPath, MANIFEST_FILE_EXTENSION));
+
+            var nefdbgnfoPath = Path.ChangeExtension(basePath, NEF_DBG_NFO_EXTENSION);
+            if (TryLoadCompressed(nefdbgnfoPath, out debugInfo)) return true;
+
+            var debugJsonPath = Path.ChangeExtension(basePath, DEBUG_JSON_EXTENSION);
+            return TryLoadUncompressed(debugJsonPath, out debugInfo);
         }
 
         static bool TryLoadCompressed(string debugInfoPath, out NeoDebugInfo debugInfo)

@@ -70,67 +70,41 @@ namespace Neo.Collector
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            logger.LogWarning($"OnSessionStart {configXml.OuterXml}");
-
             foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
             {
-                if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
-                {
-                    var name = node.HasAttribute("name")
-                        ? node.GetAttribute("name")
-                        : Path.GetFileNameWithoutExtension(node.InnerText);
-                    collector.TrackContract(name, debugInfo);
-                }
+                LoadDebugInfoSetting(node);
             }
 
-            var testSources = e.GetPropertyValue<IList<string>>("TestSources");
-
-            for (int i = 0; i < testSources.Count; i++)
+            foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources"))
             {
-                LoadTestSource(testSources[i]);
+                LoadTestSource(testSource);
+            }
+        }
+
+        internal void LoadDebugInfoSetting(XmlElement node)
+        {
+            if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
+            {
+                var name = node.HasAttribute("name")
+                    ? node.GetAttribute("name")
+                    : Path.GetFileNameWithoutExtension(node.InnerText);
+                collector.TrackContract(name, debugInfo);
             }
         }
 
         internal void LoadTestSource(string testSource)
         {
-            if (TryLoadAssembly(testSource, out var asm))
+            if (Utility.TryLoadAssembly(testSource, out var asm))
             {
                 foreach (var type in asm.DefinedTypes)
                 {
-                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath))
+                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath)
+                        && NeoDebugInfo.TryLoadManifestDebugInfo(manifestPath, out var debugInfo))
                     {
-                        // Note, some file systems are case sensitive. 
-                        // Using StringComparison.OrdinalIgnoreCase could lead to incorrect base names on such systems. 
-                        var baseName = manifestPath.EndsWith(MANIFEST_FILE_EXT, StringComparison.OrdinalIgnoreCase)
-                            ? manifestPath.Substring(0, manifestPath.Length - MANIFEST_FILE_EXT.Length)
-                            : manifestPath;
-                        var nefPath = Path.Combine(
-                            Path.GetDirectoryName(manifestPath),
-                            Path.ChangeExtension(baseName, NEF_FILE_EXT));
-
-                        if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
-                        {
-                            collector.TrackContract(contractName, debugInfo);
-                        }
+                        collector.TrackContract(contractName, debugInfo);
                     }
                 }
             }
-        }
-
-        static bool TryLoadAssembly(string path, out Assembly assembly)
-        {
-            if (File.Exists(path))
-            {
-                try
-                {
-                    assembly = Assembly.LoadFile(path);
-                    return true;
-                }
-                catch { }
-            }
-
-            assembly = default;
-            return false;
         }
 
         static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
