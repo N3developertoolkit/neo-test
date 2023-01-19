@@ -72,12 +72,14 @@ namespace Neo.Collector
         {
             logger.LogWarning($"OnSessionStart {configXml.OuterXml}");
 
-            foreach (XmlNode node in configXml.GetElementsByTagName("DebugInfo"))
+            foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
             {
                 if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
                 {
-                    var baseName = Path.GetFileNameWithoutExtension(node.InnerText);
-                    collector.TrackContract(baseName, debugInfo);
+                    var name = node.HasAttribute("name")
+                        ? node.GetAttribute("name")
+                        : Path.GetFileNameWithoutExtension(node.InnerText);
+                    collector.TrackContract(name, debugInfo);
                 }
             }
 
