@@ -58,7 +58,7 @@ namespace Neo.Collector
         }
 
         public ContractCoverage CollectCoverage() 
-            => new ContractCoverage(contractName, debugInfo, hitMap, branchMap);
+            => new ContractCoverage(contractName, instructions, debugInfo, hitMap, branchMap);
 
         MethodCoverage CollectMethodCoverage(NeoDebugInfo.Method method)
         {

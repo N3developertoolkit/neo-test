@@ -15,15 +15,19 @@ namespace Neo.Collector.Formats
                 writeAttachement(filename, stream =>
                 {
                     var writer = new StreamWriter(stream);
-                    foreach (var (address, count) in contract.Hits)
+                    foreach (var (address, _) in contract.Instructions)
                     {
                         if (contract.BranchHitMap.TryGetValue(address, out var branchHits))
                         {
                             writer.WriteLine($"{address} {branchHits.BranchCount} {branchHits.ContinueCount}");
                         }
-                        else
+                        else if (contract.HitMap.TryGetValue(address, out var count))
                         {
                             writer.WriteLine($"{address} {count}");
+                        }
+                        else
+                        {
+                            writer.WriteLine($"{address} 0");
                         }
                     }
                     writer.Flush();
