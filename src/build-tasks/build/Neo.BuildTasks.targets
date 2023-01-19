@@ -173,10 +173,8 @@
     DependsOnTargets="ConfigureNeoCsc"
     Condition="'$(NeoContractName)'!=''">
 
-    <Delete Files="@(NeoCscOutput)" TreatErrorsAsWarnings="true">
-      <Output TaskParameter="DeletedFiles" ItemName="DeletedList"/>
-    </Delete>
-    <Message Text="Deleted files: '@(DeletedList)'"/>
+    <Delete Files="@(NeoCscOutput)" TreatErrorsAsWarnings="true"/>
+
   </Target>
 
   <Target Name="CleanNeoExpressBatch"
