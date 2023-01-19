@@ -71,6 +71,7 @@ namespace Neo.Collector
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
             logger.LogWarning($"OnSessionStart {configurationElement.OuterXml}");
+            
 
             var testSources = e.GetPropertyValue<IList<string>>("TestSources");
 
