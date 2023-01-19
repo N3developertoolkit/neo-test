@@ -28,6 +28,7 @@ namespace Neo.Collector
 
         public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {
+            logger.LogWarning($"TrackContract {contractName}");
             if (!coverageMap.ContainsKey(debugInfo.Hash))
             {
                 coverageMap.Add(debugInfo.Hash, new ContractCoverageCollector(contractName, debugInfo));

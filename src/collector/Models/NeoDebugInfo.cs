@@ -38,6 +38,23 @@ namespace Neo.Collector.Models
             return TryLoadUncompressed(debugJsonPath, out debugInfo);
         }
 
+        public static bool TryLoad(string path, out NeoDebugInfo debugInfo)
+        {
+            if (path.EndsWith(NEF_DBG_NFO_EXTENSION))
+            {
+                return TryLoadCompressed(path, out debugInfo);
+            }
+            else if (path.EndsWith(DEBUG_JSON_EXTENSION))
+            {
+                return TryLoadUncompressed(path, out debugInfo);
+            }
+            else
+            {
+                debugInfo = default;
+                return false;
+            }
+        }
+
         static bool TryLoadCompressed(string debugInfoPath, out NeoDebugInfo debugInfo)
         {
             try

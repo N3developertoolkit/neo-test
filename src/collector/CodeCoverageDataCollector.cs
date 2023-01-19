@@ -27,7 +27,7 @@ namespace Neo.Collector
         DataCollectionSink dataSink;
         DataCollectionEnvironmentContext environmentContext;
         ILogger logger;
-        XmlElement configurationElement;
+        XmlElement configXml;
 
         public CodeCoverageDataCollector()
         {
@@ -45,7 +45,7 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            this.configurationElement = configurationElement;
+            this.configXml = configurationElement;
             this.events = events;
             this.dataSink = dataSink;
             this.environmentContext = environmentContext;
@@ -70,8 +70,16 @@ namespace Neo.Collector
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            logger.LogWarning($"OnSessionStart {configurationElement.OuterXml}");
-            
+            logger.LogWarning($"OnSessionStart {configXml.OuterXml}");
+
+            foreach (XmlNode node in configXml.GetElementsByTagName("DebugInfo"))
+            {
+                if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
+                {
+                    var baseName = Path.GetFileNameWithoutExtension(node.InnerText);
+                    collector.TrackContract(baseName, debugInfo);
+                }
+            }
 
             var testSources = e.GetPropertyValue<IList<string>>("TestSources");
 
