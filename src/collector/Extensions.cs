@@ -166,12 +166,12 @@ namespace Neo.Collector
         {
             var covered = 0;
             var total = 0;
-            foreach (var method in contract.Methods)
-            {
-                var mc = CalcLineCoverage(method);
-                covered += mc.covered;
-                total += mc.total;
-            }
+            // foreach (var method in contract.Methods)
+            // {
+            //     var mc = CalcLineCoverage(method);
+            //     covered += mc.covered;
+            //     total += mc.total;
+            // }
             return (covered, total);
         }
 

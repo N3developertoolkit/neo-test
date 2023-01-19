@@ -133,30 +133,10 @@ namespace Neo.Collector
         {
             LoadCoverageFiles();
 
-            var reportPath = Path.Combine(coveragePath, $"neo.cobertura.xml");
-            WriteAttachmentStream(reportPath, stream =>
-            {
-                var format = new CoberturaFormat();
-                format.WriteReport(stream, collector.CollectCoverage());
-            });
+            IReadOnlyList<ContractCoverage> coverage = collector.CollectCoverage().ToList();
 
-            foreach (var contract in collector.ContractCollectors)
-            {
-                reportPath = Path.Combine(coveragePath, $"{contract.ScriptHash}.coverage.txt");
-                WriteAttachmentText(reportPath, writer =>
-                {
-                    writer.WriteLine("HITS");
-                    foreach (var hit in contract.HitMap.OrderBy(h => h.Key))
-                    {
-                        writer.WriteLine($"{hit.Key} {hit.Value}");
-                    }
-                    writer.WriteLine("BRANCHES");
-                    foreach (var hit in contract.BranchMap.OrderBy(h => h.Key))
-                    {
-                        writer.WriteLine($"{hit.Key} {hit.Value.branchCount} {hit.Value.continueCount}");
-                    }
-                });
-            }
+            // new CoberturaFormat().WriteReport(coverage, WriteAttachment);
+            new RawCoverageFormat().WriteReport(coverage, WriteAttachment);
         }
 
         private void LoadCoverageFiles()
@@ -188,29 +168,17 @@ namespace Neo.Collector
                 }
             }
         }
-
-        void WriteAttachmentText(string filename, Action<TextWriter> writeAttachment)
-        {
-            WriteAttachmentStream(filename, (Stream stream) => 
-            {
-                var writer = new StreamWriter(stream);
-                writeAttachment(writer);
-                writer.Flush();
-            });
-        }
-
-        void WriteAttachmentStream(string filename, Action<Stream> writeAttachment)
+        void WriteAttachment(string filename, Action<Stream> writeAttachment)
         {
             try
             {
-                // logger.LogWarning($"  WriteAttachment {filename}");
-
+                var path = Path.Combine(coveragePath, filename);
                 using (var stream = File.OpenWrite(filename))
                 {
                     writeAttachment(stream);
                     stream.Flush();
                 }
-                dataSink.SendFileAsync(environmentContext.SessionDataCollectionContext, filename, false);
+                dataSink.SendFileAsync(environmentContext.SessionDataCollectionContext, path, false);
             }
             catch (Exception ex)
             {

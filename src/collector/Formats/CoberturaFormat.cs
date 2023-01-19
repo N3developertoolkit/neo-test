@@ -8,22 +8,21 @@ using static Neo.Collector.Models.ContractCoverage;
 
 namespace Neo.Collector.Formats
 {
-
-    class CoberturaFormat
+    class CoberturaFormat : ICoverageFormat
     {
-        public void WriteReport(Stream stream, IEnumerable<ContractCoverage> coverage)
+        public void WriteReport(IEnumerable<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement)
         {
-            var textWriter = new StreamWriter(stream);
-            var xmlWriter = new XmlTextWriter(textWriter)
+            writeAttachement("neo.cobertura.xml", stream => 
             {
-                Formatting = Formatting.Indented,
-            };
-            WriteReport(xmlWriter, coverage);
-            xmlWriter.Flush();
-            textWriter.Flush();
+                var textWriter = new StreamWriter(stream);
+                var xmlWriter = new XmlTextWriter(textWriter) { Formatting = Formatting.Indented };
+                WriteReport(xmlWriter, coverage);
+                xmlWriter.Flush();
+                textWriter.Flush();
+            });
         }
 
-        void WriteReport(XmlWriter writer, IEnumerable<ContractCoverage> coverage)
+        internal void WriteReport(XmlWriter writer, IEnumerable<ContractCoverage> coverage)
         {
             using (var _ = writer.StartDocument())
             using (var __ = writer.StartElement("coverage"))
@@ -46,14 +45,14 @@ namespace Neo.Collector.Formats
             using (var _ = writer.StartElement("package"))
             {
                 writer.WriteAttributeString("name", contract.Name);
-                writer.WriteAttributeString("scripthash", $"{contract.ScriptHash}");
+                writer.WriteAttributeString("scripthash", $"{contract.DebugInfo.Hash}");
                 writer.WriteAttributeString("line-rate", $"{contract.CalcLineCoverage().AsPercentage() / 100}");
                 using (var __ = writer.StartElement("classes"))
                 {
-                    foreach (var group in contract.Methods.GroupBy(m => m.Namespace))
-                    {
-                        WriteClass(writer, group.Key, group);
-                    }
+                    // foreach (var group in contract.Methods.GroupBy(m => m.Namespace))
+                    // {
+                    //     WriteClass(writer, group.Key, group);
+                    // }
                 }
             }
         }

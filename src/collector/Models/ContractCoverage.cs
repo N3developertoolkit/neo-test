@@ -1,18 +1,25 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Neo.Collector.Models
 {
     partial class ContractCoverage
     {
         public readonly string Name;
-        public readonly Hash160 ScriptHash;
-        public readonly IReadOnlyList<MethodCoverage> Methods;
+        public readonly NeoDebugInfo DebugInfo; 
+        public readonly IReadOnlyDictionary<int, uint> HitMap;
+        public readonly IReadOnlyDictionary<int, (uint BranchCount, uint ContinueCount)> BranchHitMap;
 
-        public ContractCoverage(string name, in Hash160 scriptHash, IReadOnlyList<MethodCoverage> methods)
+        public IEnumerable<(int Address, uint Count)> Hits => HitMap
+            .Select(kvp => (kvp.Key, kvp.Value))
+            .OrderBy(h => h.Key);
+
+        public ContractCoverage(string name, NeoDebugInfo debugInfo, IReadOnlyDictionary<int, uint> hitMap, IReadOnlyDictionary<int, (uint, uint)> branchHitMap)
         {
             Name = name;
-            ScriptHash = scriptHash;
-            Methods = methods;
+            DebugInfo = debugInfo;
+            HitMap = hitMap;
+            BranchHitMap = branchHitMap;
         }
     }
 }
