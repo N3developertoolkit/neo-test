@@ -27,6 +27,7 @@ namespace Neo.Collector
         DataCollectionSink dataSink;
         DataCollectionEnvironmentContext environmentContext;
         ILogger logger;
+        XmlElement configurationElement;
 
         public CodeCoverageDataCollector()
         {
@@ -44,10 +45,12 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
+            this.configurationElement = configurationElement;
             this.events = events;
             this.dataSink = dataSink;
             this.environmentContext = environmentContext;
             this.logger = new Logger(logger, environmentContext);
+
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
             collector = new CodeCoverageCollector(this.logger);
@@ -67,6 +70,8 @@ namespace Neo.Collector
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
+            logger.LogWarning($"OnSessionStart {configurationElement.OuterXml}");
+
             var testSources = e.GetPropertyValue<IList<string>>("TestSources");
 
             for (int i = 0; i < testSources.Count; i++)
@@ -91,8 +96,6 @@ namespace Neo.Collector
                         var nefPath = Path.Combine(
                             Path.GetDirectoryName(manifestPath),
                             Path.ChangeExtension(baseName, NEF_FILE_EXT));
-
-                        logger.LogWarning($"LoadTestSource {baseName} {nefPath}");
 
                         if (NeoDebugInfo.TryLoadContractDebugInfo(nefPath, out var debugInfo))
                         {
