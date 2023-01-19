@@ -173,7 +173,7 @@ namespace Neo.Collector
             try
             {
                 var path = Path.Combine(coveragePath, filename);
-                using (var stream = File.OpenWrite(filename))
+                using (var stream = File.OpenWrite(path))
                 {
                     writeAttachment(stream);
                     stream.Flush();
