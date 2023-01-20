@@ -42,7 +42,7 @@ namespace Neo.Collector.Formats
                 writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                 writer.WriteAttributeString("lines-covered", $"{hitCount}");
                 writer.WriteAttributeString("lines-valid", $"{lineCount}");
-                writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
+                writer.WriteAttributeString("version", ThisAssembly.AssemblyFileVersion);
                 writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeSeconds()}");
 
                 using (var ___ = writer.StartElement("sources"))

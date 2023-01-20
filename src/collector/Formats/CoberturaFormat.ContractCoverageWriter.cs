@@ -114,15 +114,15 @@ namespace Neo.Collector.Formats
                 }
             }
 
-            void WriteCondition(XmlWriter writer, BranchCoverage branch)
-            {
-                using (var _ = writer.StartElement("condition"))
-                {
-                    // TODO: coverage
-                    writer.WriteAttributeString("number", $"{branch.Address}");
-                    writer.WriteAttributeString("type", "jump");
-                }
-            }
+            // void WriteCondition(XmlWriter writer, BranchCoverage branch)
+            // {
+            //     using (var _ = writer.StartElement("condition"))
+            //     {
+            //         // TODO: coverage
+            //         writer.WriteAttributeString("number", $"{branch.Address}");
+            //         writer.WriteAttributeString("type", "jump");
+            //     }
+            // }
         }
     }
 }

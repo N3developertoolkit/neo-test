@@ -60,62 +60,62 @@ namespace Neo.Collector
         public ContractCoverage CollectCoverage() 
             => new ContractCoverage(contractName, instructions, debugInfo, hitMap, branchMap);
 
-        MethodCoverage CollectMethodCoverage(NeoDebugInfo.Method method)
-        {
-            var doc = method.SequencePoints.Select(sp => debugInfo.Documents[sp.Document]).FirstOrDefault();
-            var lines = new List<LineCoverage>(method.SequencePoints.Count);
-            for (int i = 0; i < method.SequencePoints.Count; i++)
-            {
-                var sp = method.SequencePoints[i];
-                var hitCount = hitMap.TryGetValue(sp.Address, out var _hitCount)
-                    ? _hitCount
-                    : 0;
+        // MethodCoverage CollectMethodCoverage(NeoDebugInfo.Method method)
+        // {
+        //     var doc = method.SequencePoints.Select(sp => debugInfo.Documents[sp.Document]).FirstOrDefault();
+        //     var lines = new List<LineCoverage>(method.SequencePoints.Count);
+        //     for (int i = 0; i < method.SequencePoints.Count; i++)
+        //     {
+        //         var sp = method.SequencePoints[i];
+        //         var hitCount = hitMap.TryGetValue(sp.Address, out var _hitCount)
+        //             ? _hitCount
+        //             : 0;
 
-                var nextSPAddress = i + 1 < method.SequencePoints.Count
-                    ? method.SequencePoints[i + 1].Address
-                    : int.MaxValue;
-                var paths = FindPaths(sp.Address, methodEnd: method.Range.End, nextSPAddress: nextSPAddress).ToList();
-                if (paths.Count == 0) throw new InvalidOperationException();
-                if (paths.Count == 1)
-                {
-                    lines.Add(new LineCoverage(sp, hitCount, Array.Empty<BranchCoverage>()));
-                }
-                else
-                {
+        //         var nextSPAddress = i + 1 < method.SequencePoints.Count
+        //             ? method.SequencePoints[i + 1].Address
+        //             : int.MaxValue;
+        //         var paths = FindPaths(sp.Address, methodEnd: method.Range.End, nextSPAddress: nextSPAddress).ToList();
+        //         if (paths.Count == 0) throw new InvalidOperationException();
+        //         if (paths.Count == 1)
+        //         {
+        //             lines.Add(new LineCoverage(sp, hitCount, Array.Empty<BranchCoverage>()));
+        //         }
+        //         else
+        //         {
 
-                }
-
-
+        //         }
 
 
-                // while (address <= method.Range.End && address < nextSPAddress)
-                // {
-                //     var ins = instructions[address];
-                //     if (ins.IsBranchInstruction())
-                //     {
-                //         var counts = branchMap.TryGetValue(address, out var _counts) ? _counts : (0, 0);
-                //         branches.Add(new BranchCoverage(address, counts));
-                //     }
-                //     address += ins.Size;
-                // }
+
+
+        //         // while (address <= method.Range.End && address < nextSPAddress)
+        //         // {
+        //         //     var ins = instructions[address];
+        //         //     if (ins.IsBranchInstruction())
+        //         //     {
+        //         //         var counts = branchMap.TryGetValue(address, out var _counts) ? _counts : (0, 0);
+        //         //         branches.Add(new BranchCoverage(address, counts));
+        //         //     }
+        //         //     address += ins.Size;
+        //         // }
 
                 
-            }
-            return new MethodCoverage(method, doc, lines);
-        }
+        //     }
+        //     return new MethodCoverage(method, doc, lines);
+        // }
 
-        static int CalculateHash(IEnumerable<int> path)
-        {
-            unchecked // Overflow is fine, just wrap
-            {
-                int hash = 17;
-                foreach (var value in path)
-                {
-                    hash = hash * 23 + value.GetHashCode();
-                }
-                return hash;
-            }
-        }
+        // static int CalculateHash(IEnumerable<int> path)
+        // {
+        //     unchecked // Overflow is fine, just wrap
+        //     {
+        //         int hash = 17;
+        //         foreach (var value in path)
+        //         {
+        //             hash = hash * 23 + value.GetHashCode();
+        //         }
+        //         return hash;
+        //     }
+        // }
 
         internal IEnumerable<ImmutableQueue<int>> FindPaths(int address, ImmutableQueue<int> path = null, int methodEnd = int.MaxValue, int nextSPAddress = int.MaxValue)
         {
