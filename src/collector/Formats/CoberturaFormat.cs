@@ -25,6 +25,7 @@ namespace Neo.Collector.Formats
             using (var _ = writer.StartDocument())
             using (var __ = writer.StartElement("coverage"))
             {
+                // TODO: line-rate, branch-rate, lines-covered, lines-valid, branches-covered, branches-valid, complexity
                 writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
                 writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeSeconds()}");
 
