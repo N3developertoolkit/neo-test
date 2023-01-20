@@ -7,7 +7,7 @@ namespace Neo.Collector.Formats
 {
     class RawCoverageFormat : ICoverageFormat
     {
-        public void WriteReport(IEnumerable<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement)
+        public void WriteReport(IReadOnlyList<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement)
         {
             foreach (var contract in coverage)
             {

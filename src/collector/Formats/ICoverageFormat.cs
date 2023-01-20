@@ -7,6 +7,6 @@ namespace Neo.Collector.Formats
 {
     interface ICoverageFormat
     {
-        void WriteReport(IEnumerable<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement);
+        void WriteReport(IReadOnlyList<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement);
     }
 }

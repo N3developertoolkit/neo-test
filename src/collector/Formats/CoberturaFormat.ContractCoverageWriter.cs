@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
@@ -21,19 +22,8 @@ namespace Neo.Collector.Formats
 
             decimal CalculateLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines)
             {
-                decimal lineCount = 0;
-                decimal lineHitCount = 0;
-                foreach (var line in lines)
-                {
-                    lineCount++;
-                    if (contract.HitMap.TryGetValue(line.Address, out var hitCount)
-                        && hitCount > 0)
-                    {
-                        lineHitCount++;
-                    }
-                }
-
-                return lineHitCount / lineCount;
+                bool hitFunc(int address) => contract.HitMap.TryGetValue(address, out var count) && count > 0;
+                return Utility.CalculateLineRate(lines, hitFunc);
             }
 
             public void WritePackage(XmlWriter writer)

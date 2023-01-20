@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using Neo.Collector.Models;
 
@@ -8,7 +9,7 @@ namespace Neo.Collector.Formats
 {
     partial class CoberturaFormat : ICoverageFormat
     {
-        public void WriteReport(IEnumerable<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement)
+        public void WriteReport(IReadOnlyList<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement)
         {
             writeAttachement("neo.cobertura.xml", stream =>
             {
@@ -20,12 +21,27 @@ namespace Neo.Collector.Formats
             });
         }
 
-        internal void WriteReport(XmlWriter writer, IEnumerable<ContractCoverage> coverage)
+        internal void WriteReport(XmlWriter writer, IReadOnlyList<ContractCoverage> coverage)
         {
+            uint lineCount = 0;
+            uint hitCount = 0;
+            foreach (var contract in coverage)
+            {
+                var lines = contract.DebugInfo.Methods.SelectMany(m => m.SequencePoints);
+                bool hitFunc(int address) => contract.HitMap.TryGetValue(address, out var count) && count > 0;
+                var rate = Utility.GetLineRate(lines, hitFunc);
+                lineCount += rate.lineCount;
+                hitCount += rate.hitCount;
+            }
+            var lineRate = Utility.CalculateLineRate(lineCount, hitCount);
+
             using (var _ = writer.StartDocument())
             using (var __ = writer.StartElement("coverage"))
             {
-                // TODO: line-rate, branch-rate, lines-covered, lines-valid, branches-covered, branches-valid, complexity
+                // TODO: branch-rate, branches-covered, branches-valid, complexity
+                writer.WriteAttributeString("line-rate", $"{lineRate}");
+                writer.WriteAttributeString("lines-covered", $"{hitCount}");
+                writer.WriteAttributeString("lines-valid", $"{lineCount}");
                 writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
                 writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeSeconds()}");
 

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using Neo.Collector.Models;
 
 namespace Neo.Collector
 {
@@ -34,6 +36,27 @@ namespace Neo.Collector
 
             assembly = default;
             return false;
+        }
+
+        public static (uint lineCount, uint hitCount) GetLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines, Func<int, bool> hitFunc)
+        {
+            uint lineCount = 0;
+            uint hitCount = 0;
+            foreach (var line in lines)
+            {
+                lineCount++;
+                if (hitFunc(line.Address)) { hitCount++; }
+            }
+            return (lineCount, hitCount);
+
+        }
+
+        public static decimal CalculateLineRate(uint lineCount, uint hitCount) => new decimal(hitCount) / new decimal(lineCount);
+
+        public static decimal CalculateLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines, Func<int, bool> hitFunc)
+        {
+            var (lineCount, hitCount) = GetLineRate(lines, hitFunc);
+            return CalculateLineRate(lineCount, hitCount);
         }
     }
 }
