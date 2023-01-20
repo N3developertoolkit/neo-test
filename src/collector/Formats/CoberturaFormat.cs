@@ -49,20 +49,24 @@ namespace Neo.Collector.Formats
                 // writer.WriteAttributeString("line-rate", $"{contract.CalcLineCoverage().AsPercentage() / 100}");
                 using (var __ = writer.StartElement("classes"))
                 {
+                    foreach (var group in contract.DebugInfo.Methods.GroupBy(m => m.Namespace))
+                    {
+                        WriteClass(writer, group.Key, group);
+                    }
                     // foreach (var group in contract.Methods.GroupBy(m => m.Namespace))
                     // {
-                    //     WriteClass(writer, group.Key, group);
+                    //     
                     // }
                 }
             }
         }
 
-        void WriteClass(XmlWriter writer, string name, IEnumerable<MethodCoverage> methods)
+        void WriteClass(XmlWriter writer, string name, IEnumerable<NeoDebugInfo.Method> methods)
         {
             using (var _ = writer.StartElement("class"))
             {
                 writer.WriteAttributeString("name", name);
-                writer.WriteAttributeString("line-rate", $"{methods.CalcLineCoverage().AsPercentage() / 100}");
+                // writer.WriteAttributeString("line-rate", $"{methods.CalcLineCoverage().AsPercentage() / 100}");
                 using (var __ = writer.StartElement("methods"))
                 {
                     foreach (var method in methods)
@@ -73,46 +77,45 @@ namespace Neo.Collector.Formats
             }
         }
 
-        void WriteMethod(XmlWriter writer, MethodCoverage method)
+        void WriteMethod(XmlWriter writer, NeoDebugInfo.Method method)
         {
             using (var _ = writer.StartElement("method"))
             {
-               
                 var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
                 writer.WriteAttributeString("name", method.Name);
                 writer.WriteAttributeString("signature", $"({signature})");
-                writer.WriteAttributeString("line-rate", $"{method.CalcLineCoverage().AsPercentage() / 100}");
+                // writer.WriteAttributeString("line-rate", $"{method.CalcLineCoverage().AsPercentage() / 100}");
                 using (var __ = writer.StartElement("lines"))
                 {
-                    foreach (var line in method.Lines)
+                    foreach (var sp in method.SequencePoints)
                     {
-                        WriteLine(writer, line);
+                        WriteLine(writer, sp);
                     }
                 }
             }
         }
 
-        void WriteLine(XmlWriter writer, LineCoverage line)
+        void WriteLine(XmlWriter writer, NeoDebugInfo.SequencePoint sp)
         {
             using (var _ = writer.StartElement("line"))
             {
-                writer.WriteAttributeString("number", $"{line.Start.Line}");
-                writer.WriteAttributeString("hits", $"{line.HitCount}");
-                if (line.Branches.Count > 0)
-                {
-                    writer.WriteAttributeString("branch", $"{true}");
-                    using (var __ = writer.StartElement("conditions"))
-                    {
-                        foreach (var branch in line.Branches)
-                        {
-                            WriteCondition(writer, branch);
-                        }
-                    }
-                }
-                else 
-                {
-                    writer.WriteAttributeString("branch", $"{false}");
-                }
+                writer.WriteAttributeString("number", $"{sp.Start.Line}");
+                // writer.WriteAttributeString("hits", $"{line.HitCount}");
+                // if (line.Branches.Count > 0)
+                // {
+                //     writer.WriteAttributeString("branch", $"{true}");
+                //     using (var __ = writer.StartElement("conditions"))
+                //     {
+                //         foreach (var branch in line.Branches)
+                //         {
+                //             WriteCondition(writer, branch);
+                //         }
+                //     }
+                // }
+                // else 
+                // {
+                //     writer.WriteAttributeString("branch", $"{false}");
+                // }
             }
         }
 
