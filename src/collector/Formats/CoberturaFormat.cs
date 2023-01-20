@@ -1,18 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Xml;
 using Neo.Collector.Models;
-using static Neo.Collector.Models.ContractCoverage;
 
 namespace Neo.Collector.Formats
 {
-    class CoberturaFormat : ICoverageFormat
+    partial class CoberturaFormat : ICoverageFormat
     {
         public void WriteReport(IEnumerable<ContractCoverage> coverage, Action<string, Action<Stream>> writeAttachement)
         {
-            writeAttachement("neo.cobertura.xml", stream => 
+            writeAttachement("neo.cobertura.xml", stream =>
             {
                 var textWriter = new StreamWriter(stream);
                 var xmlWriter = new XmlTextWriter(textWriter) { Formatting = Formatting.Indented };
@@ -42,97 +40,10 @@ namespace Neo.Collector.Formats
                 {
                     foreach (var contract in coverage)
                     {
-                        WritePackage(writer, contract);
+                        var ccWriter = new ContractCoverageWriter(contract);
+                        ccWriter.WritePackage(writer);
                     }
                 }
-            }
-        }
-
-        void WritePackage(XmlWriter writer, ContractCoverage contract)
-        {
-            using (var _ = writer.StartElement("package"))
-            {
-                writer.WriteAttributeString("name", contract.Name);
-                writer.WriteAttributeString("scripthash", $"{contract.DebugInfo.Hash}");
-                // writer.WriteAttributeString("line-rate", $"{contract.CalcLineCoverage().AsPercentage() / 100}");
-                using (var __ = writer.StartElement("classes"))
-                {
-                    foreach (var group in contract.DebugInfo.Methods.GroupBy(m => m.Namespace))
-                    {
-                        WriteClass(writer, group.Key, group);
-                    }
-                    // foreach (var group in contract.Methods.GroupBy(m => m.Namespace))
-                    // {
-                    //     
-                    // }
-                }
-            }
-        }
-
-        void WriteClass(XmlWriter writer, string name, IEnumerable<NeoDebugInfo.Method> methods)
-        {
-            using (var _ = writer.StartElement("class"))
-            {
-                writer.WriteAttributeString("name", name);
-                // writer.WriteAttributeString("line-rate", $"{methods.CalcLineCoverage().AsPercentage() / 100}");
-                using (var __ = writer.StartElement("methods"))
-                {
-                    foreach (var method in methods)
-                    {
-                        WriteMethod(writer, method);
-                    }
-                }
-            }
-        }
-
-        void WriteMethod(XmlWriter writer, NeoDebugInfo.Method method)
-        {
-            using (var _ = writer.StartElement("method"))
-            {
-                var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
-                writer.WriteAttributeString("name", method.Name);
-                writer.WriteAttributeString("signature", $"({signature})");
-                // writer.WriteAttributeString("line-rate", $"{method.CalcLineCoverage().AsPercentage() / 100}");
-                using (var __ = writer.StartElement("lines"))
-                {
-                    foreach (var sp in method.SequencePoints)
-                    {
-                        WriteLine(writer, sp);
-                    }
-                }
-            }
-        }
-
-        void WriteLine(XmlWriter writer, NeoDebugInfo.SequencePoint sp)
-        {
-            using (var _ = writer.StartElement("line"))
-            {
-                writer.WriteAttributeString("number", $"{sp.Start.Line}");
-                // writer.WriteAttributeString("hits", $"{line.HitCount}");
-                // if (line.Branches.Count > 0)
-                // {
-                //     writer.WriteAttributeString("branch", $"{true}");
-                //     using (var __ = writer.StartElement("conditions"))
-                //     {
-                //         foreach (var branch in line.Branches)
-                //         {
-                //             WriteCondition(writer, branch);
-                //         }
-                //     }
-                // }
-                // else 
-                // {
-                //     writer.WriteAttributeString("branch", $"{false}");
-                // }
-            }
-        }
-
-        void WriteCondition(XmlWriter writer, BranchCoverage branch)
-        {
-            using (var _ = writer.StartElement("condition"))
-            {
-                writer.WriteAttributeString("number", $"{branch.Address}");
-                writer.WriteAttributeString("type", "jump");
             }
         }
     }
