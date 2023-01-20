@@ -35,7 +35,7 @@ namespace Neo.Collector.Formats
                     // TODO: branch-rate, complexity
                     writer.WriteAttributeString("name", contract.Name);
                     writer.WriteAttributeString("scripthash", $"{contract.DebugInfo.Hash}");
-                    writer.WriteAttributeString("line-rate", $"{lineRate}");
+                    writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                     using (var __ = writer.StartElement("classes"))
                     {
                         foreach (var group in contract.DebugInfo.Methods.GroupBy(m => m.Namespace))
@@ -57,7 +57,7 @@ namespace Neo.Collector.Formats
                     // TODO: branch-rate, complexity
                     writer.WriteAttributeString("name", name);
                     if (filename.Length > 0) { writer.WriteAttributeString("filename", filename); }
-                    writer.WriteAttributeString("line-rate", $"{lineRate}");
+                    writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                     using (var __ = writer.StartElement("methods"))
                     {
                         foreach (var method in methods)
@@ -77,7 +77,7 @@ namespace Neo.Collector.Formats
                     // TODO: branch-rate, complexity
                     writer.WriteAttributeString("name", method.Name);
                     writer.WriteAttributeString("signature", $"({signature})");
-                    writer.WriteAttributeString("line-rate", $"{lineRate}");
+                    writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                     using (var __ = writer.StartElement("lines"))
                     {
                         foreach (var sp in method.SequencePoints)

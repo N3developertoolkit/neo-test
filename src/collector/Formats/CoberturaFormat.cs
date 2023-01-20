@@ -39,7 +39,7 @@ namespace Neo.Collector.Formats
             using (var __ = writer.StartElement("coverage"))
             {
                 // TODO: branch-rate, branches-covered, branches-valid, complexity
-                writer.WriteAttributeString("line-rate", $"{lineRate}");
+                writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                 writer.WriteAttributeString("lines-covered", $"{hitCount}");
                 writer.WriteAttributeString("lines-valid", $"{lineCount}");
                 writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
