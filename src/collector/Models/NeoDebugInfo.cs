@@ -7,19 +7,21 @@ using System.Text.RegularExpressions;
 
 namespace Neo.Collector.Models
 {
-    public partial struct NeoDebugInfo
+    public partial class NeoDebugInfo
     {
         public const string MANIFEST_FILE_EXTENSION = ".manifest.json";
         public const string NEF_DBG_NFO_EXTENSION = ".nefdbgnfo";
         public const string DEBUG_JSON_EXTENSION = ".debug.json";
 
         public readonly Hash160 Hash;
+        public readonly string DocumentRoot;
         public readonly IReadOnlyList<string> Documents;
         public readonly IReadOnlyList<Method> Methods;
 
-        public NeoDebugInfo(Hash160 hash, IReadOnlyList<string> documents, IReadOnlyList<Method> methods)
+        public NeoDebugInfo(Hash160 hash, string documentRoot, IReadOnlyList<string> documents, IReadOnlyList<Method> methods)
         {
             Hash = hash;
+            DocumentRoot = documentRoot;
             Documents = documents;
             Methods = methods;
         }
@@ -126,11 +128,13 @@ namespace Neo.Collector.Models
             var hash = Hash160.TryParse(json["hash"].Value, out var _hash)
                 ? _hash
                 : throw new FormatException($"Invalid hash {json["hash"].Value}");
+            var docRoot = json["document-root"].Value;
+            docRoot = string.IsNullOrEmpty(docRoot) ? "" : docRoot;
             var documents = json["documents"].Linq.Select(kvp => kvp.Value.Value);
             var methods = json["methods"].Linq.Select(kvp => MethodFromJson(kvp.Value));
             // TODO: parse events and static variables
 
-            return new NeoDebugInfo(hash, documents.ToArray(), methods.ToArray());
+            return new NeoDebugInfo(hash, docRoot, documents.ToArray(), methods.ToArray());
         }
 
         static Method MethodFromJson(SimpleJSON.JSONNode json)

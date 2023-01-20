@@ -30,6 +30,14 @@ namespace Neo.Collector.Formats
                 writer.WriteAttributeString("version", ThisAssembly.AssemblyInformationalVersion);
                 writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeSeconds()}");
 
+                using (var ___ = writer.StartElement("sources"))
+                {
+                    foreach (var contract in coverage)
+                    {
+                        writer.WriteElementString("source", contract.DebugInfo.DocumentRoot);
+                    }
+                }
+
                 using (var ___ = writer.StartElement("packages"))
                 {
                     foreach (var contract in coverage)

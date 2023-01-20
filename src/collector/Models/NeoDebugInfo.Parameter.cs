@@ -1,6 +1,6 @@
 namespace Neo.Collector.Models
 {
-    public partial struct NeoDebugInfo
+    public partial class NeoDebugInfo
     {
         public struct Parameter
         {
