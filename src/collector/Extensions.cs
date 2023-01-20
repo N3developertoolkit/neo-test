@@ -174,16 +174,16 @@ namespace Neo.Collector
         //     return (method.Range.End, nextLineAddress);
         // }
 
-        public static IEnumerable<ImmutableList<(int, bool)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
+        public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
         {
             var point = method.SequencePoints[index];
             var last = method.GetLastLineAddress(index, instructionMap);
             return instructionMap.GetBranchPaths(point.Address, last);
         }
         
-        public static IEnumerable<ImmutableList<(int, bool)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, int address, int lastAddress, ImmutableList<(int, bool)> path = null)
+        public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, int address, int lastAddress, ImmutableList<(int, int)> path = null)
         {
-            path = path is null ? ImmutableList<(int, bool)>.Empty : path;
+            path = path is null ? ImmutableList<(int, int)>.Empty : path;
 
             while (address <= lastAddress)
             {
@@ -197,8 +197,8 @@ namespace Neo.Collector
                     var offset = ins.GetBranchOffset();
                     var branchAddress = address + offset;
                     var continueAddress = address + ins.Size;
-                    var branchPaths = instructionMap.GetBranchPaths(branchAddress, lastAddress, path.Add((address, true)));
-                    var continuePaths = instructionMap.GetBranchPaths(continueAddress, lastAddress, path.Add((address, false)));
+                    var branchPaths = instructionMap.GetBranchPaths(branchAddress, lastAddress, path.Add((address, branchAddress)));
+                    var continuePaths = instructionMap.GetBranchPaths(continueAddress, lastAddress, path.Add((address, continueAddress)));
                     return branchPaths.Concat(continuePaths);
                 }
                 else
