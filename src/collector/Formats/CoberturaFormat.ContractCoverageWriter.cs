@@ -93,6 +93,7 @@ namespace Neo.Collector.Formats
                 var sp = method.SequencePoints[index];
                 var hits = contract.HitMap.TryGetValue(sp.Address, out var value) ? value : 0;
                 var branchPaths = contract.InstructionMap.GetBranchPaths(method, index).ToList();
+                if (branchPaths.Count == 0) throw new Exception();
                 using (var _ = writer.StartElement("line"))
                 {
                     // TODO: branch (t/f), condition-coverage
