@@ -135,7 +135,7 @@ namespace Neo.Collector
 
             IReadOnlyList<ContractCoverage> coverage = collector.CollectCoverage().ToList();
 
-            // new CoberturaFormat().WriteReport(coverage, WriteAttachment);
+            new CoberturaFormat().WriteReport(coverage, WriteAttachment);
             new RawCoverageFormat().WriteReport(coverage, WriteAttachment);
         }
 
@@ -168,6 +168,7 @@ namespace Neo.Collector
                 }
             }
         }
+
         void WriteAttachment(string filename, Action<Stream> writeAttachment)
         {
             try

@@ -46,7 +46,7 @@ namespace Neo.Collector.Formats
             {
                 writer.WriteAttributeString("name", contract.Name);
                 writer.WriteAttributeString("scripthash", $"{contract.DebugInfo.Hash}");
-                writer.WriteAttributeString("line-rate", $"{contract.CalcLineCoverage().AsPercentage() / 100}");
+                // writer.WriteAttributeString("line-rate", $"{contract.CalcLineCoverage().AsPercentage() / 100}");
                 using (var __ = writer.StartElement("classes"))
                 {
                     // foreach (var group in contract.Methods.GroupBy(m => m.Namespace))
