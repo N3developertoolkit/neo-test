@@ -80,22 +80,25 @@ namespace Neo.Collector.Formats
                     writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                     using (var __ = writer.StartElement("lines"))
                     {
-                        foreach (var sp in method.SequencePoints)
+                        for (int i = 0; i < method.SequencePoints.Count; i++)
                         {
-                            WriteLine(writer, sp);
+                            WriteLine(writer, method, i);
                         }
                     }
                 }
             }
 
-            void WriteLine(XmlWriter writer, NeoDebugInfo.SequencePoint sp)
+            void WriteLine(XmlWriter writer, NeoDebugInfo.Method method, int index)
             {
+                var sp = method.SequencePoints[index];
                 var hits = contract.HitMap.TryGetValue(sp.Address, out var value) ? value : 0;
+                var branchPaths = contract.InstructionMap.GetBranchPaths(method, index).ToList();
                 using (var _ = writer.StartElement("line"))
                 {
                     // TODO: branch (t/f), condition-coverage
                     writer.WriteAttributeString("number", $"{sp.Start.Line}");
                     writer.WriteAttributeString("hits", $"{hits}");
+                    writer.WriteAttributeString("branch", $"{branchPaths.Count > 1}");
                     // if (line.Branches.Count > 0)
                     // {
                     //     writer.WriteAttributeString("branch", $"{true}");

@@ -13,7 +13,7 @@ namespace Neo.Collector
         readonly NeoDebugInfo debugInfo;
         readonly Dictionary<int, uint> hitMap = new Dictionary<int, uint>();
         readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
-        IReadOnlyDictionary<int, Instruction> instructions = null;
+        IReadOnlyDictionary<int, Instruction> instructionMap = null;
 
         public Hash160 ScriptHash => debugInfo.Hash;
         public IReadOnlyDictionary<int, uint> HitMap => hitMap;
@@ -44,21 +44,21 @@ namespace Neo.Collector
 
         public void RecordScript(IEnumerable<(int address, Instruction instruction)> instructions)
         {
-            if (!(this.instructions is null))
+            if (!(this.instructionMap is null))
             {
                 throw new InvalidOperationException($"RecordScript already called for {contractName}");
             }
 
-            var _instructions = new SortedDictionary<int, Instruction>();
+            var instructionMap = new SortedDictionary<int, Instruction>();
             foreach (var (address, instruction) in instructions)
             {
-                _instructions.Add(address, instruction);
+                instructionMap.Add(address, instruction);
             }
-            this.instructions = _instructions;
+            this.instructionMap = instructionMap;
         }
 
         public ContractCoverage CollectCoverage() 
-            => new ContractCoverage(contractName, instructions, debugInfo, hitMap, branchMap);
+            => new ContractCoverage(contractName, debugInfo, instructionMap, hitMap, branchMap);
 
         // MethodCoverage CollectMethodCoverage(NeoDebugInfo.Method method)
         // {
@@ -119,23 +119,17 @@ namespace Neo.Collector
 
         internal IEnumerable<ImmutableQueue<int>> FindPaths(int address, ImmutableQueue<int> path = null, int methodEnd = int.MaxValue, int nextSPAddress = int.MaxValue)
         {
-            var maxAddress = instructions.Keys.Max();
+            var maxAddress = instructionMap.Keys.Max();
             path = path is null ? ImmutableQueue<int>.Empty : path;
 
             while (true)
             {
                 var ins = address <= maxAddress 
-                    ? instructions[address] 
+                    ? instructionMap[address] 
                     : new Instruction(OpCode.RET);
 
                 if (ins.IsBranchInstruction())
                 {
-                    var offset = ins.GetBranchOffset();
-                    var branchAddress = address+offset;
-                    var branchPaths = FindPaths(branchAddress, path.Enqueue(branchAddress), methodEnd, nextSPAddress);
-                    var continueAddress = address + ins.Size;
-                    var continuePaths = FindPaths(continueAddress, path.Enqueue(continueAddress), methodEnd, nextSPAddress);
-                    return branchPaths.Concat(continuePaths);
                 }
                 
                 if (ins.IsCallInstruction())

@@ -38,12 +38,20 @@ public class UnitTest1
     public void TestName()
     {
         var debugInfo = TestFiles.GetResource("registrar.debug.json", NeoDebugInfo.Load);
-        var coverage = new ContractCoverageCollector("test", debugInfo);
         var nef = TestFiles.GetResource("0xc8855ad814f63da8551a2e7f021ac58897bdf532.nef", NefFile.Load);
-        coverage.RecordScript(nef.Script.EnumerateInstructions());
+        var instructionMap = nef.Script.EnumerateInstructions().ToImmutableDictionary(i => i.address, i => i.instruction);
 
-        var paths = coverage.FindPaths(4, null, 50, 50).ToArray();
-;           
+        foreach (var method in debugInfo.Methods)
+        {
+            for (int i = 0; i < method.SequencePoints.Count; i++)
+            {
+                NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
+                var last = method.GetLastLineAddress(i, instructionMap);
+                var ins = instructionMap.GetBranchPaths(sp.Address, last).ToArray();
+                ;
+            }
+        }
+
     }
 
 }

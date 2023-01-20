@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Neo.Collector.Models;
 
 namespace Neo.Collector.Formats
@@ -15,7 +16,8 @@ namespace Neo.Collector.Formats
                 writeAttachement(filename, stream =>
                 {
                     var writer = new StreamWriter(stream);
-                    foreach (var (address, _) in contract.Instructions)
+                    var addresses = contract.InstructionMap.Select(kvp => kvp.Key).OrderBy(h => h);
+                    foreach (var address in addresses)
                     {
                         if (contract.BranchHitMap.TryGetValue(address, out var branchHits))
                         {
