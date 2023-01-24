@@ -93,6 +93,10 @@ namespace Neo.Collector
                     : Path.GetFileNameWithoutExtension(node.InnerText);
                 collector.TrackContract(name, debugInfo);
             }
+            else
+            {
+                logger.LogError($"LoadDebugInfoSetting {node.InnerText}");
+            }
         }
 
         internal void LoadTestSource(string testSource)
@@ -108,6 +112,10 @@ namespace Neo.Collector
                         collector.TrackContract(contractName, debugInfo);
                     }
                 }
+            }
+            else
+            {
+                logger.LogError($"LoadTestSource {testSource}");
             }
         }
 
