@@ -46,7 +46,7 @@ public class UnitTest1
             for (int i = 0; i < method.SequencePoints.Count; i++)
             {
                 NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
-                var last = method.GetLastLineAddress(i, instructionMap);
+                var last = method.GetLineLastAddress(i, instructionMap);
                 var ins = instructionMap.GetBranchPaths(sp.Address, last).ToArray();
                 ;
             }

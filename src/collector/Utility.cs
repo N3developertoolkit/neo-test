@@ -51,12 +51,12 @@ namespace Neo.Collector
 
         }
 
-        public static decimal CalculateLineRate(uint lineCount, uint hitCount) => new decimal(hitCount) / new decimal(lineCount);
+        public static decimal CalculateHitRate(uint lineCount, uint hitCount) => new decimal(hitCount) / new decimal(lineCount);
 
         public static decimal CalculateLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines, Func<int, bool> hitFunc)
         {
             var (lineCount, hitCount) = GetLineRate(lines, hitFunc);
-            return CalculateLineRate(lineCount, hitCount);
+            return CalculateHitRate(lineCount, hitCount);
         }
     }
 }

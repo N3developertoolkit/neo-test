@@ -33,7 +33,7 @@ namespace Neo.Collector.Formats
                 lineCount += rate.lineCount;
                 hitCount += rate.hitCount;
             }
-            var lineRate = Utility.CalculateLineRate(lineCount, hitCount);
+            var lineRate = Utility.CalculateHitRate(lineCount, hitCount);
 
             using (var _ = writer.StartDocument())
             using (var __ = writer.StartElement("coverage"))

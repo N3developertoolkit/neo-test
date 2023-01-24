@@ -163,21 +163,27 @@ namespace Neo.Collector
             }
         }
 
-        // public static (int methodEnd, int nextLineAddress) GetBoundary(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method)
-        // {
-        //     var spIndex = method.SequencePoints.IndexOf(sp => sp.Address == point.Address);
-        //     if (spIndex < 0) throw new ArgumentException("Sequence point not in Method", nameof(method));
-        //     var nextLineAddress = spIndex + 1 < method.SequencePoints.Count 
-        //             ? method.SequencePoints[spIndex + 1].Address
-        //             : int.MaxValue;
+        public static IEnumerable<(int address, OpCode opCode)> GetBranches(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
+        {
+            var address = method.SequencePoints[index].Address;
+            var lastAddress = method.GetLineLastAddress(index, instructionMap);
 
-        //     return (method.Range.End, nextLineAddress);
-        // }
+            while (address <= lastAddress)
+            {
+                var ins = instructionMap[address];
+                if (ins.IsBranchInstruction())
+                {
+                    yield return (address, ins.OpCode);
+                }
+                address += ins.Size;
+            }
+
+        }
 
         public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
         {
             var point = method.SequencePoints[index];
-            var last = method.GetLastLineAddress(index, instructionMap);
+            var last = method.GetLineLastAddress(index, instructionMap);
             return instructionMap.GetBranchPaths(point.Address, last);
         }
         
@@ -264,10 +270,10 @@ namespace Neo.Collector
         {
             var index = method.SequencePoints.IndexOf(sp => sp.Address == point.Address);
             if (index < 0) throw new ArgumentException(nameof(point));
-            return method.GetLastLineAddress(index, instructionMap);
+            return method.GetLineLastAddress(index, instructionMap);
         }
 
-        public static int GetLastLineAddress(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
+        public static int GetLineLastAddress(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
         {
             var point = method.SequencePoints[index];
             var nextIndex = index + 1;
