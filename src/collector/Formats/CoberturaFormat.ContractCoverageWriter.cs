@@ -89,7 +89,7 @@ namespace Neo.Collector.Formats
             {
                 var lineRate = CalculateLineRate(DebugInfo.Methods.SelectMany(m => m.SequencePoints));
                 var (branchCount, branchHit) = CalculateBranchRate(DebugInfo.Methods);
-                var branchRate = Utility.CalculateHitRate(branchCount, branchHit);
+                var branchRate = branchCount == 0 ? 1m : Utility.CalculateHitRate(branchCount, branchHit);
 
                 using (var _ = writer.StartElement("package"))
                 {
@@ -114,7 +114,7 @@ namespace Neo.Collector.Formats
                     ? contract.DebugInfo.Documents[docIndex] : string.Empty;
                 var lineRate = CalculateLineRate(methods.SelectMany(m => m.SequencePoints));
                 var (branchCount, branchHit) = CalculateBranchRate(methods);
-                var branchRate = Utility.CalculateHitRate(branchCount, branchHit);
+                var branchRate = branchCount == 0 ? 1m : Utility.CalculateHitRate(branchCount, branchHit);
                 using (var _ = writer.StartElement("class"))
                 {
                     writer.WriteAttributeString("name", name);
@@ -136,7 +136,7 @@ namespace Neo.Collector.Formats
                 var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
                 var lineRate = CalculateLineRate(method.SequencePoints);
                 var (branchCount, branchHit) = CalculateBranchRate(method);
-                var branchRate = Utility.CalculateHitRate(branchCount, branchHit);
+                var branchRate = branchCount == 0 ? 1m : Utility.CalculateHitRate(branchCount, branchHit);
                 using (var _ = writer.StartElement("method"))
                 {
                     writer.WriteAttributeString("name", method.Name);
@@ -177,14 +177,14 @@ namespace Neo.Collector.Formats
                         {
                             foreach (var (address, opCode) in GetBranchInstructions(method, index))
                             {
-                                // var (condBranchCount, condContinueCount) = contract.BranchHitMap[address];
-                                // var coverage = condBranchCount == 0 ? 0m : 1m
-                                //     + condContinueCount == 0 ? 0m : 1m;
+                                var (condBranchCount, condContinueCount) = contract.BranchHitMap[address];
+                                var coverage = condBranchCount == 0 ? 0m : 1m
+                                    + condContinueCount == 0 ? 0m : 1m;
                                 using (var _3 = writer.StartElement("condition"))
                                 {
                                     writer.WriteAttributeString("number", $"{address}");
                                     writer.WriteAttributeString("type", $"{opCode}");
-                                    // writer.WriteAttributeString("coverage", $"{coverage * 100}%");
+                                    writer.WriteAttributeString("coverage", $"{coverage * 100}%");
                                 }
                             }
                         }
