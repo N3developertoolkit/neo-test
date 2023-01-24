@@ -85,6 +85,7 @@ namespace Neo.Collector
 
         internal void LoadDebugInfoSetting(XmlElement node)
         {
+            logger.LogWarning($"LoadDebugInfoSetting {node.InnerText}");
             if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
             {
                 var name = node.HasAttribute("name")
@@ -96,6 +97,7 @@ namespace Neo.Collector
 
         internal void LoadTestSource(string testSource)
         {
+            logger.LogWarning($"LoadTestSource {testSource}");
             if (Utility.TryLoadAssembly(testSource, out var asm))
             {
                 foreach (var type in asm.DefinedTypes)
