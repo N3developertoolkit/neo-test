@@ -177,14 +177,14 @@ namespace Neo.Collector.Formats
                         {
                             foreach (var (address, opCode) in GetBranchInstructions(method, index))
                             {
-                                var (condBranchCount, condContinueCount) = contract.BranchHitMap[address];
-                                var coverage = condBranchCount == 0 ? 0m : 1m
-                                    + condContinueCount == 0 ? 0m : 1m;
+                                // var (condBranchCount, condContinueCount) = contract.BranchHitMap[address];
+                                // var coverage = condBranchCount == 0 ? 0m : 1m
+                                //     + condContinueCount == 0 ? 0m : 1m;
                                 using (var _3 = writer.StartElement("condition"))
                                 {
                                     writer.WriteAttributeString("number", $"{address}");
                                     writer.WriteAttributeString("type", $"{opCode}");
-                                    writer.WriteAttributeString("coverage", $"{coverage * 100}%");
+                                    // writer.WriteAttributeString("coverage", $"{coverage * 100}%");
                                 }
                             }
                         }
