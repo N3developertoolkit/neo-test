@@ -162,6 +162,7 @@ namespace Neo.Collector.Formats
                 using (var _ = writer.StartElement("line"))
                 {
                     writer.WriteAttributeString("number", $"{sp.Start.Line}");
+                    writer.WriteAttributeString("address", $"{sp.Address}");
                     writer.WriteAttributeString("hits", $"{hits}");
 
                     if (branchCount == 0)
@@ -184,7 +185,7 @@ namespace Neo.Collector.Formats
                                 {
                                     writer.WriteAttributeString("number", $"{address}");
                                     writer.WriteAttributeString("type", $"{opCode}");
-                                    writer.WriteAttributeString("coverage", $"{coverage * 100}%");
+                                    writer.WriteAttributeString("coverage", $"{coverage / 2m * 100m}%");
                                 }
                             }
                         }
