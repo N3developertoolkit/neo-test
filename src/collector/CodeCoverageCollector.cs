@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Xml;
 using Neo.Collector.Models;
 
 namespace Neo.Collector
@@ -25,6 +27,65 @@ namespace Neo.Collector
 
         public IEnumerable<ContractCoverage> CollectCoverage() 
             => coverageMap.Values.Select(c => c.CollectCoverage());
+
+        public void LoadDebugInfoSetting(XmlElement node)
+        {
+            logger.LogWarning($"LoadDebugInfoSetting {node.InnerText}");
+            if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
+            {
+                var name = node.HasAttribute("name")
+                    ? node.GetAttribute("name")
+                    : Path.GetFileNameWithoutExtension(node.InnerText);
+                TrackContract(name, debugInfo);
+            }
+            else
+            {
+                logger.LogError($"LoadDebugInfoSetting {node.InnerText}");
+            }
+        }
+
+        public void LoadTestSource(string testSource)
+        {
+            logger.LogWarning($"LoadTestSource {testSource}");
+            if (Utility.TryLoadAssembly(testSource, out var asm))
+            {
+                foreach (var type in asm.DefinedTypes)
+                {
+                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath)
+                        && NeoDebugInfo.TryLoadManifestDebugInfo(manifestPath, out var debugInfo))
+                    {
+                        TrackContract(contractName, debugInfo);
+                    }
+                }
+            }
+            else
+            {
+                logger.LogError($"LoadTestSource {testSource}");
+            }
+        }
+
+        const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
+        const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
+
+        static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
+        {
+            if (type.IsInterface)
+            {
+                foreach (var a in type.GetCustomAttributesData())
+                {
+                    if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
+                    {
+                        name = (string)a.ConstructorArguments[0].Value;
+                        manifestPath = (string)a.ConstructorArguments[1].Value;
+                        return true;
+                    }
+                }
+            }
+
+            name = "";
+            manifestPath = "";
+            return false;
+        }
 
         public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {

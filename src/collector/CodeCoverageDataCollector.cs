@@ -17,8 +17,6 @@ namespace Neo.Collector
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
         private const string MANIFEST_FILE_EXT = ".manifest.json";
         private const string NEF_FILE_EXT = ".nef";
-        const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
-        const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
 
         readonly string coveragePath;
         CodeCoverageCollector collector;
@@ -74,69 +72,13 @@ namespace Neo.Collector
         {
             foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources"))
             {
-                LoadTestSource(testSource);
+                collector.LoadTestSource(testSource);
             }
 
             foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
             {
-                LoadDebugInfoSetting(node);
+                collector.LoadDebugInfoSetting(node);
             }
-        }
-
-        internal void LoadDebugInfoSetting(XmlElement node)
-        {
-            logger.LogWarning($"LoadDebugInfoSetting {node.InnerText}");
-            if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
-            {
-                var name = node.HasAttribute("name")
-                    ? node.GetAttribute("name")
-                    : Path.GetFileNameWithoutExtension(node.InnerText);
-                collector.TrackContract(name, debugInfo);
-            }
-            else
-            {
-                logger.LogError($"LoadDebugInfoSetting {node.InnerText}");
-            }
-        }
-
-        internal void LoadTestSource(string testSource)
-        {
-            logger.LogWarning($"LoadTestSource {testSource}");
-            if (Utility.TryLoadAssembly(testSource, out var asm))
-            {
-                foreach (var type in asm.DefinedTypes)
-                {
-                    if (TryGetContractAttribute(type, out var contractName, out var manifestPath)
-                        && NeoDebugInfo.TryLoadManifestDebugInfo(manifestPath, out var debugInfo))
-                    {
-                        collector.TrackContract(contractName, debugInfo);
-                    }
-                }
-            }
-            else
-            {
-                logger.LogError($"LoadTestSource {testSource}");
-            }
-        }
-
-        static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
-        {
-            if (type.IsInterface)
-            {
-                foreach (var a in type.GetCustomAttributesData())
-                {
-                    if (a.AttributeType.Name == CONTRACT_ATTRIBUTE_NAME && a.AttributeType.Namespace == TEST_HARNESS_NAMESPACE)
-                    {
-                        name = (string)a.ConstructorArguments[0].Value;
-                        manifestPath = (string)a.ConstructorArguments[1].Value;
-                        return true;
-                    }
-                }
-            }
-
-            name = "";
-            manifestPath = "";
-            return false;
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)

@@ -43,11 +43,22 @@ public class UnitTest1
     [Fact]
     public void TestName2()
     {
-        // Given
-    
-        // When
-    
-        // Then
+        const string PATH = @"C:\Users\harry\Source\neo\seattle\samples\registrar\test\bin\Debug\net6.0\test-registrar-contract.dll";
+        var logger = new Moq.Mock<ILogger>();
+        var collector = new CodeCoverageCollector(logger.Object);
+        collector.LoadTestSource(PATH);
+    }
+
+    [Fact]
+    public void TestName3()
+    {
+
+        var doc= new XmlDocument();
+        var e = doc.CreateElement("DebugInfo");
+        e.InnerText = @"C:\Users\harry\Source\neo\seattle\samples\registrar\src\bin\sc\registrar.nefdbgnfo";
+        var logger = new Moq.Mock<ILogger>();
+        var collector = new CodeCoverageCollector(logger.Object);
+        collector.LoadDebugInfoSetting(e);
     }
 
     

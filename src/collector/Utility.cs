@@ -28,7 +28,7 @@ namespace Neo.Collector
             {
                 try
                 {
-                    assembly = Assembly.LoadFile(path);
+                    assembly = Assembly.LoadFrom(path);
                     return true;
                 }
                 catch { }
