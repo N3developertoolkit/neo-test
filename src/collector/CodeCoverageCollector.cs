@@ -35,6 +35,37 @@ namespace Neo.Collector
             }
         }
 
+        public void LoadCoverageFiles(string coveragePath)
+        {
+            foreach (var filename in Directory.EnumerateFiles(coveragePath))
+            {
+                try
+                {
+                    var ext = Path.GetExtension(filename);
+                    switch (ext)
+                    {
+                        case CodeCoverageCollector.COVERAGE_FILE_EXT:
+                            LoadCoverage(filename);
+                            break;
+                        case CodeCoverageCollector.NEF_FILE_EXT:
+                            LoadNef(filename);
+                            break;
+                        case CodeCoverageCollector.SCRIPT_FILE_EXT:
+                            LoadScript(filename);
+                            break;
+                        default:
+                            logger.LogWarning($"Unrecognized coverage output extension {filename}");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(filename, ex);
+                }
+            }
+
+        }
+
         public void LoadCoverage(string filename)
         {
             using (var stream = File.OpenRead(filename))

@@ -73,7 +73,7 @@ namespace Neo.Collector.Formats
                 var address = method.SequencePoints[index].Address;
                 var last = method.GetLineLastAddress(index, instructionMap);
 
-                while (address < last)
+                while (address <= last)
                 {
                     var ins = instructionMap[address];
 

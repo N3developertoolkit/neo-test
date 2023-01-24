@@ -131,42 +131,11 @@ namespace Neo.Collector
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            LoadCoverageFiles();
-
+            collector.LoadCoverageFiles(coveragePath);
             IReadOnlyList<ContractCoverage> coverage = collector.CollectCoverage().ToList();
 
             new CoberturaFormat().WriteReport(coverage, WriteAttachment);
             new RawCoverageFormat().WriteReport(coverage, WriteAttachment);
-        }
-
-        private void LoadCoverageFiles()
-        {
-            foreach (var filename in Directory.EnumerateFiles(coveragePath))
-            {
-                try
-                {
-                    var ext = Path.GetExtension(filename);
-                    switch (ext)
-                    {
-                        case CodeCoverageCollector.COVERAGE_FILE_EXT:
-                            collector.LoadCoverage(filename);
-                            break;
-                        case CodeCoverageCollector.NEF_FILE_EXT:
-                            collector.LoadNef(filename);
-                            break;
-                        case CodeCoverageCollector.SCRIPT_FILE_EXT:
-                            collector.LoadScript(filename);
-                            break;
-                        default:
-                            logger.LogWarning($"Unrecognized coverage output extension {filename}");
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(filename, ex);
-                }
-            }
         }
 
         void WriteAttachment(string filename, Action<Stream> writeAttachment)

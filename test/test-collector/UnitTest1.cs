@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
 using Neo.Collector;
 using Neo.Collector.Formats;
@@ -16,36 +17,27 @@ public class UnitTest1
     [Fact]
     public void Test1()
     {
+        const string DEBUG_INFO_PATH = @"C:\Users\harry\Source\neo\seattle\samples\registrar\src\bin\sc\registrar.nefdbgnfo";
+        const string COVERAGE_PATH = @"C:\Users\harry\AppData\Local\Temp\lc5xob3e.rza";
+        
         var logger = new Moq.Mock<ILogger>();
         var collector = new CodeCoverageCollector(logger.Object);
-        collector.LoadTestContract("test contract", "registrar.debug.json");
-        collector.LoadTestOutput(".run1.");
+        var debugInfo = NeoDebugInfo.TryLoad(DEBUG_INFO_PATH, out var value) ? value : throw new Exception();
+        collector.TrackContract("contract", debugInfo);
+        collector.LoadCoverageFiles(COVERAGE_PATH);
         var coverage = collector.CollectCoverage().First();
      
         var coverageWriter = new CoberturaFormat.ContractCoverageWriter(coverage);
-        var method = coverage.DebugInfo.Methods[0];
-        var rate = coverageWriter.CalculateBranchRate(method, 0);
+        var method = coverage.DebugInfo.Methods.First(m => m.Name == "Register");
 
-        using var stream = new System.IO.MemoryStream();
-        using var xmlWriter = new System.Xml.XmlTextWriter(stream, null);
-        coverageWriter.WriteLine(xmlWriter, method, 0);
+        using var stream = new MemoryStream();
+        using var xmlWriter = new XmlTextWriter(stream, null);
+        coverageWriter.WritePackage(xmlWriter);
         xmlWriter.Flush();
         stream.Flush();
-
-        var str = System.Text.Encoding.UTF8.GetString(stream.ToArray());
+        
+        var str = Encoding.UTF8.GetString(stream.ToArray());
         ;
-        // var coverage = collector.CollectCoverage();
-        // foreach (var contract in coverage)
-        // {
-        //     var bar = contract.CalcLineCoverage().AsPercentage();
-        //     //             foreach (var method in contract.Methods)
-        //     //             {
-        //     //                 var name = method.Name;
-        //     //                 var foo = method.CalcLineCoverage().AsPercentage();
-        //     // ;
-        // }
-
-
     }
 
     [Fact]
