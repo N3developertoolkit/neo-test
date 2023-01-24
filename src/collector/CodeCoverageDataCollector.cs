@@ -184,6 +184,7 @@ namespace Neo.Collector
             catch (Exception ex)
             {
                 logger.LogError(ex.Message, ex);
+                logger.LogError(ex.StackTrace);
             }
         }
     }
