@@ -9,7 +9,7 @@ namespace Neo.Collector.Formats
 {
     partial class CoberturaFormat
     {
-        class ContractCoverageWriter
+        internal class ContractCoverageWriter
         {
             readonly ContractCoverage contract;
 
@@ -20,13 +20,13 @@ namespace Neo.Collector.Formats
                 this.contract = contract;
             }
 
-            decimal CalculateLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines)
+            internal decimal CalculateLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines)
             {
                 bool hitFunc(int address) => contract.HitMap.TryGetValue(address, out var count) && count > 0;
                 return Utility.CalculateLineRate(lines, hitFunc);
             }
 
-            (uint branchCount, uint branchHit) CalculateBranchRate(IEnumerable<NeoDebugInfo.Method> methods)
+            internal (uint branchCount, uint branchHit) CalculateBranchRate(IEnumerable<NeoDebugInfo.Method> methods)
             {
                 var branchCount = 0u;
                 var branchHit = 0u;
@@ -39,7 +39,7 @@ namespace Neo.Collector.Formats
                 return (branchCount, branchHit);
             }
 
-            (uint branchCount, uint branchHit) CalculateBranchRate(NeoDebugInfo.Method method)
+            internal (uint branchCount, uint branchHit) CalculateBranchRate(NeoDebugInfo.Method method)
             {
                 var branchCount = 0u;
                 var branchHit = 0u;
@@ -52,7 +52,7 @@ namespace Neo.Collector.Formats
                 return (branchCount, branchHit);
             }
 
-            (uint branchCount, uint branchHit) CalculateBranchRate(NeoDebugInfo.Method method, int index)
+            internal (uint branchCount, uint branchHit) CalculateBranchRate(NeoDebugInfo.Method method, int index)
             {
                 var branchCount = 0u;
                 var branchHit = 0u;
@@ -107,7 +107,7 @@ namespace Neo.Collector.Formats
                 }
             }
 
-            void WriteClass(XmlWriter writer, string name, IEnumerable<NeoDebugInfo.Method> methods)
+            internal void WriteClass(XmlWriter writer, string name, IEnumerable<NeoDebugInfo.Method> methods)
             {
                 var docIndex = methods.SelectMany(m => m.SequencePoints).Select(sp => sp.Document).FirstOrDefault();
                 var filename = docIndex < contract.DebugInfo.Documents.Count
@@ -131,7 +131,7 @@ namespace Neo.Collector.Formats
                 }
             }
 
-            void WriteMethod(XmlWriter writer, NeoDebugInfo.Method method)
+            internal void WriteMethod(XmlWriter writer, NeoDebugInfo.Method method)
             {
                 var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
                 var lineRate = CalculateLineRate(method.SequencePoints);
@@ -153,7 +153,7 @@ namespace Neo.Collector.Formats
                 }
             }
 
-            void WriteLine(XmlWriter writer, NeoDebugInfo.Method method, int index)
+            internal void WriteLine(XmlWriter writer, NeoDebugInfo.Method method, int index)
             {
                 var sp = method.SequencePoints[index];
                 var hits = contract.HitMap.TryGetValue(sp.Address, out var value) ? value : 0;
@@ -173,14 +173,14 @@ namespace Neo.Collector.Formats
                     {
                         var branchRate = Utility.CalculateHitRate(branchCount, branchHit);
                         writer.WriteAttributeString("branch", $"{true}");
-                        writer.WriteAttributeString("condition-coverage", $"{branchRate * 100:N4}% ({branchHit}/{branchCount}");
+                        writer.WriteAttributeString("condition-coverage", $"{branchRate * 100:N}% ({branchHit}/{branchCount})");
                         using (var __ = writer.StartElement("conditions"))
                         {
                             foreach (var (address, opCode) in GetBranchInstructions(method, index))
                             {
                                 var (condBranchCount, condContinueCount) = contract.BranchHitMap.TryGetValue(address, out var _value) ? _value : (0, 0);
-                                var coverage = condBranchCount == 0 ? 0m : 1m
-                                    + condContinueCount == 0 ? 0m : 1m;
+                                var coverage = condBranchCount == 0 ? 0m : 1m;
+                                coverage += condContinueCount == 0 ? 0m : 1m;
                                 using (var _3 = writer.StartElement("condition"))
                                 {
                                     writer.WriteAttributeString("number", $"{address}");
