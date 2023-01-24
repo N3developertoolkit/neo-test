@@ -28,7 +28,7 @@ namespace Neo.Collector
 
         public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {
-            // logger.LogWarning($"TrackContract {contractName}");
+            logger.LogWarning($"TrackContract {contractName}");
             if (!coverageMap.ContainsKey(debugInfo.Hash))
             {
                 coverageMap.Add(debugInfo.Hash, new ContractCoverageCollector(contractName, debugInfo));
@@ -142,7 +142,7 @@ namespace Neo.Collector
             }
             else
             {
-                // logger.LogWarning($"{hash} script not tracked");
+                logger.LogWarning($"{hash} script not tracked");
             }
         }
 
@@ -171,7 +171,7 @@ namespace Neo.Collector
             }
             else
             {
-                // logger.LogWarning($"{hash} nef not tracked");
+                logger.LogWarning($"{hash} nef not tracked");
             }
         }
     }
