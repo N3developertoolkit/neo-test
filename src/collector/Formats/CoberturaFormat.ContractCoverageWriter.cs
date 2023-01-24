@@ -177,7 +177,7 @@ namespace Neo.Collector.Formats
                         {
                             foreach (var (address, opCode) in GetBranchInstructions(method, index))
                             {
-                                var (condBranchCount, condContinueCount) = contract.BranchHitMap[address];
+                                var (condBranchCount, condContinueCount) = contract.BranchHitMap.TryGetValue(address, out var _value) ? _value : (0, 0);
                                 var coverage = condBranchCount == 0 ? 0m : 1m
                                     + condContinueCount == 0 ? 0m : 1m;
                                 using (var _3 = writer.StartElement("condition"))
