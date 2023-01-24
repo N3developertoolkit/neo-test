@@ -164,7 +164,7 @@ namespace Neo.Collector.Formats
                     writer.WriteAttributeString("number", $"{sp.Start.Line}");
                     writer.WriteAttributeString("hits", $"{hits}");
 
-                    if (branchCount > 0)
+                    if (branchCount == 0)
                     {
                         writer.WriteAttributeString("branch", $"{false}");
                     }
