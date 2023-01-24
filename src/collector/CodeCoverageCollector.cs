@@ -39,6 +39,7 @@ namespace Neo.Collector
         {
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
+                logger.LogWarning($"LoadCoverageFiles {filename}");
                 try
                 {
                     var ext = Path.GetExtension(filename);
