@@ -11,6 +11,8 @@ namespace Neo.Collector
     // Testable version of CodeCoverageDataCollector
     class CodeCoverageCollector
     {
+        internal const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
+        internal const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
         internal const string COVERAGE_FILE_EXT = ".neo-coverage";
         internal const string SCRIPT_FILE_EXT = ".neo-script";
         internal const string NEF_FILE_EXT = ".nef";
@@ -28,19 +30,20 @@ namespace Neo.Collector
         public IEnumerable<ContractCoverage> CollectCoverage() 
             => coverageMap.Values.Select(c => c.CollectCoverage());
 
-        public void LoadDebugInfoSetting(XmlElement node)
+        public void LoadDebugInfoSetting(string path, string name)
         {
-            logger.LogWarning($"LoadDebugInfoSetting {node.InnerText}");
-            if (NeoDebugInfo.TryLoad(node.InnerText, out var debugInfo))
+            logger.LogWarning($"LoadDebugInfoSetting {path}");
+            if (NeoDebugInfo.TryLoad(path, out var debugInfo))
             {
-                var name = node.HasAttribute("name")
-                    ? node.GetAttribute("name")
-                    : Path.GetFileNameWithoutExtension(node.InnerText);
+                if (string.IsNullOrEmpty(name))
+                {
+                    name = Path.GetFileNameWithoutExtension(path);
+                }
                 TrackContract(name, debugInfo);
             }
             else
             {
-                logger.LogError($"LoadDebugInfoSetting {node.InnerText}");
+                logger.LogError($"LoadDebugInfoSetting failed to load {path}");
             }
         }
 
@@ -60,12 +63,9 @@ namespace Neo.Collector
             }
             else
             {
-                logger.LogError($"LoadTestSource {testSource}");
+                logger.LogError($"LoadTestSource failed to load {testSource}");
             }
         }
-
-        const string TEST_HARNESS_NAMESPACE = "NeoTestHarness";
-        const string CONTRACT_ATTRIBUTE_NAME = "ContractAttribute";
 
         static bool TryGetContractAttribute(TypeInfo type, out string name, out string manifestPath)
         {
@@ -106,13 +106,13 @@ namespace Neo.Collector
                     var ext = Path.GetExtension(filename);
                     switch (ext)
                     {
-                        case CodeCoverageCollector.COVERAGE_FILE_EXT:
+                        case COVERAGE_FILE_EXT:
                             LoadCoverage(filename);
                             break;
-                        case CodeCoverageCollector.NEF_FILE_EXT:
+                        case NEF_FILE_EXT:
                             LoadNef(filename);
                             break;
-                        case CodeCoverageCollector.SCRIPT_FILE_EXT:
+                        case SCRIPT_FILE_EXT:
                             LoadScript(filename);
                             break;
                         default:

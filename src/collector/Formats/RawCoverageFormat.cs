@@ -12,7 +12,7 @@ namespace Neo.Collector.Formats
         {
             foreach (var contract in coverage)
             {
-                var filename = $"{contract.DebugInfo.Hash}.coverage.txt";
+                var filename = $"{contract.DebugInfo.Hash}.neo-coverage.txt";
                 writeAttachement(filename, stream =>
                 {
                     var writer = new StreamWriter(stream);

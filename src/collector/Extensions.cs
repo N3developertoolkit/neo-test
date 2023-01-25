@@ -163,58 +163,126 @@ namespace Neo.Collector
             }
         }
 
-        public static IEnumerable<(int address, OpCode opCode)> GetBranches(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
+        public static decimal CalculateLineRate(this IEnumerable<NeoDebugInfo.SequencePoint> lines, Func<int, bool> hitFunc)
         {
-            var address = method.SequencePoints[index].Address;
-            var lastAddress = method.GetLineLastAddress(index, instructionMap);
+            var (lineCount, hitCount) = GetLineRate(lines, hitFunc);
+            return Utility.CalculateHitRate(lineCount, hitCount);
+        }
 
-            while (address <= lastAddress)
+        public static (uint lineCount, uint hitCount) GetLineRate(this IEnumerable<NeoDebugInfo.SequencePoint> lines, Func<int, bool> hitFunc)
+        {
+            uint lineCount = 0;
+            uint hitCount = 0;
+            foreach (var line in lines)
             {
-                var ins = instructionMap[address];
-                if (ins.IsBranchInstruction())
-                {
-                    yield return (address, ins.OpCode);
-                }
-                address += ins.Size;
+                lineCount++;
+                if (hitFunc(line.Address)) { hitCount++; }
             }
-
+            return (lineCount, hitCount);
         }
 
-        public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
-        {
-            var point = method.SequencePoints[index];
-            var last = method.GetLineLastAddress(index, instructionMap);
-            return instructionMap.GetBranchPaths(point.Address, last);
-        }
-        
-        public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, int address, int lastAddress, ImmutableList<(int, int)> path = null)
-        {
-            path = path is null ? ImmutableList<(int, int)>.Empty : path;
 
-            while (address <= lastAddress)
+        public static decimal CalculateBranchRate(this IReadOnlyDictionary<int, Instruction> instructionMap, IEnumerable<NeoDebugInfo.Method> methods, Func<int, (uint, uint)> branchHitFunc)
+        {
+            var (branchCount, branchHit) = instructionMap.GetBranchRate(methods, branchHitFunc);
+            return Utility.CalculateHitRate(branchCount, branchHit);
+        }
+
+        public static (uint branchCount, uint branchHit) GetBranchRate(this IReadOnlyDictionary<int, Instruction> instructionMap, IEnumerable<NeoDebugInfo.Method> methods, Func<int, (uint, uint)> branchHitFunc)
+        {
+            uint branchCount = 0u, branchHit = 0u;
+            foreach (var method in methods)
             {
-                var ins = instructionMap[address];
-                if (ins.OpCode == OpCode.RET)
-                {
-                    break;
-                }
-                else if (ins.IsBranchInstruction())
-                {
-                    var offset = ins.GetBranchOffset();
-                    var branchAddress = address + offset;
-                    var continueAddress = address + ins.Size;
-                    var branchPaths = instructionMap.GetBranchPaths(branchAddress, lastAddress, path.Add((address, branchAddress)));
-                    var continuePaths = instructionMap.GetBranchPaths(continueAddress, lastAddress, path.Add((address, continueAddress)));
-                    return branchPaths.Concat(continuePaths);
-                }
-                else
-                {
-                    address += ins.Size;
-                }
+                var rate = instructionMap.GetBranchRate(method, branchHitFunc);
+                branchCount += rate.branchCount;
+                branchHit += rate.branchHit;
             }
-
-            return Enumerable.Repeat(path, 1);
+            return (branchCount, branchHit);
         }
+
+        public static decimal CalculateBranchRate(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, Func<int, (uint, uint)> branchHitFunc)
+        {
+            var (branchCount, branchHit) = instructionMap.GetBranchRate(method, branchHitFunc);
+            return Utility.CalculateHitRate(branchCount, branchHit);
+        }
+
+        public static (uint branchCount, uint branchHit) GetBranchRate(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, Func<int, (uint, uint)> branchHitFunc)
+        {
+            uint branchCount = 0u, branchHit = 0u;
+            for (int i = 0; i < method.SequencePoints.Count; i++)
+            {
+                var rate = instructionMap.GetBranchRate(method, i, branchHitFunc);
+                branchCount += rate.branchCount;
+                branchHit += rate.branchHit;
+            }
+            return (branchCount, branchHit);
+        }
+
+        public static decimal CalculateBranchRate(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index, Func<int, (uint, uint)> branchHitFunc)
+        {
+            var (branchCount, branchHit) = instructionMap.GetBranchRate(method, index, branchHitFunc);
+            return Utility.CalculateHitRate(branchCount, branchHit);
+        }
+
+        public static (uint branchCount, uint branchHit) GetBranchRate(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index, Func<int, (uint, uint)> branchHitFunc)
+        {
+            return instructionMap
+                .GetBranchInstructions(method, index)
+                .GetBranchRate(branchHitFunc);
+        }
+
+        // public static IEnumerable<(int address, OpCode opCode)> GetBranches(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
+        // {
+        //     var address = method.SequencePoints[index].Address;
+        //     var lastAddress = method.GetLineLastAddress(index, instructionMap);
+
+        //     while (address <= lastAddress)
+        //     {
+        //         var ins = instructionMap[address];
+        //         if (ins.IsBranchInstruction())
+        //         {
+        //             yield return (address, ins.OpCode);
+        //         }
+        //         address += ins.Size;
+        //     }
+
+        // }
+
+        // public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
+        // {
+        //     var point = method.SequencePoints[index];
+        //     var last = method.GetLineLastAddress(index, instructionMap);
+        //     return instructionMap.GetBranchPaths(point.Address, last);
+        // }
+
+        // public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, int address, int lastAddress, ImmutableList<(int, int)> path = null)
+        // {
+        //     path = path is null ? ImmutableList<(int, int)>.Empty : path;
+
+        //     while (address <= lastAddress)
+        //     {
+        //         var ins = instructionMap[address];
+        //         if (ins.OpCode == OpCode.RET)
+        //         {
+        //             break;
+        //         }
+        //         else if (ins.IsBranchInstruction())
+        //         {
+        //             var offset = ins.GetBranchOffset();
+        //             var branchAddress = address + offset;
+        //             var continueAddress = address + ins.Size;
+        //             var branchPaths = instructionMap.GetBranchPaths(branchAddress, lastAddress, path.Add((address, branchAddress)));
+        //             var continuePaths = instructionMap.GetBranchPaths(continueAddress, lastAddress, path.Add((address, continueAddress)));
+        //             return branchPaths.Concat(continuePaths);
+        //         }
+        //         else
+        //         {
+        //             address += ins.Size;
+        //         }
+        //     }
+
+        //     return Enumerable.Repeat(path, 1);
+        // }
 
         // public static void FindPaths(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method, IReadOnlyDictionary<int, Instruction> instructionMap)
         // {
@@ -257,23 +325,55 @@ namespace Neo.Collector
         //     }
         // }
 
-        public static int IndexOf<T>(this IReadOnlyList<T> @this, Func<T, bool> predicate)
+        // public static int IndexOf<T>(this IReadOnlyList<T> @this, Func<T, bool> predicate)
+        // {
+        //     for (int i = 0; i < @this.Count; i++)
+        //     {
+        //         if (predicate(@this[i])) return i;
+        //     }
+        //     return -1;
+        // }
+
+        // public static int GetLastAddress(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method, IReadOnlyDictionary<int, Instruction> instructionMap)
+        // {
+        //     var index = method.SequencePoints.IndexOf(sp => sp.Address == point.Address);
+        //     if (index < 0) throw new ArgumentException(nameof(point));
+        //     return method.GetLineLastAddress(index, instructionMap);
+        // }
+
+
+        public static (uint branchCount, uint branchHit) GetBranchRate(this IEnumerable<(int address, OpCode opCode)> lines, Func<int, (uint, uint)> hitFunc)
         {
-            for (int i = 0; i < @this.Count; i++)
+            var branchCount = 0u;
+            var branchHit = 0u;
+            foreach (var (address, _) in lines)
             {
-                if (predicate(@this[i])) return i;
+                var (branchHitCount, continueHitCount) = hitFunc(address);
+                branchCount += 2;
+                branchHit += branchHitCount == 0 ? 0u : 1u;
+                branchHit += continueHitCount == 0 ? 0u : 1u;
             }
-            return -1;
+            return (branchCount, branchHit);
         }
 
-        public static int GetLastAddress(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method, IReadOnlyDictionary<int, Instruction> instructionMap)
+        public static IEnumerable<(int address, OpCode opCode)> GetBranchInstructions(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
         {
-            var index = method.SequencePoints.IndexOf(sp => sp.Address == point.Address);
-            if (index < 0) throw new ArgumentException(nameof(point));
-            return method.GetLineLastAddress(index, instructionMap);
+            var address = method.SequencePoints[index].Address;
+            var last = instructionMap.GetLineLastAddress(method, index);
+
+            while (address <= last)
+            {
+                var ins = instructionMap[address];
+
+                if (ins.IsBranchInstruction())
+                {
+                    yield return (address, ins.OpCode);
+                }
+                address += ins.Size;
+            }
         }
 
-        public static int GetLineLastAddress(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
+        public static int GetLineLastAddress(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
         {
             var point = method.SequencePoints[index];
             var nextIndex = index + 1;

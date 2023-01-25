@@ -43,8 +43,8 @@ namespace Neo.BuildTasks
             return new NeoManifest
             {
                 Name = contractName,
-                Methods = methods.ToArray(),
-                Events = events.ToArray()
+                Methods = methods.ToList(),
+                Events = events.ToList()
             };
         }
 
@@ -64,7 +64,7 @@ namespace Neo.BuildTasks
             {
                 Name = name,
                 ReturnType = returnType,
-                Parameters = @params.ToArray()
+                Parameters = @params.ToList()
             };
         }
 
@@ -75,7 +75,7 @@ namespace Neo.BuildTasks
             return new Event
             {
                 Name = name,
-                Parameters = @params.ToArray()
+                Parameters = @params.ToList()
             };
         }
     }

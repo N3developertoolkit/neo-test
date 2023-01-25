@@ -15,8 +15,6 @@ namespace Neo.Collector
     public partial class CodeCoverageDataCollector : DataCollector, ITestExecutionEnvironmentSpecifier
     {
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
-        private const string MANIFEST_FILE_EXT = ".manifest.json";
-        private const string NEF_FILE_EXT = ".nef";
 
         readonly string coveragePath;
         CodeCoverageCollector collector;
@@ -77,35 +75,35 @@ namespace Neo.Collector
 
             foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
             {
-                collector.LoadDebugInfoSetting(node);
+                var name = node.HasAttribute("name") ? node.GetAttribute("name") : string.Empty;
+                collector.LoadDebugInfoSetting(node.InnerText, name);
             }
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
             collector.LoadCoverageFiles(coveragePath);
-            IReadOnlyList<ContractCoverage> coverage = collector.CollectCoverage().ToList();
+            var coverage = collector.CollectCoverage().ToList();
 
             new CoberturaFormat().WriteReport(coverage, WriteAttachment);
             new RawCoverageFormat().WriteReport(coverage, WriteAttachment);
-        }
 
-        void WriteAttachment(string filename, Action<Stream> writeAttachment)
-        {
-            try
+            void WriteAttachment(string filename, Action<Stream> writeAttachment)
             {
-                var path = Path.Combine(coveragePath, filename);
-                using (var stream = File.OpenWrite(path))
+                try
                 {
-                    writeAttachment(stream);
-                    stream.Flush();
+                    var path = Path.Combine(coveragePath, filename);
+                    using (var stream = File.OpenWrite(path))
+                    {
+                        writeAttachment(stream);
+                        stream.Flush();
+                    }
+                    dataSink.SendFileAsync(environmentContext.SessionDataCollectionContext, path, false);
                 }
-                dataSink.SendFileAsync(environmentContext.SessionDataCollectionContext, path, false);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex.Message, ex);
-                logger.LogError(ex.StackTrace);
+                catch (Exception ex)
+                {
+                    logger.LogError(ex.Message, ex);
+                }
             }
         }
     }

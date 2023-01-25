@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using Neo.Collector.Models;
-using static Neo.Collector.Models.ContractCoverage;
 
 namespace Neo.Collector.Formats
 {
@@ -20,79 +19,17 @@ namespace Neo.Collector.Formats
                 this.contract = contract;
             }
 
-            internal decimal CalculateLineRate(IEnumerable<NeoDebugInfo.SequencePoint> lines)
-            {
-                bool hitFunc(int address) => contract.HitMap.TryGetValue(address, out var count) && count > 0;
-                return Utility.CalculateLineRate(lines, hitFunc);
-            }
-
-            internal (uint branchCount, uint branchHit) CalculateBranchRate(IEnumerable<NeoDebugInfo.Method> methods)
-            {
-                var branchCount = 0u;
-                var branchHit = 0u;
-                foreach (var method in methods)
-                {
-                    var rate = CalculateBranchRate(method);
-                    branchCount += rate.branchCount;
-                    branchHit += rate.branchHit;
-                }
-                return (branchCount, branchHit);
-            }
-
-            internal (uint branchCount, uint branchHit) CalculateBranchRate(NeoDebugInfo.Method method)
-            {
-                var branchCount = 0u;
-                var branchHit = 0u;
-                for (int i = 0; i < method.SequencePoints.Count; i++)
-                {
-                    var rate = CalculateBranchRate(method, i);
-                    branchCount += rate.branchCount;
-                    branchHit += rate.branchHit;
-                }
-                return (branchCount, branchHit);
-            }
-
-            internal (uint branchCount, uint branchHit) CalculateBranchRate(NeoDebugInfo.Method method, int index)
-            {
-                var branchCount = 0u;
-                var branchHit = 0u;
-                foreach (var (address, _) in GetBranchInstructions(method, index))
-                {
-                    var (branchHitCount, continueHitCount) = contract.BranchHitMap.TryGetValue(address, out var value) ? value : (0, 0);
-                    branchCount += 2;
-                    branchHit += branchHitCount == 0 ? 0u : 1u;
-                    branchHit += continueHitCount == 0 ? 0u : 1u;
-
-                }
-                return (branchCount, branchHit);
-            }
-
-            IEnumerable<(int address, OpCode opCode)> GetBranchInstructions(NeoDebugInfo.Method method, int index)
-            {
-                var instructionMap = contract.InstructionMap;
-                var address = method.SequencePoints[index].Address;
-                var last = method.GetLineLastAddress(index, instructionMap);
-
-                while (address <= last)
-                {
-                    var ins = instructionMap[address];
-
-                    if (ins.IsBranchInstruction())
-                    {
-                        yield return (address, ins.OpCode);
-                    }
-                    address += ins.Size;
-                }
-            }
+            bool GetAddressHit(int address) => contract.HitMap.TryGetValue(address, out var count) && count > 0;
+            (uint, uint) GetBranchHit(int address) => contract.BranchHitMap.TryGetValue(address, out var value) ? value : (0, 0);
 
             public void WritePackage(XmlWriter writer)
             {
-                var lineRate = CalculateLineRate(DebugInfo.Methods.SelectMany(m => m.SequencePoints));
-                var (branchCount, branchHit) = CalculateBranchRate(DebugInfo.Methods);
-                var branchRate = branchCount == 0 ? 1m : Utility.CalculateHitRate(branchCount, branchHit);
+                var lineRate = DebugInfo.Methods.SelectMany(m => m.SequencePoints).CalculateLineRate(GetAddressHit);
+                var branchRate = contract.InstructionMap.CalculateBranchRate(DebugInfo.Methods, GetBranchHit);
 
                 using (var _ = writer.StartElement("package"))
                 {
+                    // TODO: complexity
                     writer.WriteAttributeString("name", contract.Name);
                     writer.WriteAttributeString("scripthash", $"{contract.DebugInfo.Hash}");
                     writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
@@ -112,20 +49,33 @@ namespace Neo.Collector.Formats
                 var docIndex = methods.SelectMany(m => m.SequencePoints).Select(sp => sp.Document).FirstOrDefault();
                 var filename = docIndex < contract.DebugInfo.Documents.Count
                     ? contract.DebugInfo.Documents[docIndex] : string.Empty;
-                var lineRate = CalculateLineRate(methods.SelectMany(m => m.SequencePoints));
-                var (branchCount, branchHit) = CalculateBranchRate(methods);
-                var branchRate = branchCount == 0 ? 1m : Utility.CalculateHitRate(branchCount, branchHit);
+                var lineRate = methods.SelectMany(m => m.SequencePoints).CalculateLineRate(GetAddressHit);
+                var branchRate = contract.InstructionMap.CalculateBranchRate(methods, GetBranchHit);
+
                 using (var _ = writer.StartElement("class"))
-                {
+                { 
+                    // TODO: complexity
                     writer.WriteAttributeString("name", name);
                     if (filename.Length > 0) { writer.WriteAttributeString("filename", filename); }
                     writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
                     writer.WriteAttributeString("branch-rate", $"{branchRate:N4}");
+
                     using (var __ = writer.StartElement("methods"))
                     {
                         foreach (var method in methods)
                         {
                             WriteMethod(writer, method);
+                        }
+                    }
+
+                    using (var __ = writer.StartElement("lines"))
+                    {
+                        foreach (var method in methods)
+                        {
+                            for (int i = 0; i < method.SequencePoints.Count; i++)
+                            {
+                                WriteLine(writer, method, i);
+                            }
                         }
                     }
                 }
@@ -134,9 +84,9 @@ namespace Neo.Collector.Formats
             internal void WriteMethod(XmlWriter writer, NeoDebugInfo.Method method)
             {
                 var signature = string.Join(", ", method.Parameters.Select(p => p.Type));
-                var lineRate = CalculateLineRate(method.SequencePoints);
-                var (branchCount, branchHit) = CalculateBranchRate(method);
-                var branchRate = branchCount == 0 ? 1m : Utility.CalculateHitRate(branchCount, branchHit);
+                var lineRate = method.SequencePoints.CalculateLineRate(GetAddressHit);
+                var branchRate = contract.InstructionMap.CalculateBranchRate(method, GetBranchHit);
+
                 using (var _ = writer.StartElement("method"))
                 {
                     writer.WriteAttributeString("name", method.Name);
@@ -157,7 +107,7 @@ namespace Neo.Collector.Formats
             {
                 var sp = method.SequencePoints[index];
                 var hits = contract.HitMap.TryGetValue(sp.Address, out var value) ? value : 0;
-                var (branchCount, branchHit) = CalculateBranchRate(method, index);
+                var (branchCount, branchHit) = contract.InstructionMap.GetBranchRate(method, index, GetBranchHit);
 
                 using (var _ = writer.StartElement("line"))
                 {
@@ -172,15 +122,17 @@ namespace Neo.Collector.Formats
                     else
                     {
                         var branchRate = Utility.CalculateHitRate(branchCount, branchHit);
+
                         writer.WriteAttributeString("branch", $"{true}");
                         writer.WriteAttributeString("condition-coverage", $"{branchRate * 100:N}% ({branchHit}/{branchCount})");
                         using (var __ = writer.StartElement("conditions"))
                         {
-                            foreach (var (address, opCode) in GetBranchInstructions(method, index))
+                            foreach (var (address, opCode) in contract.InstructionMap.GetBranchInstructions(method, index))
                             {
-                                var (condBranchCount, condContinueCount) = contract.BranchHitMap.TryGetValue(address, out var _value) ? _value : (0, 0);
+                                var (condBranchCount, condContinueCount) = GetBranchHit(address);
                                 var coverage = condBranchCount == 0 ? 0m : 1m;
                                 coverage += condContinueCount == 0 ? 0m : 1m;
+
                                 using (var _3 = writer.StartElement("condition"))
                                 {
                                     writer.WriteAttributeString("number", $"{address}");

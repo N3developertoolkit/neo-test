@@ -134,7 +134,7 @@ namespace Neo.Collector.Models
             var methods = json["methods"].Linq.Select(kvp => MethodFromJson(kvp.Value));
             // TODO: parse events and static variables
 
-            return new NeoDebugInfo(hash, docRoot, documents.ToArray(), methods.ToArray());
+            return new NeoDebugInfo(hash, docRoot, documents.ToList(), methods.ToList());
         }
 
         static Method MethodFromJson(SimpleJSON.JSONNode json)
@@ -146,7 +146,7 @@ namespace Neo.Collector.Models
             var @params = json["params"].Linq.Select(kvp => ParamFromJson(kvp.Value));
             var sequencePoints = json["sequence-points"].Linq.Select(kvp => SequencePointFromJson(kvp.Value));
 
-            return new Method(id, @namespace, name, range, @params.ToArray(), sequencePoints.ToArray());
+            return new Method(id, @namespace, name, range, @params.ToList(), sequencePoints.ToList());
         }
 
         static Parameter ParamFromJson(SimpleJSON.JSONNode json)

@@ -52,13 +52,12 @@ public class UnitTest1
     [Fact]
     public void TestName3()
     {
-
         var doc= new XmlDocument();
         var e = doc.CreateElement("DebugInfo");
         e.InnerText = @"C:\Users\harry\Source\neo\seattle\samples\registrar\src\bin\sc\registrar.nefdbgnfo";
         var logger = new Moq.Mock<ILogger>();
         var collector = new CodeCoverageCollector(logger.Object);
-        collector.LoadDebugInfoSetting(e);
+        // collector.LoadDebugInfoSetting(e);
     }
 
     
@@ -75,9 +74,9 @@ public class UnitTest1
             for (int i = 0; i < method.SequencePoints.Count; i++)
             {
                 NeoDebugInfo.SequencePoint sp = method.SequencePoints[i];
-                var last = method.GetLineLastAddress(i, instructionMap);
-                var ins = instructionMap.GetBranchPaths(sp.Address, last).ToArray();
-                ;
+                // var last = method.GetLineLastAddress(i, instructionMap);
+                // var ins = instructionMap.GetBranchPaths(sp.Address, last).ToArray();
+                // ;
             }
         }
     }
