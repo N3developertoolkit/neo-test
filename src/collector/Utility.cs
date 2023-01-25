@@ -38,24 +38,7 @@ namespace Neo.Collector
             return false;
         }
 
-
         public static decimal CalculateHitRate(uint lineCount, uint hitCount)
             => lineCount == 0 ? 1m : new decimal(hitCount) / new decimal(lineCount);
-
-        // public static (uint branchCount, uint branchHit) CalculateBranchRate(
-        //     IEnumerable<(int address, OpCode opCode)> lines, Func<int, (uint, uint)> hitFunc)
-        // {
-        //     var branchCount = 0u;
-        //     var branchHit = 0u;
-        //     foreach (var (address, _) in lines)
-        //     {
-        //         var (branchHitCount, continueHitCount) = hitFunc(address);
-        //         branchCount += 2;
-        //         branchHit += branchHitCount == 0 ? 0u : 1u;
-        //         branchHit += continueHitCount == 0 ? 0u : 1u;
-
-        //     }
-        //     return (branchCount, branchHit);
-        // }
     }
 }

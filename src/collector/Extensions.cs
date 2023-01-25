@@ -2,6 +2,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -120,8 +121,10 @@ namespace Neo.Collector
                 || instruction.OpCode == OpCode.CALL_L;
 
         public static bool IsBranchInstruction(this Instruction instruction)
-            => instruction.OpCode >= OpCode.JMPIF
-                && instruction.OpCode <= OpCode.JMPLE_L;
+            => IsBranchInstruction(instruction.OpCode);
+
+        static bool IsBranchInstruction(OpCode opCode)
+            => opCode >= OpCode.JMPIF && opCode <= OpCode.JMPLE_L;
 
         public static int GetCallOffset(this Instruction instruction)
         {
@@ -231,123 +234,13 @@ namespace Neo.Collector
                 .GetBranchRate(branchHitFunc);
         }
 
-        // public static IEnumerable<(int address, OpCode opCode)> GetBranches(this NeoDebugInfo.Method method, int index, IReadOnlyDictionary<int, Instruction> instructionMap)
-        // {
-        //     var address = method.SequencePoints[index].Address;
-        //     var lastAddress = method.GetLineLastAddress(index, instructionMap);
-
-        //     while (address <= lastAddress)
-        //     {
-        //         var ins = instructionMap[address];
-        //         if (ins.IsBranchInstruction())
-        //         {
-        //             yield return (address, ins.OpCode);
-        //         }
-        //         address += ins.Size;
-        //     }
-
-        // }
-
-        // public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, NeoDebugInfo.Method method, int index)
-        // {
-        //     var point = method.SequencePoints[index];
-        //     var last = method.GetLineLastAddress(index, instructionMap);
-        //     return instructionMap.GetBranchPaths(point.Address, last);
-        // }
-
-        // public static IEnumerable<ImmutableList<(int, int)>> GetBranchPaths(this IReadOnlyDictionary<int, Instruction> instructionMap, int address, int lastAddress, ImmutableList<(int, int)> path = null)
-        // {
-        //     path = path is null ? ImmutableList<(int, int)>.Empty : path;
-
-        //     while (address <= lastAddress)
-        //     {
-        //         var ins = instructionMap[address];
-        //         if (ins.OpCode == OpCode.RET)
-        //         {
-        //             break;
-        //         }
-        //         else if (ins.IsBranchInstruction())
-        //         {
-        //             var offset = ins.GetBranchOffset();
-        //             var branchAddress = address + offset;
-        //             var continueAddress = address + ins.Size;
-        //             var branchPaths = instructionMap.GetBranchPaths(branchAddress, lastAddress, path.Add((address, branchAddress)));
-        //             var continuePaths = instructionMap.GetBranchPaths(continueAddress, lastAddress, path.Add((address, continueAddress)));
-        //             return branchPaths.Concat(continuePaths);
-        //         }
-        //         else
-        //         {
-        //             address += ins.Size;
-        //         }
-        //     }
-
-        //     return Enumerable.Repeat(path, 1);
-        // }
-
-        // public static void FindPaths(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method, IReadOnlyDictionary<int, Instruction> instructionMap)
-        // {
-        //     var (methodEnd, nextLineAddress) = point.GetBoundary(method);
-
-        // ImmutableLiost
-        //     var address = point.Address;
-        //     while (true)
-        //     {
-        //         var instruction = instructionMap[address];
-
-        //         if (instruction.IsBranchInstruction())
-        //         {
-
-        //         }
-        //         else if (instruction.IsCallInstruction())
-        //         {
-
-        //         }
-        //         else
-        //         {
-
-        //         }
-
-
-        //     }
-
-        // }
-
-        // public static IEnumerable<(int, Instruction)> GetInstructions(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method, IReadOnlyDictionary<int, Instruction> instructionMap)
-        // {
-        //     var (methodEnd, nextLineAddress) = point.GetBoundary(method);
-
-        //     var address = point.Address;
-        //     while (address <= method.Range.End && address < nextLineAddress)
-        //     {
-        //         var instruction = instructionMap[address];
-        //         yield return (address, instruction);
-        //         address += instruction.Size;
-        //     }
-        // }
-
-        // public static int IndexOf<T>(this IReadOnlyList<T> @this, Func<T, bool> predicate)
-        // {
-        //     for (int i = 0; i < @this.Count; i++)
-        //     {
-        //         if (predicate(@this[i])) return i;
-        //     }
-        //     return -1;
-        // }
-
-        // public static int GetLastAddress(this NeoDebugInfo.SequencePoint point, NeoDebugInfo.Method method, IReadOnlyDictionary<int, Instruction> instructionMap)
-        // {
-        //     var index = method.SequencePoints.IndexOf(sp => sp.Address == point.Address);
-        //     if (index < 0) throw new ArgumentException(nameof(point));
-        //     return method.GetLineLastAddress(index, instructionMap);
-        // }
-
-
-        public static (uint branchCount, uint branchHit) GetBranchRate(this IEnumerable<(int address, OpCode opCode)> lines, Func<int, (uint, uint)> hitFunc)
+        public static (uint branchCount, uint branchHit) GetBranchRate(this IEnumerable<(int address, OpCode opCode)> branchLines, Func<int, (uint, uint)> hitFunc)
         {
             var branchCount = 0u;
             var branchHit = 0u;
-            foreach (var (address, _) in lines)
+            foreach (var (address, opCode) in branchLines)
             {
+                Debug.Assert(IsBranchInstruction(opCode));
                 var (branchHitCount, continueHitCount) = hitFunc(address);
                 branchCount += 2;
                 branchHit += branchHitCount == 0 ? 0u : 1u;
