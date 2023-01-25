@@ -13,6 +13,11 @@ will not have contiguous patch numbers. Initial major and minor releases will be
 in this file without a patch number. Patch version will be included for bug fixes, but
 may not exactly match a publicly released version.
 
+## [Unreleased]
+
+### Added
+
+* Code Coverage Collector. For more info, [see the docs](docs\code-coverage.md) ([#45](https://github.com/ngdenterprise/neo-test/pull/45))
 ## [3.4.14] - 2022-08-17
 
 ### Changed

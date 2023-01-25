@@ -261,3 +261,11 @@ interface Nep17Token
     }
 }
 ```
+
+## Neo.Collector
+
+For C# developers, the `Neo.Collector` package can be used to collect smart contract code coverage.
+By specifying "Neo code coverage" as the collector for a `dotnet test` run, the developer can get
+coverage information for the contracts in the popular [Cobertura format](https://github.com/cobertura/cobertura).
+
+For more details, see the [code coverage documentation](docs\code-coverage.md)
