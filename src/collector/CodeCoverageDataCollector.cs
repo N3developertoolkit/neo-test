@@ -17,13 +17,14 @@ namespace Neo.Collector
         const string COVERAGE_PATH_ENV_NAME = "NEO_TEST_APP_ENGINE_COVERAGE_PATH";
 
         readonly string coveragePath;
-        CodeCoverageCollector collector;
 
+        CodeCoverageCollector collector;
         DataCollectionEvents events;
         DataCollectionSink dataSink;
         DataCollectionEnvironmentContext environmentContext;
         ILogger logger;
-        XmlElement configXml;
+        bool verboseLogConfig;
+        IReadOnlyList<(string path, string name)> debugInfoConfig;
 
         public CodeCoverageDataCollector()
         {
@@ -41,7 +42,17 @@ namespace Neo.Collector
                 DataCollectionLogger logger,
                 DataCollectionEnvironmentContext environmentContext)
         {
-            this.configXml = configurationElement;
+            var verboseLogNode = configurationElement.SelectSingleNode("VerboseLog");
+            verboseLogConfig = !(verboseLogNode is null) && bool.TryParse(verboseLogNode.InnerText, out var value) && value;
+            debugInfoConfig = configurationElement.SelectNodes("DebugInfo")
+                .OfType<XmlElement>()
+                .Select(node => 
+                {
+                    var name = node.HasAttribute("name") ? node.GetAttribute("name") : string.Empty;
+                    return (node.InnerText, name);
+                })
+                .ToList();
+
             this.events = events;
             this.dataSink = dataSink;
             this.environmentContext = environmentContext;
@@ -49,9 +60,9 @@ namespace Neo.Collector
 
             events.SessionStart += OnSessionStart;
             events.SessionEnd += OnSessionEnd;
-            collector = new CodeCoverageCollector(this.logger);
+            collector = new CodeCoverageCollector(this.logger, verboseLogConfig);
 
-            this.logger.LogWarning($"Initialize {this.coveragePath}");
+            if (verboseLogConfig) this.logger.LogWarning($"Initialize {this.coveragePath}");
         }
 
         protected override void Dispose(bool disposing)
@@ -73,10 +84,9 @@ namespace Neo.Collector
                 collector.LoadTestSource(testSource);
             }
 
-            foreach (XmlElement node in configXml.SelectNodes("DebugInfo"))
+            foreach (var (path, name) in debugInfoConfig)
             {
-                var name = node.HasAttribute("name") ? node.GetAttribute("name") : string.Empty;
-                collector.LoadDebugInfoSetting(node.InnerText, name);
+                collector.LoadDebugInfoSetting(path, name);
             }
         }
 

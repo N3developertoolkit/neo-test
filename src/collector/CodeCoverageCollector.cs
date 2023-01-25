@@ -18,13 +18,15 @@ namespace Neo.Collector
         internal const string NEF_FILE_EXT = ".nef";
 
         readonly ILogger logger;
+        readonly bool verboseLog;
         readonly IDictionary<Hash160, ContractCoverageCollector> coverageMap = new Dictionary<Hash160, ContractCoverageCollector>();
 
         public IEnumerable<ContractCoverageCollector> ContractCollectors => coverageMap.Values;
 
-        public CodeCoverageCollector(ILogger logger)
+        public CodeCoverageCollector(ILogger logger, bool verboseLog = false)
         {
             this.logger = logger;
+            this.verboseLog = verboseLog;
         }
 
         public IEnumerable<ContractCoverage> CollectCoverage() 
@@ -32,7 +34,7 @@ namespace Neo.Collector
 
         public void LoadDebugInfoSetting(string path, string name)
         {
-            logger.LogWarning($"LoadDebugInfoSetting {path}");
+            if (verboseLog) logger.LogWarning($"LoadDebugInfoSetting {path}");
             if (NeoDebugInfo.TryLoad(path, out var debugInfo))
             {
                 if (string.IsNullOrEmpty(name))
@@ -49,7 +51,7 @@ namespace Neo.Collector
 
         public void LoadTestSource(string testSource)
         {
-            logger.LogWarning($"LoadTestSource {testSource}");
+            if (verboseLog) logger.LogWarning($"LoadTestSource {testSource}");
             if (Utility.TryLoadAssembly(testSource, out var asm))
             {
                 foreach (var type in asm.DefinedTypes)
@@ -89,7 +91,7 @@ namespace Neo.Collector
 
         public void TrackContract(string contractName, NeoDebugInfo debugInfo)
         {
-            logger.LogWarning($"TrackContract {contractName}");
+            if (verboseLog) logger.LogWarning($"TrackContract {contractName}");
             if (!coverageMap.ContainsKey(debugInfo.Hash))
             {
                 coverageMap.Add(debugInfo.Hash, new ContractCoverageCollector(contractName, debugInfo));
@@ -100,7 +102,7 @@ namespace Neo.Collector
         {
             foreach (var filename in Directory.EnumerateFiles(coveragePath))
             {
-                logger.LogWarning($"LoadCoverageFiles {filename}");
+                if (verboseLog) logger.LogWarning($"LoadCoverageFiles {filename}");
                 try
                 {
                     var ext = Path.GetExtension(filename);
@@ -125,7 +127,6 @@ namespace Neo.Collector
                     logger.LogError(filename, ex);
                 }
             }
-
         }
 
         public void LoadCoverage(string filename)
@@ -141,6 +142,7 @@ namespace Neo.Collector
         {
             var reader = new StreamReader(stream);
             var hash = Hash160.Zero;
+
             while (!reader.EndOfStream)
             {
                 var line = reader.ReadLine();
@@ -171,7 +173,7 @@ namespace Neo.Collector
                             }
                             else
                             {
-                                throw new InvalidDataException($"Invalid raw coverage data line '{line}'");
+                                logger.LogError($"Invalid raw coverage data line '{line}'");
                             }
                         }
                     }
@@ -191,7 +193,7 @@ namespace Neo.Collector
             }
             else
             {
-                logger.LogWarning($"Failed to parse {baseFileName} filename");
+                logger.LogError($"Failed to parse {baseFileName} filename");
             }
         }
 
@@ -203,7 +205,7 @@ namespace Neo.Collector
             }
             else
             {
-                logger.LogWarning($"{hash} script not tracked");
+                if (verboseLog) logger.LogWarning($"{hash} script not tracked");
             }
         }
 
@@ -219,7 +221,7 @@ namespace Neo.Collector
             }
             else
             {
-                logger.LogWarning($"Failed to parse {baseFileName} filename");
+                logger.LogError($"Failed to parse {baseFileName} filename");
             }
         }
 
@@ -232,7 +234,7 @@ namespace Neo.Collector
             }
             else
             {
-                logger.LogWarning($"{hash} nef not tracked");
+                if (verboseLog) logger.LogWarning($"{hash} nef not tracked");
             }
         }
     }
