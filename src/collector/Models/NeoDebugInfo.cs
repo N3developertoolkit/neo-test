@@ -52,7 +52,7 @@ namespace Neo.Collector.Models
             }
 
             var basePath = Path.Combine(
-                Path.GetDirectoryName(manifestPath), 
+                Path.GetDirectoryName(manifestPath),
                 Utility.GetBaseName(manifestPath, MANIFEST_FILE_EXTENSION));
 
             var nefdbgnfoPath = Path.ChangeExtension(basePath, NEF_DBG_NFO_EXTENSION);
@@ -69,20 +69,34 @@ namespace Neo.Collector.Models
                 if (File.Exists(debugInfoPath))
                 {
                     using (var fileStream = File.OpenRead(debugInfoPath))
-                    using (var zip = ZipStorer.Open(fileStream, FileAccess.Read))
                     {
-                        var entries = zip.ReadCentralDir();
-                        for (int i = 0; i < entries.Count; i++)
+                        return TryLoadCompressed(fileStream, out debugInfo);
+                    }
+                }
+            }
+            catch { }
+
+            debugInfo = default;
+            return false;
+        }
+
+        internal static bool TryLoadCompressed(Stream stream, out NeoDebugInfo debugInfo)
+        {
+            try
+            {
+                using (var zip = ZipStorer.Open(stream, FileAccess.Read))
+                {
+                    var entries = zip.ReadCentralDir();
+                    for (int i = 0; i < entries.Count; i++)
+                    {
+                        var entry = entries[i];
+                        if (entry.FilenameInZip.EndsWith(DEBUG_JSON_EXTENSION, StringComparison.OrdinalIgnoreCase)
+                            && zip.ExtractFile(entry, out var buffer))
                         {
-                            var entry = entries[i];
-                            if (entry.FilenameInZip.EndsWith(DEBUG_JSON_EXTENSION, StringComparison.OrdinalIgnoreCase)
-                                && zip.ExtractFile(entry, out var buffer))
+                            using (var memoryStream = new MemoryStream(buffer))
                             {
-                                using (var memoryStream = new MemoryStream(buffer))
-                                {
-                                    debugInfo = Load(memoryStream);
-                                    return true;
-                                }
+                                debugInfo = Load(memoryStream);
+                                return true;
                             }
                         }
                     }
@@ -154,7 +168,7 @@ namespace Neo.Collector.Models
             var values = json.Value.Split(',');
             if (values.Length == 2 || values.Length == 3)
             {
-                var index = values.Length == 3 
+                var index = values.Length == 3
                     && int.TryParse(values[2], out var _index)
                     && _index >= 0 ? _index : -1;
 

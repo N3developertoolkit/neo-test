@@ -9,13 +9,23 @@ namespace test_collector;
 
 static class TestFiles
 {
-    public static void LoadTestContract(this CodeCoverageCollector @this, string contractName, string debugInfoFileName)
+    public static void TrackTestContract(this CodeCoverageCollector @this, string contractName, string debugInfoFileName)
     {
         var debugInfo = GetResource(debugInfoFileName, stream =>
         {
-            using var reader = new StreamReader(stream);
-            var json = SimpleJSON.JSON.Parse(reader.ReadToEnd());
-            return NeoDebugInfo.FromDebugInfoJson(json);
+            if (debugInfoFileName.EndsWith(NeoDebugInfo.NEF_DBG_NFO_EXTENSION))
+            {
+                return NeoDebugInfo.TryLoadCompressed(stream, out var debugInfo)
+                    ? debugInfo : throw new Exception("NeoDebugInfo.TryLoadCompressed failed");
+            }
+            else if (debugInfoFileName.EndsWith(NeoDebugInfo.DEBUG_JSON_EXTENSION))
+            {
+                return NeoDebugInfo.Load(stream);
+            }
+            else
+            {
+                throw new Exception($"Invalid debug info file extension {debugInfoFileName}");
+            }
         });
         @this.TrackContract(contractName, debugInfo);
     }
