@@ -205,8 +205,6 @@ namespace Neo.Test.Runner
                 {
                     var sequencePoints = debugInfo.Methods.SelectMany(m => m.SequencePoints).ToArray();
                     var hitMap = engine.GetHitMap(contract.Hash);
-
-
                     var branchMap = engine.GetBranchMap(contract.Hash);
 
                     await writer.WritePropertyNameAsync("code-coverage");
