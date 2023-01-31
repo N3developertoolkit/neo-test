@@ -17,11 +17,10 @@ env:
 jobs:
   test:
     uses: ./.github/workflows/test.yml
-  pack:
-    needs: test
-    uses: ./.github/workflows/pack.yml
+  package:
+    uses: ./.github/workflows/package.yml
   publish:
-    needs: pack
+    needs: [test, package]
     runs-on: ubuntu-latest
     steps:
     - name: Setup .NET
@@ -34,22 +33,7 @@ jobs:
     - name: Download Neo.Assertions
       uses: actions/download-artifact@v3
       with:
-        name: assertions
-        path: ./out
-    - name: Download Neo.BuildTasks
-      uses: actions/download-artifact@v3
-      with:
-        name: build-tasks
-        path: ./out
-    - name: Download Neo.Test.Harness
-      uses: actions/download-artifact@v3
-      with:
-        name: test-harness
-        path: ./out
-    - name: Download Neo.Test.Runner
-      uses: actions/download-artifact@v3
-      with:
-        name: test-runner
+        name: packages
         path: ./out
     - name: Publish to Azure Artifacts
       run: dotnet nuget push --api-key AzureArtifacts out/*.nupkg

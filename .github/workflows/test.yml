@@ -21,24 +21,21 @@ jobs:
         dotnet-version: |
           ${{ env.DOTNET_VERSION }}
           3.1.x
-    - name: Nerdbank.GitVersioning
-      uses: dotnet/nbgv@v0.4.0
-      id: nbgv
-    - name: Restore
+    - name: Build and Test
       run: |
-        dotnet restore --configfile ./NuGet.Config
-    - name: Build
-      run: |
+        dotnet restore
         dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
-    - name: Test
-      run: |
         dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    - name: Upload Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: ./test/test-build-tasks/TestResults/*/coverage.cobertura.xml
     - name: Upload Build Log
-      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: buildlog
-        path: ./msbuild.binlog
+        path: ./msbuild.${{ matrix.os }}.binlog
     - name: Code Coverage Report
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:

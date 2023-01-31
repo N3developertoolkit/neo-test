@@ -35,29 +35,14 @@ jobs:
         dotnet restore
         dotnet build --configuration ${{ env.CONFIGURATION }} --no-restore --verbosity normal --BinaryLogger:./msbuild.binlog
         dotnet pack --configuration ${{ env.CONFIGURATION }} --output ./out --no-build --verbosity normal
+    - name: Upload Packages
+      uses: actions/upload-artifact@v3
+      with:
+        name: packages
+        path: ./out/Neo.*.nupkg
     - name: Upload Build Log
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: buildlog
         path: ./msbuild.binlog
-    - name: Upload Neo.Assertions
-      uses: actions/upload-artifact@v3
-      with:
-        name: assertions
-        path: ./out/Neo.Assertions.*.nupkg
-    - name: Upload Neo.BuildTasks
-      uses: actions/upload-artifact@v3
-      with:
-        name: build-tasks
-        path: ./out/Neo.BuildTasks.*.nupkg
-    - name: Upload Neo.Test.Harness
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-harness
-        path: ./out/Neo.Test.Harness.*.nupkg
-    - name: Upload Neo.Test.Runner
-      uses: actions/upload-artifact@v3
-      with:
-        name: test-runner
-        path: ./out/Neo.Test.Runner.*.nupkg
