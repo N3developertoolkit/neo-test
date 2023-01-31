@@ -7,8 +7,9 @@ namespace Neo.BuildTasks
 {
     public static class ContractGenerator
     {
-        public static string GenerateContractInterface(NeoManifest manifest, string contractNameOverride, string @namespace)
+        public static string GenerateContractInterface(NeoManifest manifest, string manifestFile, string contractNameOverride, string @namespace)
         {
+            var manifestName = manifest.Name.Replace("\"", "\"\"");
             var contractName = string.IsNullOrEmpty(contractNameOverride)
                 ? Regex.Replace(manifest.Name, "^.*\\.", string.Empty)
                 : contractNameOverride;
@@ -40,8 +41,10 @@ namespace Neo.BuildTasks
 [System.CodeDom.Compiler.GeneratedCode(""Neo.BuildTasks"",""{ThisAssembly.AssemblyFileVersion}"")]
 #endif
 ");
-            builder.AppendLine($"[System.ComponentModel.Description(\"{manifest.Name}\")]");
-
+            builder.AppendLine($"[System.ComponentModel.Description(@\"{manifestName}\")]");
+            builder.AppendLine("#if !OMIT_TEST_HARNESS_ATTRIBUTES");
+            builder.AppendLine($"[NeoTestHarness.Contract(@\"{manifestName}\", @\"{manifestFile}\")]");
+            builder.AppendLine("#endif");
             builder.AppendLine($"interface {contractName} {{");
             builder.IncrementIndent();
             for (int i = 0; i < manifest.Methods.Count; i++)
