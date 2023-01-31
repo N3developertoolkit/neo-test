@@ -3,33 +3,20 @@ name: Release
 on:
   workflow_dispatch:
 
-env:
-  CONFIGURATION: 'Release'
-  DOTNET_VERSION: '6.0.x'
-
 jobs:
   test:
+    if: startsWith(github.ref, 'refs/heads/release/')
     uses: ./.github/workflows/test.yml
-  pack:
+  package:
+    if: startsWith(github.ref, 'refs/heads/release/')
     needs: test
     uses: ./.github/workflows/pack.yml
   release:
-    needs: pack
+    needs: package
     if: startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     steps:
-    - name: Download Neo.Assertions
-      uses: actions/download-artifact@v3
-      with:
-        name: assertions
-        path: ./out
-    - name: Download Neo.BuildTasks
-      uses: actions/download-artifact@v3
-      with:
-        name: build-tasks
-        path: ./out
-    - name: Download Neo.Test.Harness
-      uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v3
       with:
         name: test-harness
         path: ./out
@@ -42,16 +29,10 @@ jobs:
       uses: marvinpinto/action-automatic-releases@v1.1.1
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: ${{ needs.pack.outputs.PrereleaseVersion != '' }}
-        title: Release ${{ needs.pack.outputs.NuGetPackageVersion }}
-        automatic_release_tag: ${{ needs.pack.outputs.NuGetPackageVersion }}
+        prerelease: ${{ needs.package.outputs.PrereleaseVersion != '' }}
+        title: Release ${{ needs.package.outputs.NuGetPackageVersion }}
+        automatic_release_tag: ${{ needs.package.outputs.NuGetPackageVersion }}
         files: |
           ./out/*
     - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.Assertions.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
-    - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.BuildTasks.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
-    - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.Test.Harness.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
-    - name: Push to Nuget.org
-      run: dotnet nuget push ${{ format('./out/Neo.Test.Runner.{0}.nupkg', needs.pack.outputs.NuGetPackageVersion) }} --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push out/*.nupkg --api-key ${{ secrets.NUGET_ORG_TOKEN }} --source https://api.nuget.org/v3/index.json

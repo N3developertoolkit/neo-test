@@ -9,3 +9,6 @@ on:
 jobs:
   pack:
     uses: ./.github/workflows/test.yml
+  package:
+    needs: test
+    uses: ./.github/workflows/package.yml
