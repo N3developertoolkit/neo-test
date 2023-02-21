@@ -1,0 +1,12 @@
+<!-- https://github.com/microsoft/MSBuildSdks/tree/main/src/Traversal -->
+<Project Sdk="Microsoft.Build.Traversal/3.2.0">
+  <ItemGroup>
+    <ProjectReference Include="src\assertions\assertions.csproj" />
+    <ProjectReference Include="src\build-tasks\build-tasks.csproj" />
+    <ProjectReference Include="src\collector\collector.csproj" />
+    <ProjectReference Include="src\runner\runner.csproj" />
+    <ProjectReference Include="src\test-harness\test-harness.csproj" />
+    <ProjectReference Include="test\test-build-tasks\test-build-tasks.csproj" />
+    <ProjectReference Include="test\test-collector\test-collector.csproj" />
+  </ItemGroup>
+</Project>
