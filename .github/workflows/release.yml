@@ -7,13 +7,12 @@ jobs:
   test:
     if: startsWith(github.ref, 'refs/heads/release/')
     uses: ./.github/workflows/test.yml
-  package:
+  pack:
     if: startsWith(github.ref, 'refs/heads/release/')
-    needs: test
     uses: ./.github/workflows/pack.yml
   release:
-    needs: package
     if: startsWith(github.ref, 'refs/heads/release/')
+    needs: [test, pack]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v3
@@ -24,9 +23,9 @@ jobs:
       uses: marvinpinto/action-automatic-releases@v1.1.1
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: ${{ needs.package.outputs.PrereleaseVersion != '' }}
-        title: Release ${{ needs.package.outputs.NuGetPackageVersion }}
-        automatic_release_tag: ${{ needs.package.outputs.NuGetPackageVersion }}
+        prerelease: ${{ needs.pack.outputs.PrereleaseVersion != '' }}
+        title: Release ${{ needs.pack.outputs.NuGetPackageVersion }}
+        automatic_release_tag: ${{ needs.pack.outputs.NuGetPackageVersion }}
         files: |
           ./out/*
     - name: Push to Nuget.org
