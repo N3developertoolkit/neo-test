@@ -17,10 +17,10 @@ env:
 jobs:
   test:
     uses: ./.github/workflows/test.yml
-  package:
-    uses: ./.github/workflows/package.yml
+  pack:
+    uses: ./.github/workflows/pack.yml
   publish:
-    needs: [test, package]
+    needs: [test, pack]
     runs-on: ubuntu-latest
     steps:
     - name: Setup .NET
@@ -30,10 +30,10 @@ jobs:
         source-url: ${{ env.AZURE_ARTIFACTS_FEED_URL }}
       env:
         NUGET_AUTH_TOKEN: ${{ secrets.AZURE_ARTIFACTS_PAT }} 
-    - name: Download Neo.Assertions
+    - name: Download Packages
       uses: actions/download-artifact@v3
       with:
         name: packages
         path: ./out
-    - name: Publish to Azure Artifacts
+    - name: Publish Packages to Azure Artifacts
       run: dotnet nuget push --api-key AzureArtifacts out/*.nupkg
