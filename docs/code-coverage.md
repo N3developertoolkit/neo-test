@@ -9,6 +9,11 @@ Neo-Test can collect code coverage from tests that use [TestApplicationEngine](h
 
 ## Add Neo.Collector package to test project
 
+> Note, Neo.Collector depends on changes in the .NET 7 SDK when running on MacOS or Linux. If you're
+> collecting code coverage for contracts written for Neo 3.5 on a non-Windows OS, you'll need to install
+> the latest [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) and the latest 
+> [.NET 6 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
+
 The code coverage collector is distributed in the Neo.Collector NuGet package. Like other NuGet package references,
 the test project must contain a `PackageReference` for Neo.Collector. Since the package is used at build time,
 the `IncludeAssets` and `PrivateAssets` values must be set as per the example below.
