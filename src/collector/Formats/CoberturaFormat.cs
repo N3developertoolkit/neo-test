@@ -64,6 +64,7 @@ namespace Neo.Collector.Formats
                 ccWriter.WritePackage(writer);
             }
             writer.WriteEndElement();
+            writer.WriteEndElement();
         }
     }
 }
