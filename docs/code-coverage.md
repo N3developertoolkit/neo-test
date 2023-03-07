@@ -7,6 +7,14 @@ Neo-Test can collect code coverage from tests that use [TestApplicationEngine](h
   in C# to use this coverage collection. Neo.Test.Runner can be used to run tests and collect coverage
   without using C#.
 
+## Preview Release
+
+Neo.Collector has not been officially released yet. However, you can still try it out *right now* if 
+you're willing to pull the latest bits from the Neo Blockchain Toolkit artifacts server. The Neo Registrar
+sample's test project has been updated to collect code coverage. Please check out the  
+[code-coverage branch](https://github.com/ngdenterprise/neo-registrar-sample/tree/code-coverage)
+if you want to see Neo.Collector in action.
+
 ## Add Neo.Collector package to test project
 
 > Note, Neo.Collector depends on changes in the .NET 7 SDK when running on MacOS or Linux. If you're
