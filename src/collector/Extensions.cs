@@ -14,18 +14,6 @@ namespace Neo.Collector
 {
     static class Extensions
     {
-        public static IDisposable StartDocument(this XmlWriter @this)
-        {
-            @this.WriteStartDocument();
-            return new DelegateDisposable(() => @this.WriteEndDocument());
-        }
-
-        public static IDisposable StartElement(this XmlWriter @this, string localName)
-        {
-            @this.WriteStartElement(localName);
-            return new DelegateDisposable(() => @this.WriteEndElement());
-        }
-
         public static bool TryParseHexString(this string @this, out byte[] buffer)
         {
             buffer = Array.Empty<byte>();
