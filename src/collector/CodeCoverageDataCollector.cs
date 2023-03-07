@@ -79,14 +79,14 @@ namespace Neo.Collector
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources"))
-            {
-                collector.LoadTestSource(testSource);
-            }
-
             foreach (var (path, name) in debugInfoConfig)
             {
                 collector.LoadDebugInfoSetting(path, name);
+            }
+
+            foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources"))
+            {
+                collector.LoadTestSource(testSource);
             }
         }
 
