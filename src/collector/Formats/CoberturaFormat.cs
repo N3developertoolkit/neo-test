@@ -39,35 +39,31 @@ namespace Neo.Collector.Formats
             var lineRate = Utility.CalculateHitRate(linesValid, linesCovered);
             var branchRate = Utility.CalculateHitRate(branchesValid, branchesCovered);
 
-            using (var _ = writer.StartDocument())
-            using (var __ = writer.StartElement("coverage"))
+            writer.WriteStartDocument();
+            writer.WriteStartElement("coverage");
+            writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
+            writer.WriteAttributeString("lines-covered", $"{linesCovered}");
+            writer.WriteAttributeString("lines-valid", $"{linesValid}");
+            writer.WriteAttributeString("branch-rate", $"{branchRate:N4}");
+            writer.WriteAttributeString("branches-covered", $"{branchesCovered}");
+            writer.WriteAttributeString("branches-valid", $"{branchesValid}");
+            writer.WriteAttributeString("version", ThisAssembly.AssemblyFileVersion);
+            writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeSeconds()}");
+
+            writer.WriteStartElement("sources");
+            foreach (var contract in coverage)
             {
-                writer.WriteAttributeString("line-rate", $"{lineRate:N4}");
-                writer.WriteAttributeString("lines-covered", $"{linesCovered}");
-                writer.WriteAttributeString("lines-valid", $"{linesValid}");
-                writer.WriteAttributeString("branch-rate", $"{branchRate:N4}");
-                writer.WriteAttributeString("branches-covered", $"{branchesCovered}");
-                writer.WriteAttributeString("branches-valid", $"{branchesValid}");
-                writer.WriteAttributeString("version", ThisAssembly.AssemblyFileVersion);
-                writer.WriteAttributeString("timestamp", $"{DateTimeOffset.Now.ToUnixTimeSeconds()}");
-
-                using (var ___ = writer.StartElement("sources"))
-                {
-                    foreach (var contract in coverage)
-                    {
-                        writer.WriteElementString("source", contract.DebugInfo.DocumentRoot);
-                    }
-                }
-
-                using (var ___ = writer.StartElement("packages"))
-                {
-                    foreach (var contract in coverage)
-                    {
-                        var ccWriter = new ContractCoverageWriter(contract);
-                        ccWriter.WritePackage(writer);
-                    }
-                }
+                writer.WriteElementString("source", contract.DebugInfo.DocumentRoot);
             }
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("packages");
+            foreach (var contract in coverage)
+            {
+                var ccWriter = new ContractCoverageWriter(contract);
+                ccWriter.WritePackage(writer);
+            }
+            writer.WriteEndElement();
         }
     }
 }
