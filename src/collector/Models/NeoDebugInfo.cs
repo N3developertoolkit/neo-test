@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Collector.Models
 {
@@ -26,7 +27,7 @@ namespace Neo.Collector.Models
             Methods = methods;
         }
 
-        public static bool TryLoad(string path, out NeoDebugInfo debugInfo)
+        public static bool TryLoad(string path, [MaybeNullWhen(false)] out NeoDebugInfo debugInfo)
         {
             if (path.EndsWith(NEF_DBG_NFO_EXTENSION))
             {
@@ -43,7 +44,7 @@ namespace Neo.Collector.Models
             }
         }
 
-        public static bool TryLoadManifestDebugInfo(string manifestPath, out NeoDebugInfo debugInfo)
+        public static bool TryLoadManifestDebugInfo(string manifestPath, [MaybeNullWhen(false)] out NeoDebugInfo debugInfo)
         {
             if (string.IsNullOrEmpty(manifestPath))
             {
@@ -62,7 +63,7 @@ namespace Neo.Collector.Models
             return TryLoadUncompressed(debugJsonPath, out debugInfo);
         }
 
-        static bool TryLoadCompressed(string debugInfoPath, out NeoDebugInfo debugInfo)
+        static bool TryLoadCompressed(string debugInfoPath, [MaybeNullWhen(false)] out NeoDebugInfo debugInfo)
         {
             try
             {
@@ -80,7 +81,7 @@ namespace Neo.Collector.Models
             return false;
         }
 
-        internal static bool TryLoadCompressed(Stream stream, out NeoDebugInfo debugInfo)
+        internal static bool TryLoadCompressed(Stream stream, [MaybeNullWhen(false)] out NeoDebugInfo debugInfo)
         {
             try
             {
@@ -108,7 +109,7 @@ namespace Neo.Collector.Models
             return false;
         }
 
-        static bool TryLoadUncompressed(string debugInfoPath, out NeoDebugInfo debugInfo)
+        static bool TryLoadUncompressed(string debugInfoPath, [MaybeNullWhen(false)] out NeoDebugInfo debugInfo)
         {
             try
             {

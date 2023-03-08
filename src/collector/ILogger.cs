@@ -4,7 +4,7 @@ namespace Neo.Collector
 {
     public interface ILogger
     {
-        void LogError(string text, Exception exception = null);
+        void LogError(string text, Exception? exception = null);
         void LogWarning(string text);
     }
 }

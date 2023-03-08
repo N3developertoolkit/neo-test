@@ -1,6 +1,8 @@
 // ZipStorer, by Jaime Olivares
 // Website: http://github.com/jaime-olivares/zipstorer
 
+#nullable disable
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -1139,3 +1141,5 @@ namespace System.IO.Compression
 #endregion
     }
 }
+
+#nullable restore

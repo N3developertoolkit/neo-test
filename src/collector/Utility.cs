@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Neo.Collector.Models;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Collector
 {
@@ -22,7 +23,7 @@ namespace Neo.Collector
             return path;
         }
 
-        public static bool TryLoadAssembly(string path, out Assembly assembly)
+        public static bool TryLoadAssembly(string path, [MaybeNullWhen(false)] out Assembly assembly)
         {
             if (File.Exists(path))
             {

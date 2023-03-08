@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Neo.Collector.Models
 {
@@ -22,7 +23,7 @@ namespace Neo.Collector.Models
             CheckSum = checkSum;
         }
 
-        public static bool TryLoad(string filename, out NefFile nefFile)
+        public static bool TryLoad(string filename, [MaybeNullWhen(false)] out NefFile nefFile)
         {
             try
             {

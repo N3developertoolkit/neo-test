@@ -3,6 +3,8 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>neo-collector</AssemblyName>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
     <PackageId>Neo.Collector</PackageId>
     <RootNamespace>Neo.Collector</RootNamespace>
     <TargetFramework></TargetFramework>
@@ -16,6 +18,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="17.4.0" />
     <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+    <PackageReference Include="PolySharp" Version="1.12.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="System.Text.Encoding.CodePages" Version="7.0.0" />
   </ItemGroup>
 

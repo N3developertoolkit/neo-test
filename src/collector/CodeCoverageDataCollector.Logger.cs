@@ -16,7 +16,7 @@ namespace Neo.Collector
                 collectionContext = environmentContext.SessionDataCollectionContext;
             }
 
-            public void LogError(string text, Exception exception = null)
+            public void LogError(string text, Exception? exception = null)
             {
                 if (exception is null)
                     logger.LogError(collectionContext, text);
