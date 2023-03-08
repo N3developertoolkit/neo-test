@@ -14,13 +14,13 @@ namespace Neo.BuildTasks
         protected override string PackageId => PACKAGE_ID;
 
         [Required]
-        public ITaskItem BatchFile { get; set; }
+        public ITaskItem? BatchFile { get; set; }
 
-        public ITaskItem InputFile { get; set; }
+        public ITaskItem? InputFile { get; set; }
 
         public bool Reset { get; set; }
 
-        public ITaskItem Checkpoint { get; set; }
+        public ITaskItem? Checkpoint { get; set; }
 
         public bool Trace { get; set; }
 

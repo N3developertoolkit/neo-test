@@ -3,7 +3,7 @@
   <PropertyGroup>
     <DisableMSBuildAssemblyCopyCheck>true</DisableMSBuildAssemblyCopyCheck>
     <IsPackable>false</IsPackable>
-    <NoWarn>IDE1006</NoWarn>
+    <NoWarn>IDE1006;NU1701</NoWarn>
     <RootNamespace>build_tasks</RootNamespace>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
   </PropertyGroup>

@@ -7,6 +7,7 @@
  * 
  * Written by Bunny83 
  * 2012-06-09
+ * https://github.com/Bunny83/SimpleJSON
  * 
  * Changelog now external. See Changelog.txt
  * 
@@ -33,6 +34,8 @@
  * SOFTWARE.
  * 
  * * * * */
+#nullable disable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1432,3 +1435,5 @@ namespace SimpleJSON
         }
     }
 }
+
+#nullable restore

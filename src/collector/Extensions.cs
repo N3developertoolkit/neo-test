@@ -244,13 +244,18 @@ namespace Neo.Collector
 
             while (address <= last)
             {
-                var ins = instructionMap[address];
-
-                if (ins.IsBranchInstruction())
+                if (instructionMap.TryGetValue(address, out var ins))
                 {
-                    yield return (address, ins.OpCode);
+                    if (ins.IsBranchInstruction())
+                    {
+                        yield return (address, ins.OpCode);
+                    }
+                    address += ins.Size;
                 }
-                address += ins.Size;
+                else
+                {
+                    break;
+                }
             }
         }
 
@@ -269,15 +274,21 @@ namespace Neo.Collector
                 var address = point.Address;
                 while (true)
                 {
-                    var ins = instructionMap[address];
-                    var newAddress = address + ins.Size;
-                    if (newAddress >= nextSPAddress)
+                    if (instructionMap.TryGetValue(address, out var ins))
                     {
-                        return address;
+                        var newAddress = address + ins.Size;
+                        if (newAddress >= nextSPAddress)
+                        {
+                            return address;
+                        }
+                        else
+                        {
+                            address = newAddress;
+                        }
                     }
                     else
                     {
-                        address = newAddress;
+                        return address;
                     }
                 }
             }

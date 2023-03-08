@@ -11,9 +11,9 @@ namespace Neo.Collector
     {
         readonly string contractName;
         readonly NeoDebugInfo debugInfo;
-        readonly Dictionary<int, uint> hitMap = new Dictionary<int, uint>();
-        readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new Dictionary<int, (uint branchCount, uint continueCount)>();
-        IReadOnlyDictionary<int, Instruction> instructionMap = null;
+        readonly Dictionary<int, uint> hitMap = new();
+        readonly Dictionary<int, (uint branchCount, uint continueCount)> branchMap = new();
+        IReadOnlyDictionary<int, Instruction> instructionMap = ImmutableDictionary<int, Instruction>.Empty;
 
         public Hash160 ScriptHash => debugInfo.Hash;
         public IReadOnlyDictionary<int, uint> HitMap => hitMap;
@@ -44,7 +44,7 @@ namespace Neo.Collector
 
         public void RecordScript(IEnumerable<(int address, Instruction instruction)> instructions)
         {
-            if (!(this.instructionMap is null))
+            if (this.instructionMap.Count > 0)
             {
                 throw new InvalidOperationException($"RecordScript already called for {contractName}");
             }
@@ -57,10 +57,12 @@ namespace Neo.Collector
             this.instructionMap = instructionMap;
         }
 
-        public ContractCoverage CollectCoverage() 
-            => new ContractCoverage(contractName, debugInfo, instructionMap, hitMap, branchMap);
+        public ContractCoverage CollectCoverage()
+        {
+            return new(contractName, debugInfo, instructionMap, hitMap, branchMap);
+        }
 
-        internal IEnumerable<ImmutableQueue<int>> FindPaths(int address, ImmutableQueue<int> path = null, int methodEnd = int.MaxValue, int nextSPAddress = int.MaxValue)
+        internal IEnumerable<ImmutableQueue<int>> FindPaths(int address, ImmutableQueue<int>? path = null, int methodEnd = int.MaxValue, int nextSPAddress = int.MaxValue)
         {
             var maxAddress = instructionMap.Keys.Max();
             path = path is null ? ImmutableQueue<int>.Empty : path;

@@ -18,13 +18,13 @@ namespace Neo.Collector
 
         readonly string coveragePath;
 
-        CodeCoverageCollector collector;
-        DataCollectionEvents events;
-        DataCollectionSink dataSink;
-        DataCollectionEnvironmentContext environmentContext;
-        ILogger logger;
+        CodeCoverageCollector? collector;
+        DataCollectionEvents? events;
+        DataCollectionSink? dataSink;
+        DataCollectionEnvironmentContext? environmentContext;
+        ILogger? logger;
         bool verboseLogConfig;
-        IReadOnlyList<(string path, string name)> debugInfoConfig;
+        IReadOnlyList<(string path, string name)>? debugInfoConfig;
 
         public CodeCoverageDataCollector()
         {
@@ -36,14 +36,17 @@ namespace Neo.Collector
         }
 
         public override void Initialize(
-                XmlElement configurationElement,
+                XmlElement? configurationElement,
                 DataCollectionEvents events,
                 DataCollectionSink dataSink,
                 DataCollectionLogger logger,
-                DataCollectionEnvironmentContext environmentContext)
+                DataCollectionEnvironmentContext? environmentContext)
         {
+            if (configurationElement is null) throw new ArgumentNullException(nameof(configurationElement));
+            if (environmentContext is null) throw new ArgumentNullException(nameof(environmentContext));
+
             var verboseLogNode = configurationElement.SelectSingleNode("VerboseLog");
-            verboseLogConfig = !(verboseLogNode is null) && bool.TryParse(verboseLogNode.InnerText, out var value) && value;
+            verboseLogConfig = verboseLogNode is not null && bool.TryParse(verboseLogNode.InnerText, out var value) && value;
             debugInfoConfig = configurationElement.SelectNodes("DebugInfo")
                 .OfType<XmlElement>()
                 .Select(node => 
@@ -67,8 +70,11 @@ namespace Neo.Collector
 
         protected override void Dispose(bool disposing)
         {
-            events.SessionStart -= OnSessionStart;
-            events.SessionEnd -= OnSessionEnd;
+            if (events is not null) 
+            {
+                events.SessionStart -= OnSessionStart;
+                events.SessionEnd -= OnSessionEnd;
+            }
             base.Dispose(disposing);
         }
 
@@ -79,29 +85,35 @@ namespace Neo.Collector
 
         void OnSessionStart(object sender, SessionStartEventArgs e)
         {
-            foreach (var (path, name) in debugInfoConfig)
+            foreach (var (path, name) in debugInfoConfig ?? Enumerable.Empty<(string, string)>())
             {
-                collector.LoadDebugInfoSetting(path, name);
+                collector?.LoadDebugInfoSetting(path, name);
             }
 
-            foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources"))
+            foreach (var testSource in e.GetPropertyValue<IList<string>>("TestSources") ?? Enumerable.Empty<string>())
             {
-                collector.LoadTestSource(testSource);
+                collector?.LoadTestSource(testSource);
             }
         }
 
         void OnSessionEnd(object sender, SessionEndEventArgs e)
         {
-            collector.LoadCoverageFiles(coveragePath);
-            var coverage = collector.CollectCoverage().ToList();
+            collector?.LoadCoverageFiles(coveragePath);
+            var coverage = collector?.CollectCoverage().ToList();
 
-            new CoberturaFormat().WriteReport(coverage, WriteAttachment);
-            new RawCoverageFormat().WriteReport(coverage, WriteAttachment);
+            if (coverage is not null)
+            {
+                new CoberturaFormat().WriteReport(coverage, WriteAttachment);
+                new RawCoverageFormat().WriteReport(coverage, WriteAttachment);
+            }
 
             void WriteAttachment(string filename, Action<Stream> writeAttachment)
             {
                 try
                 {
+                    if (environmentContext is null) throw new NullReferenceException($"Invalid {nameof(environmentContext)}");
+                    if (dataSink is null) throw new NullReferenceException($"Invalid {nameof(dataSink)}");
+
                     var path = Path.Combine(coveragePath, filename);
                     using (var stream = File.OpenWrite(path))
                     {
@@ -112,7 +124,7 @@ namespace Neo.Collector
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex.Message, ex);
+                    logger?.LogError($"{coveragePath}\n{ex.Message}\n{ex.StackTrace}", ex);
                 }
             }
         }

@@ -21,13 +21,13 @@ namespace Neo.BuildTasks
 
     public interface IProcessRunner
     {
-        ProcessResults Run(string command, string arguments, string workingDirectory = null);
+        ProcessResults Run(string command, string arguments, string workingDirectory = "");
     }
 
     // https://github.com/jamesmanning/RunProcessAsTask
     class ProcessRunner : IProcessRunner
     {
-        public ProcessResults Run(string command, string arguments, string workingDirectory = null)
+        public ProcessResults Run(string command, string arguments, string workingDirectory = "")
         {
             var startInfo = new System.Diagnostics.ProcessStartInfo(command, arguments)
             {
@@ -35,7 +35,7 @@ namespace Neo.BuildTasks
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                WorkingDirectory = string.IsNullOrEmpty(workingDirectory) ? null : workingDirectory,
+                WorkingDirectory = string.IsNullOrEmpty(workingDirectory) ? "" : workingDirectory,
             };
 
             var process = new System.Diagnostics.Process
